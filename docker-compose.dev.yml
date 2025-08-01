@@ -1,0 +1,167 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres:
+    image: postgres:15-alpine
+    container_name: roi-postgres-dev
+    environment:
+      POSTGRES_DB: roi_poc_dev
+      POSTGRES_USER: roi_dev
+      POSTGRES_PASSWORD: dev_password_123
+      POSTGRES_MULTIPLE_DATABASES: auth_db,user_db,document_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+      - ./database/migrations:/migrations
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roi_dev -d roi_poc_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - roi-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: roi-redis-dev
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass dev_redis_pass
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "dev_redis_pass", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - roi-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: roi-elasticsearch-dev
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - roi-network
+
+  # Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: roi-rabbitmq-dev
+    environment:
+      RABBITMQ_DEFAULT_USER: roi_dev
+      RABBITMQ_DEFAULT_PASS: dev_rabbit_pass
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - roi-network
+
+  # Development Tools
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: roi-mailhog-dev
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    logging:
+      driver: "none"
+    networks:
+      - roi-network
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: roi-localstack-dev
+    environment:
+      - SERVICES=s3,lambda,apigateway,cloudformation
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    ports:
+      - "4566:4566"
+    volumes:
+      - localstack_data:/tmp/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - roi-network
+
+  # Monitoring Stack (Development)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: roi-prometheus-dev
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.dev.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - roi-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: roi-grafana-dev
+    ports:
+      - "3030:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - roi-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: roi-jaeger-dev
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+    networks:
+      - roi-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  rabbitmq_data:
+  localstack_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  roi-network:
+    driver: bridge
+    name: roi-dev-network

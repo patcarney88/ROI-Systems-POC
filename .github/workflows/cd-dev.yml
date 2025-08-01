@@ -1,0 +1,175 @@
+name: CD - Deploy to Development
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'Deployment target'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - web
+          - api
+          - services
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY_PREFIX: roi-poc
+  ECS_CLUSTER: roi-poc-dev
+  ENVIRONMENT: development
+
+jobs:
+  deploy:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    environment: development
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build and push Web App
+        if: github.event.inputs.deploy_target == 'all' || github.event.inputs.deploy_target == 'web'
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f apps/web/Dockerfile \
+            --build-arg NODE_ENV=production \
+            --build-arg NEXT_PUBLIC_API_URL=${{ secrets.DEV_API_URL }} \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-web:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-web:latest \
+            .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-web:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-web:latest
+          
+      - name: Build and push API
+        if: github.event.inputs.deploy_target == 'all' || github.event.inputs.deploy_target == 'api'
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f apps/api/Dockerfile \
+            --build-arg NODE_ENV=production \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-api:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-api:latest \
+            .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-api:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-api:latest
+          
+      - name: Build and push Services
+        if: github.event.inputs.deploy_target == 'all' || github.event.inputs.deploy_target == 'services'
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          for service in auth documents notifications analytics; do
+            docker build -f services/$service/Dockerfile \
+              --build-arg NODE_ENV=production \
+              -t $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-$service:$IMAGE_TAG \
+              -t $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-$service:latest \
+              .
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-$service:$IMAGE_TAG
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY_PREFIX-$service:latest
+          done
+          
+      - name: Update ECS Services
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Update task definitions
+          for service in web api auth documents notifications analytics; do
+            if [[ "${{ github.event.inputs.deploy_target }}" == "all" ]] || \
+               [[ "${{ github.event.inputs.deploy_target }}" == "web" && "$service" == "web" ]] || \
+               [[ "${{ github.event.inputs.deploy_target }}" == "api" && "$service" == "api" ]] || \
+               [[ "${{ github.event.inputs.deploy_target }}" == "services" && "$service" != "web" && "$service" != "api" ]]; then
+              
+              # Download current task definition
+              aws ecs describe-task-definition \
+                --task-definition roi-poc-dev-$service \
+                --query taskDefinition > task-def-$service.json
+                
+              # Update image
+              NEW_IMAGE="${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY_PREFIX-$service:$IMAGE_TAG"
+              jq --arg IMAGE "$NEW_IMAGE" '.containerDefinitions[0].image = $IMAGE' \
+                task-def-$service.json > updated-task-def-$service.json
+                
+              # Register new task definition
+              aws ecs register-task-definition \
+                --cli-input-json file://updated-task-def-$service.json
+                
+              # Update service
+              aws ecs update-service \
+                --cluster $ECS_CLUSTER \
+                --service roi-poc-dev-$service \
+                --task-definition roi-poc-dev-$service \
+                --force-new-deployment
+            fi
+          done
+          
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+        run: |
+          npm run db:migrate --workspace=apps/api
+          
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.DEV_CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+            
+      - name: Health check
+        run: |
+          # Wait for services to stabilize
+          sleep 60
+          
+          # Check web app
+          curl -f https://dev.roi-systems.com/health || exit 1
+          
+          # Check API
+          curl -f https://api-dev.roi-systems.com/health || exit 1
+          
+      - name: Send deployment notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            Development Deployment ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+            Target: ${{ github.event.inputs.deploy_target || 'all' }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          
+      - name: Update deployment tracking
+        run: |
+          echo "deployment_id=${{ github.run_id }}" >> $GITHUB_OUTPUT
+          echo "environment=development" >> $GITHUB_OUTPUT
+          echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT

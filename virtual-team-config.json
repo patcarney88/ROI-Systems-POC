@@ -1,0 +1,150 @@
+{
+  "team_configuration": {
+    "mode": "hive-mind",
+    "autonomous_handoffs": true,
+    "parallel_execution": true,
+    "ml_pattern_match": true,
+    "coordination_protocol": "distributed-consensus"
+  },
+  "personas": {
+    "architect": {
+      "role": "System Architecture & Design",
+      "expertise": ["system-design", "scalability", "patterns", "technical-strategy"],
+      "coordination": ["devops", "backend-lead", "frontend-lead", "security-engineer"]
+    },
+    "devops": {
+      "role": "Infrastructure & Automation",
+      "expertise": ["ci-cd", "cloud", "monitoring", "deployment"],
+      "coordination": ["architect", "security-engineer", "performance-engineer"]
+    },
+    "ux-ui-designer": {
+      "role": "User Experience & Interface Design",
+      "expertise": ["interaction-design", "wireframing", "prototyping"],
+      "coordination": ["product-designer", "visual-designer", "frontend-lead"]
+    },
+    "product-designer": {
+      "role": "Product Design Strategy",
+      "expertise": ["design-systems", "user-flows", "product-vision"],
+      "coordination": ["ux-ui-designer", "product-manager", "ux-researcher"]
+    },
+    "mobile-ux": {
+      "role": "Mobile Experience Specialist",
+      "expertise": ["mobile-patterns", "touch-interfaces", "responsive-design"],
+      "coordination": ["ux-ui-designer", "frontend-lead", "visual-designer"]
+    },
+    "visual-designer": {
+      "role": "Visual Design & Branding",
+      "expertise": ["typography", "color-theory", "visual-hierarchy", "branding"],
+      "coordination": ["ux-ui-designer", "product-designer", "frontend-lead"]
+    },
+    "ux-researcher": {
+      "role": "User Research & Analytics",
+      "expertise": ["user-testing", "data-analysis", "behavioral-insights"],
+      "coordination": ["product-designer", "analytics-engineer", "product-manager"]
+    },
+    "backend-lead": {
+      "role": "Backend Architecture & Development",
+      "expertise": ["apis", "microservices", "databases", "scalability"],
+      "coordination": ["architect", "database-specialist", "security-engineer", "integration-specialist"]
+    },
+    "frontend-lead": {
+      "role": "Frontend Architecture & Development",
+      "expertise": ["spa", "performance", "accessibility", "responsive"],
+      "coordination": ["architect", "ux-ui-designer", "performance-engineer"]
+    },
+    "security-engineer": {
+      "role": "Security & Compliance",
+      "expertise": ["authentication", "encryption", "vulnerability-assessment", "compliance"],
+      "coordination": ["architect", "devops", "backend-lead"]
+    },
+    "database-specialist": {
+      "role": "Database Design & Optimization",
+      "expertise": ["schema-design", "query-optimization", "data-modeling", "migrations"],
+      "coordination": ["backend-lead", "data-scientist", "performance-engineer"]
+    },
+    "email-specialist": {
+      "role": "Email Systems & Deliverability",
+      "expertise": ["email-templates", "deliverability", "spam-prevention", "tracking"],
+      "coordination": ["notification-engineer", "backend-lead", "analytics-engineer"]
+    },
+    "notification-engineer": {
+      "role": "Notification Systems",
+      "expertise": ["push-notifications", "in-app-messaging", "real-time-updates"],
+      "coordination": ["email-specialist", "backend-lead", "frontend-lead"]
+    },
+    "analytics-engineer": {
+      "role": "Analytics & Tracking",
+      "expertise": ["event-tracking", "metrics", "dashboards", "reporting"],
+      "coordination": ["data-scientist", "ux-researcher", "product-manager"]
+    },
+    "qa-engineer": {
+      "role": "Quality Assurance & Testing",
+      "expertise": ["test-automation", "e2e-testing", "regression", "quality-metrics"],
+      "coordination": ["frontend-lead", "backend-lead", "performance-engineer"]
+    },
+    "performance-engineer": {
+      "role": "Performance Optimization",
+      "expertise": ["load-testing", "optimization", "caching", "monitoring"],
+      "coordination": ["devops", "frontend-lead", "backend-lead", "database-specialist"]
+    },
+    "technical-writer": {
+      "role": "Documentation & Communication",
+      "expertise": ["api-docs", "user-guides", "technical-specs", "knowledge-base"],
+      "coordination": ["architect", "product-manager", "qa-engineer"]
+    },
+    "ml-engineer": {
+      "role": "Machine Learning Systems",
+      "expertise": ["model-deployment", "ml-ops", "feature-engineering", "optimization"],
+      "coordination": ["data-scientist", "backend-lead", "performance-engineer"]
+    },
+    "data-scientist": {
+      "role": "Data Analysis & Modeling",
+      "expertise": ["predictive-modeling", "roi-analysis", "statistical-analysis", "insights"],
+      "coordination": ["ml-engineer", "analytics-engineer", "database-specialist"]
+    },
+    "integration-specialist": {
+      "role": "External Integrations",
+      "expertise": ["apis", "webhooks", "third-party-services", "data-sync"],
+      "coordination": ["backend-lead", "architect", "security-engineer"]
+    },
+    "agile-coach": {
+      "role": "Process & Methodology",
+      "expertise": ["scrum", "kanban", "team-dynamics", "process-optimization"],
+      "coordination": ["product-manager", "architect", "qa-engineer"]
+    },
+    "product-manager": {
+      "role": "Product Strategy & Roadmap",
+      "expertise": ["requirements", "prioritization", "stakeholder-management", "metrics"],
+      "coordination": ["agile-coach", "architect", "ux-researcher", "analytics-engineer"]
+    }
+  },
+  "handoff_protocols": {
+    "design_to_dev": ["product-designer", "ux-ui-designer", "frontend-lead"],
+    "backend_to_frontend": ["backend-lead", "frontend-lead", "integration-specialist"],
+    "research_to_design": ["ux-researcher", "product-designer", "product-manager"],
+    "dev_to_qa": ["frontend-lead", "backend-lead", "qa-engineer"],
+    "security_review": ["security-engineer", "architect", "devops"]
+  },
+  "parallel_workflows": [
+    {
+      "name": "frontend_development",
+      "personas": ["frontend-lead", "ux-ui-designer", "mobile-ux", "performance-engineer"]
+    },
+    {
+      "name": "backend_development",
+      "personas": ["backend-lead", "database-specialist", "integration-specialist", "security-engineer"]
+    },
+    {
+      "name": "infrastructure",
+      "personas": ["devops", "performance-engineer", "security-engineer"]
+    },
+    {
+      "name": "analytics_ml",
+      "personas": ["data-scientist", "ml-engineer", "analytics-engineer"]
+    },
+    {
+      "name": "communications",
+      "personas": ["email-specialist", "notification-engineer", "technical-writer"]
+    }
+  ]
+}
