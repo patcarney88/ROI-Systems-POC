@@ -1,0 +1,11 @@
+{
+  "extends": "/Users/patcarney/.trinity/cursor/config.json",
+  "project": {
+    "name": "auth-service",
+    "trinity": {
+      "version": "6.2.0",
+      "global": true,
+      "initialized": "2025-10-08T14:23:42.031Z"
+    }
+  }
+}

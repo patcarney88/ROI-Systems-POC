@@ -1,0 +1,11 @@
+{
+  "extends": "/Users/patcarney/.trinity/cursor/config.json",
+  "project": {
+    "name": "backend",
+    "trinity": {
+      "version": "6.2.0",
+      "global": true,
+      "initialized": "2025-10-08T18:18:59.678Z"
+    }
+  }
+}

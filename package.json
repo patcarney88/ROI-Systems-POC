@@ -38,8 +38,7 @@
     "build": "npm run build --workspaces --if-present",
     "build:docker": "docker-compose -f docker-compose.yml build",
     
-    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
-    "prepare": "husky install"
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules"
   },
   "devDependencies": {
     "@types/jest": "^29.5.11",

@@ -1,0 +1,11 @@
+{
+  "extends": "/Users/patcarney/.trinity/cursor/config.json",
+  "project": {
+    "name": "ROI-Systems-POC",
+    "trinity": {
+      "version": "6.2.0",
+      "global": true,
+      "initialized": "2025-10-08T14:42:34.588Z"
+    }
+  }
+}
