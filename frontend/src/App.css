@@ -730,6 +730,66 @@ body {
   box-shadow: var(--shadow-xl);
 }
 
+.document-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.document-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-50);
+  border-radius: var(--radius-lg);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.document-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.document-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.document-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateX(4px);
+}
+
+.document-item .document-icon {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.document-item .document-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
 .document-header {
   display: flex;
   align-items: center;
