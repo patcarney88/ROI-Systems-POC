@@ -1,11 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
 import './App.css'
-import Dashboard from './pages/Dashboard'
-import Documents from './pages/Documents'
-import Clients from './pages/Clients'
-import Campaigns from './pages/Campaigns'
-import Analytics from './pages/Analytics'
+import { DashboardSkeleton, AlertSkeleton, DocumentSkeleton } from './components/skeletons'
+import { getPerformanceMonitor } from './utils/performance'
+import { useNotifications } from './hooks/useNotifications'
+import {
+  BellIconWithBadge,
+  NotificationCenter,
+  NotificationToast,
+  NotificationPermissionPrompt
+} from './components/notifications'
+import { Notification } from './types/notification.types'
+
+// Lazy load page components for code splitting
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Documents = lazy(() => import('./pages/Documents'))
+const Clients = lazy(() => import('./pages/Clients'))
+const Campaigns = lazy(() => import('./pages/Campaigns'))
+const Analytics = lazy(() => import('./pages/Analytics'))
+const AlertDashboard = lazy(() => import('./pages/AlertDashboard'))
 
 interface Document {
   id: string;
@@ -57,6 +70,18 @@ function AppContent() {
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Notification state
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
+  const [toastNotification, setToastNotification] = useState<Notification | null>(null);
+  const [showToast, setShowToast] = useState(false);
+
+  // Use notifications hook
+  const notifications_hook = useNotifications({
+    autoInit: true,
+    pageSize: 20
+  });
 
   // Data states
   const [documents, setDocuments] = useState<Document[]>([
@@ -165,7 +190,53 @@ function AppContent() {
 
   useEffect(() => {
     setTimeout(() => setLoading(false), 800);
+
+    // Initialize performance monitoring
+    const perfMonitor = getPerformanceMonitor();
+    perfMonitor.mark('app-init');
+
+    // Log performance summary after page load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        perfMonitor.logSummary();
+      }, 3000);
+    });
+
+    return () => {
+      perfMonitor.disconnect();
+    };
   }, []);
+
+  // Show permission prompt after login (only if not dismissed)
+  useEffect(() => {
+    const shouldShowPrompt =
+      !loading &&
+      notifications_hook.canPrompt &&
+      !notifications_hook.isSubscribed &&
+      !localStorage.getItem('notification_prompt_dismissed');
+
+    if (shouldShowPrompt) {
+      // Show prompt after 3 seconds
+      const timer = setTimeout(() => {
+        setShowPermissionPrompt(true);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, notifications_hook.canPrompt, notifications_hook.isSubscribed]);
+
+  // Handle new notifications (show toast when app is open)
+  useEffect(() => {
+    if (notifications_hook.history.length > 0) {
+      const latestNotification = notifications_hook.history[0];
+
+      // Only show toast for unread notifications
+      if (!latestNotification.read) {
+        setToastNotification(latestNotification);
+        setShowToast(true);
+      }
+    }
+  }, [notifications_hook.history.length]);
 
   // Document upload handler
   const handleDocumentUpload = (files: File[], metadata: any) => {
@@ -260,6 +331,9 @@ function AppContent() {
             <Link to="/" className={location.pathname === '/' ? 'nav-link active' : 'nav-link'}>
               Dashboard
             </Link>
+            <Link to="/alerts" className={location.pathname === '/alerts' ? 'nav-link active' : 'nav-link'}>
+              Alerts
+            </Link>
             <Link to="/documents" className={location.pathname === '/documents' ? 'nav-link active' : 'nav-link'}>
               Documents
             </Link>
@@ -281,13 +355,13 @@ function AppContent() {
                 <path d="m21 21-4.35-4.35"></path>
               </svg>
             </button>
-            <button className="nav-action-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-              {notifications.length > 0 && <span className="notification-badge">{notifications.length}</span>}
-            </button>
+
+            {/* Notification Bell */}
+            <BellIconWithBadge
+              unreadCount={notifications_hook.unreadCount}
+              onClick={() => setNotificationCenterOpen(true)}
+            />
+
             <button className="nav-action-btn avatar">
               <span>AG</span>
             </button>
@@ -297,60 +371,112 @@ function AppContent() {
 
       {/* Main Content with Routes */}
       <main>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <Dashboard
-                documents={documents}
-                clients={clients}
-                stats={stats}
-                onDocumentUpload={handleDocumentUpload}
-                onClientSave={handleClientSave}
-                onCampaignLaunch={handleCampaignLaunch}
-              />
-            }
-          />
-          <Route
-            path="/documents"
-            element={
-              <Documents
-                documents={documents}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onDocumentUpload={handleDocumentUpload}
-              />
-            }
-          />
-          <Route
-            path="/clients"
-            element={
-              <Clients
-                clients={clients}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onClientSave={handleClientSave}
-                onEditClient={handleEditClient}
-              />
-            }
-          />
-          <Route
-            path="/campaigns"
-            element={
-              <Campaigns
-                campaigns={campaigns}
-                onCampaignLaunch={handleCampaignLaunch}
-              />
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <Analytics stats={stats} />
-            }
-          />
-        </Routes>
+        <Suspense fallback={<DashboardSkeleton />}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <Dashboard
+                  documents={documents}
+                  clients={clients}
+                  stats={stats}
+                  onDocumentUpload={handleDocumentUpload}
+                  onClientSave={handleClientSave}
+                  onCampaignLaunch={handleCampaignLaunch}
+                />
+              }
+            />
+            <Route
+              path="/alerts"
+              element={
+                <Suspense fallback={<AlertSkeleton />}>
+                  <AlertDashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/documents"
+              element={
+                <Suspense fallback={<DocumentSkeleton />}>
+                  <Documents
+                    documents={documents}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    onDocumentUpload={handleDocumentUpload}
+                  />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/clients"
+              element={
+                <Suspense fallback={<DashboardSkeleton />}>
+                  <Clients
+                    clients={clients}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    onClientSave={handleClientSave}
+                    onEditClient={handleEditClient}
+                  />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/campaigns"
+              element={
+                <Suspense fallback={<DashboardSkeleton />}>
+                  <Campaigns
+                    campaigns={campaigns}
+                    onCampaignLaunch={handleCampaignLaunch}
+                  />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <Suspense fallback={<DashboardSkeleton />}>
+                  <Analytics stats={stats} />
+                </Suspense>
+              }
+            />
+          </Routes>
+        </Suspense>
       </main>
+
+      {/* Notification Components */}
+      <NotificationCenter
+        open={notificationCenterOpen}
+        onClose={() => setNotificationCenterOpen(false)}
+        notifications={notifications_hook.history}
+        unreadCount={notifications_hook.unreadCount}
+        loading={notifications_hook.historyLoading}
+        onMarkAsRead={notifications_hook.markAsRead}
+        onMarkAllAsRead={notifications_hook.markAllAsRead}
+        onDelete={notifications_hook.deleteNotification}
+        onLoadMore={notifications_hook.loadMoreHistory}
+        onRefresh={notifications_hook.refreshHistory}
+        hasMore={true}
+      />
+
+      <NotificationPermissionPrompt
+        open={showPermissionPrompt}
+        onClose={() => setShowPermissionPrompt(false)}
+        onEnable={async () => {
+          await notifications_hook.subscribe();
+        }}
+        variant="modal"
+      />
+
+      <NotificationToast
+        notification={toastNotification}
+        open={showToast}
+        onClose={() => setShowToast(false)}
+        onClick={(notification) => {
+          notifications_hook.markAsRead(notification.id);
+        }}
+        autoHideDuration={5000}
+      />
 
       {/* Footer */}
       <footer className="main-footer">
@@ -371,6 +497,7 @@ function AppContent() {
             <div className="footer-column">
               <h4>Platform</h4>
               <Link to="/">Dashboard</Link>
+              <Link to="/alerts">Alerts</Link>
               <Link to="/documents">Documents</Link>
               <Link to="/clients">Clients</Link>
               <Link to="/analytics">Analytics</Link>
