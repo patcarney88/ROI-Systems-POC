@@ -3,17 +3,15 @@ import bcrypt from 'bcryptjs';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 import { asyncHandler, AppError } from '../middleware/error.middleware';
 import { createLogger } from '../utils/logger';
+import { User, UserRole, UserStatus } from '../models/User';
 
 const logger = createLogger('auth-controller');
-
-// Mock user database (replace with actual database in production)
-const users: any[] = [];
 
 /**
  * Register a new user
  */
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { email, password, firstName, lastName, role = 'agent' } = req.body;
+  const { email, password, firstName, lastName, role = UserRole.AGENT } = req.body;
 
   // Validation
   if (!email || !password || !firstName || !lastName) {
@@ -21,27 +19,20 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Check if user already exists
-  const existingUser = users.find(u => u.email === email);
+  const existingUser = await User.findOne({ where: { email } });
   if (existingUser) {
     throw new AppError(409, 'USER_EXISTS', 'User with this email already exists');
   }
 
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Create user
-  const newUser = {
-    id: `user_${Date.now()}`,
+  // Create user (password will be hashed by the model hook)
+  const newUser = await User.create({
     email,
-    password: hashedPassword,
+    password,
     firstName,
     lastName,
-    role,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
-
-  users.push(newUser);
+    role: role as UserRole,
+    status: UserStatus.ACTIVE
+  });
 
   // Generate tokens
   const tokens = generateTokens({
@@ -79,16 +70,25 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Find user
-  const user = users.find(u => u.email === email);
+  const user = await User.findOne({ where: { email } });
   if (!user) {
     throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
   }
 
-  // Verify password
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+  // Check if user is active
+  if (user.status !== UserStatus.ACTIVE) {
+    throw new AppError(403, 'ACCOUNT_DISABLED', 'Account is not active');
+  }
+
+  // Verify password using model method
+  const isPasswordValid = await user.validatePassword(password);
   if (!isPasswordValid) {
     throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
   }
+
+  // Update last login
+  user.lastLogin = new Date();
+  await user.save();
 
   // Generate tokens
   const tokens = generateTokens({
@@ -128,9 +128,14 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const payload = verifyRefreshToken(refreshToken);
 
   // Find user
-  const user = users.find(u => u.id === payload.userId);
+  const user = await User.findByPk(payload.userId);
   if (!user) {
     throw new AppError(401, 'INVALID_TOKEN', 'User not found');
+  }
+
+  // Check if user is active
+  if (user.status !== UserStatus.ACTIVE) {
+    throw new AppError(403, 'ACCOUNT_DISABLED', 'Account is not active');
   }
 
   // Generate new tokens
@@ -158,7 +163,10 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError(401, 'UNAUTHORIZED', 'User not authenticated');
   }
 
-  const user = users.find(u => u.id === userId);
+  const user = await User.findByPk(userId, {
+    attributes: { exclude: ['password'] }
+  });
+
   if (!user) {
     throw new AppError(404, 'USER_NOT_FOUND', 'User not found');
   }
@@ -172,6 +180,8 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        status: user.status,
+        lastLogin: user.lastLogin,
         createdAt: user.createdAt
       }
     }
@@ -189,7 +199,7 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
     throw new AppError(401, 'UNAUTHORIZED', 'User not authenticated');
   }
 
-  const user = users.find(u => u.id === userId);
+  const user = await User.findByPk(userId);
   if (!user) {
     throw new AppError(404, 'USER_NOT_FOUND', 'User not found');
   }
@@ -197,7 +207,7 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
   // Update user
   if (firstName) user.firstName = firstName;
   if (lastName) user.lastName = lastName;
-  user.updatedAt = new Date();
+  await user.save();
 
   logger.info(`Profile updated for user: ${user.email}`);
 
@@ -209,7 +219,8 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role
+        role: user.role,
+        status: user.status
       }
     }
   });

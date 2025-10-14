@@ -1,0 +1,255 @@
+{
+  "cascade_superforge_integration": {
+    "mode": "cooperative",
+    "conflict_resolution": "cascade-orchestrates",
+    "parallel_execution": true,
+    "description": "Cascade acts as orchestrator while Superforge agents execute specialized tasks"
+  },
+  "cascade_role": {
+    "primary": "orchestrator",
+    "responsibilities": [
+      "Task delegation to Superforge agents",
+      "Progress monitoring via team dashboard",
+      "Conflict resolution between agents",
+      "User interaction and requirements gathering",
+      "High-level architecture decisions",
+      "Code review and quality gates"
+    ],
+    "does_not_interfere_with": [
+      "Superforge agent creation",
+      "Parallel agent execution",
+      "Agent-specific workflows",
+      "Hive-mind consensus protocols"
+    ]
+  },
+  "superforge_agents": {
+    "source": "virtual-team-config.json",
+    "total_agents": 64,
+    "personas": 22,
+    "execution_mode": "parallel",
+    "coordination": "hive-mind-protocol.md"
+  },
+  "delegation_strategy": {
+    "cascade_handles": [
+      "User requests and clarifications",
+      "Task breakdown and planning",
+      "Agent assignment and coordination",
+      "Progress tracking and reporting",
+      "Integration testing",
+      "Final delivery and documentation"
+    ],
+    "superforge_handles": [
+      "Specialized development tasks",
+      "Parallel workflow execution",
+      "Domain-specific expertise",
+      "Autonomous handoffs between personas",
+      "ML pattern matching",
+      "Quality assurance automation"
+    ]
+  },
+  "communication_protocol": {
+    "cascade_to_superforge": {
+      "method": "task_queue",
+      "format": "structured_json",
+      "endpoint": "/api/superforge/tasks",
+      "includes": ["task_description", "assigned_personas", "priority", "dependencies"]
+    },
+    "superforge_to_cascade": {
+      "method": "progress_updates",
+      "format": "webhook",
+      "endpoint": "http://localhost:4000/api/update-progress",
+      "includes": ["agent_id", "task_status", "progress_percent", "artifacts"]
+    },
+    "dashboard_integration": {
+      "enabled": true,
+      "url": "http://localhost:4000",
+      "real_time_updates": true
+    }
+  },
+  "workflow_patterns": {
+    "pattern_1_user_request": {
+      "step_1": "Cascade receives user request",
+      "step_2": "Cascade analyzes requirements",
+      "step_3": "Cascade creates task breakdown",
+      "step_4": "Cascade delegates to Superforge personas",
+      "step_5": "Superforge agents execute in parallel",
+      "step_6": "Cascade monitors via dashboard",
+      "step_7": "Cascade integrates results",
+      "step_8": "Cascade delivers to user"
+    },
+    "pattern_2_autonomous_execution": {
+      "step_1": "Superforge agents detect work needed",
+      "step_2": "Hive-mind protocol coordinates",
+      "step_3": "Agents execute autonomously",
+      "step_4": "Progress updates sent to dashboard",
+      "step_5": "Cascade monitors but doesn't interfere",
+      "step_6": "Cascade validates quality gates"
+    },
+    "pattern_3_conflict_resolution": {
+      "step_1": "Conflict detected by either system",
+      "step_2": "Cascade pauses affected workflows",
+      "step_3": "Cascade consults relevant personas",
+      "step_4": "Consensus mechanism applied",
+      "step_5": "Cascade makes final decision",
+      "step_6": "Workflows resume"
+    }
+  },
+  "agent_mapping": {
+    "dev_team": {
+      "dashboard_team": "dev",
+      "superforge_personas": [
+        "backend-lead",
+        "frontend-lead",
+        "database-specialist",
+        "integration-specialist",
+        "performance-engineer"
+      ],
+      "cascade_oversight": "code_review_and_integration"
+    },
+    "qa_team": {
+      "dashboard_team": "qa",
+      "superforge_personas": [
+        "qa-engineer",
+        "performance-engineer",
+        "security-engineer"
+      ],
+      "cascade_oversight": "quality_gates_and_validation"
+    },
+    "design_team": {
+      "dashboard_team": "design",
+      "superforge_personas": [
+        "ux-ui-designer",
+        "product-designer",
+        "mobile-ux",
+        "visual-designer",
+        "ux-researcher"
+      ],
+      "cascade_oversight": "design_review_and_approval"
+    },
+    "infrastructure_team": {
+      "dashboard_team": "devops",
+      "superforge_personas": [
+        "devops",
+        "architect",
+        "security-engineer"
+      ],
+      "cascade_oversight": "deployment_and_monitoring"
+    }
+  },
+  "parallel_execution_rules": {
+    "max_concurrent_agents": 64,
+    "cascade_max_parallel_tasks": 10,
+    "resource_allocation": {
+      "cascade": "20%",
+      "superforge": "80%",
+      "description": "Cascade focuses on coordination, Superforge on execution"
+    },
+    "conflict_prevention": {
+      "file_locking": true,
+      "task_dependencies": true,
+      "workspace_isolation": false,
+      "merge_strategy": "cascade_reviews_all"
+    }
+  },
+  "quality_gates": {
+    "gate_1_requirements": {
+      "owner": "cascade",
+      "approvers": ["product-manager", "architect"],
+      "automated": false
+    },
+    "gate_2_design": {
+      "owner": "cascade",
+      "approvers": ["product-designer", "ux-ui-designer", "architect"],
+      "automated": false
+    },
+    "gate_3_implementation": {
+      "owner": "superforge",
+      "approvers": ["backend-lead", "frontend-lead", "qa-engineer"],
+      "automated": true,
+      "cascade_validation": true
+    },
+    "gate_4_testing": {
+      "owner": "superforge",
+      "approvers": ["qa-engineer", "security-engineer", "performance-engineer"],
+      "automated": true,
+      "cascade_validation": true
+    },
+    "gate_5_deployment": {
+      "owner": "cascade",
+      "approvers": ["devops", "architect", "product-manager"],
+      "automated": false
+    }
+  },
+  "dashboard_configuration": {
+    "teams": [
+      {
+        "name": "Development",
+        "key": "dev",
+        "agents": ["backend-lead", "frontend-lead", "database-specialist", "integration-specialist"],
+        "metrics": ["tasks_completed", "code_quality", "velocity"]
+      },
+      {
+        "name": "QA",
+        "key": "qa",
+        "agents": ["qa-engineer", "performance-engineer", "security-engineer"],
+        "metrics": ["tests_passed", "bugs_found", "coverage"]
+      },
+      {
+        "name": "Design",
+        "key": "design",
+        "agents": ["ux-ui-designer", "product-designer", "visual-designer"],
+        "metrics": ["designs_completed", "user_feedback", "iterations"]
+      },
+      {
+        "name": "DevOps",
+        "key": "devops",
+        "agents": ["devops", "architect"],
+        "metrics": ["deployments", "uptime", "performance"]
+      }
+    ],
+    "update_frequency_ms": 3000,
+    "websocket_enabled": true
+  },
+  "best_practices": {
+    "cascade_should": [
+      "Delegate specialized tasks to Superforge personas",
+      "Monitor progress via dashboard",
+      "Handle user communication",
+      "Make final integration decisions",
+      "Validate quality gates",
+      "Resolve conflicts when they arise"
+    ],
+    "cascade_should_not": [
+      "Interfere with Superforge agent creation",
+      "Override hive-mind consensus without reason",
+      "Duplicate work that agents are doing",
+      "Block parallel execution",
+      "Micromanage individual agents"
+    ],
+    "superforge_should": [
+      "Execute tasks autonomously",
+      "Use hive-mind protocol for coordination",
+      "Send progress updates to dashboard",
+      "Follow quality standards",
+      "Escalate conflicts to Cascade"
+    ],
+    "superforge_should_not": [
+      "Wait for Cascade approval on routine tasks",
+      "Bypass quality gates",
+      "Make architectural decisions without Cascade",
+      "Deploy to production without Cascade approval"
+    ]
+  },
+  "emergency_protocols": {
+    "cascade_override": {
+      "enabled": true,
+      "triggers": ["critical_bug", "security_incident", "deployment_failure"],
+      "action": "pause_all_agents_and_take_control"
+    },
+    "superforge_escalation": {
+      "enabled": true,
+      "triggers": ["consensus_failure", "resource_conflict", "quality_gate_failure"],
+      "action": "notify_cascade_for_resolution"
+    }
+  }
+}

@@ -9,6 +9,29 @@
 
 ---
 
+## 🤖 Cascade + Superforge Integration
+
+This project uses a **cooperative multi-agent system**:
+- **Cascade (Claude Code)**: Orchestrator - handles user requests, delegates tasks, monitors progress
+- **64 Superforge Agents**: Executors - 22 specialized personas working in parallel
+- **Real-time Dashboard**: http://localhost:4000 - monitor all agent activity
+
+**Quick Start**:
+```bash
+# Check integration status
+./scripts/cascade-superforge.sh status
+
+# Start monitoring dashboard
+./scripts/cascade-superforge.sh start
+
+# View recent activity
+./scripts/cascade-superforge.sh activity
+```
+
+📖 **Documentation**: See [`QUICK_REFERENCE.md`](QUICK_REFERENCE.md) and [`CASCADE_SUPERFORGE_INTEGRATION.md`](CASCADE_SUPERFORGE_INTEGRATION.md)
+
+---
+
 ## 🎯 Overview
 
 ROI Systems is a comprehensive real estate document management and client retention platform that helps real estate professionals:

@@ -7,8 +7,9 @@ services:
     container_name: roi-poc-postgres
     environment:
       POSTGRES_DB: roi_poc
-      POSTGRES_USER: ${DB_USER:-roi_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-roi_pass}
+      # SECURITY: No default passwords - environment variables required
+      POSTGRES_USER: ${DB_USER:?ERROR - DB_USER environment variable required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?ERROR - DB_PASSWORD environment variable required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -26,7 +27,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: roi-poc-redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_pass}
+    # SECURITY: No default password - environment variable required
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD environment variable required}
     volumes:
       - redis_data:/data
     ports:
@@ -46,8 +48,10 @@ services:
     environment:
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - xpack.security.enabled=false
-      - xpack.security.enrollment.enabled=false
+      # SECURITY WARNING: In production, enable xpack security and set ELASTIC_PASSWORD
+      - xpack.security.enabled=${ES_SECURITY_ENABLED:-false}
+      - xpack.security.enrollment.enabled=${ES_SECURITY_ENABLED:-false}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-}
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     ports:
@@ -107,11 +111,13 @@ services:
     environment:
       NODE_ENV: development
       PORT: 4000
-      DATABASE_URL: postgresql://${DB_USER:-roi_user}:${DB_PASSWORD:-roi_pass}@postgres:5432/roi_poc
-      REDIS_URL: redis://default:${REDIS_PASSWORD:-redis_pass}@redis:6379
+      # SECURITY: No default credentials - environment variables required
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/roi_poc
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
       ELASTICSEARCH_URL: http://elasticsearch:9200
       AWS_ENDPOINT: http://localstack:4566
-      JWT_SECRET: ${JWT_SECRET:-development_secret}
+      JWT_SECRET: ${JWT_SECRET:?ERROR - JWT_SECRET environment variable required}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?ERROR - JWT_REFRESH_SECRET environment variable required}
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages
@@ -163,9 +169,11 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5001
-      DATABASE_URL: postgresql://${DB_USER:-roi_user}:${DB_PASSWORD:-roi_pass}@postgres:5432/roi_poc
-      REDIS_URL: redis://default:${REDIS_PASSWORD:-redis_pass}@redis:6379
-      JWT_SECRET: ${JWT_SECRET:-development_secret}
+      # SECURITY: No default credentials - environment variables required
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/roi_poc
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:?ERROR - JWT_SECRET environment variable required}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?ERROR - JWT_REFRESH_SECRET environment variable required}
     volumes:
       - ./services/auth:/app/services/auth
       - ./packages:/app/packages
@@ -191,8 +199,9 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5002
-      DATABASE_URL: postgresql://${DB_USER:-roi_user}:${DB_PASSWORD:-roi_pass}@postgres:5432/roi_poc
-      REDIS_URL: redis://default:${REDIS_PASSWORD:-redis_pass}@redis:6379
+      # SECURITY: No default credentials - environment variables required
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/roi_poc
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
       ELASTICSEARCH_URL: http://elasticsearch:9200
       AWS_ENDPOINT: http://localstack:4566
       S3_BUCKET: roi-poc-documents
@@ -224,8 +233,9 @@ services:
     container_name: roi-poc-ml-api
     environment:
       ENVIRONMENT: development
-      DATABASE_URL: postgresql://${DB_USER:-roi_user}:${DB_PASSWORD:-roi_pass}@postgres:5432/roi_poc
-      REDIS_URL: redis://default:${REDIS_PASSWORD:-redis_pass}@redis:6379
+      # SECURITY: No default credentials - environment variables required
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/roi_poc
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
       AWS_ENDPOINT: http://localstack:4566
       MODEL_BUCKET: roi-poc-ml-models
     volumes:

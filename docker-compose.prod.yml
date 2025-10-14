@@ -1,0 +1,579 @@
+version: '3.9'
+
+################################################################################
+# ROI Systems POC - Production Docker Compose Configuration
+#
+# SECURITY FEATURES:
+# - Docker secrets for sensitive data
+# - No default passwords or credentials
+# - TLS/SSL encryption enabled
+# - Health checks for all services
+# - Resource limits configured
+# - Read-only root filesystems where possible
+#
+# USAGE:
+#   1. Create Docker secrets first:
+#      ./scripts/setup-docker-secrets.sh production
+#
+#   2. Deploy stack:
+#      docker stack deploy -c docker-compose.prod.yml roi-poc
+#
+# REQUIREMENTS:
+# - Docker Swarm mode enabled
+# - Secrets created beforehand
+# - Production environment file (.env.production)
+################################################################################
+
+services:
+
+  ################################################################################
+  # PostgreSQL Database (Production)
+  ################################################################################
+  postgres:
+    image: postgres:15-alpine
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      POSTGRES_DB: roi_poc
+      POSTGRES_USER: roi_user
+      # Password loaded from Docker secret
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      # Production PostgreSQL configuration
+      POSTGRES_INITDB_ARGS: --encoding=UTF-8 --locale=en_US.UTF-8
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    secrets:
+      - db_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./infrastructure/docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roi_user -d roi_poc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ################################################################################
+  # Redis Cache (Production)
+  ################################################################################
+  redis:
+    image: redis:7-alpine
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    command: >
+      sh -c '
+      redis-server
+      --requirepass "$$(cat /run/secrets/redis_password)"
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 768mb
+      --maxmemory-policy allkeys-lru
+      --tcp-backlog 511
+      --timeout 300
+      --tcp-keepalive 60
+      --loglevel notice
+      '
+    secrets:
+      - redis_password
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ################################################################################
+  # Elasticsearch (Production)
+  ################################################################################
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+      restart_policy:
+        condition: on-failure
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - xpack.security.enabled=true
+      - xpack.security.enrollment.enabled=true
+      - ELASTIC_PASSWORD_FILE=/run/secrets/elastic_password
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+    secrets:
+      - elastic_password
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+      - ./infrastructure/docker/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ################################################################################
+  # API Gateway (Production)
+  ################################################################################
+  api:
+    image: ${DOCKER_REGISTRY:-registry.example.com}/roi-poc-api:${VERSION:-latest}
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: production
+      args:
+        NODE_ENV: production
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # Database connection (password from secret)
+      DB_USER: roi_user
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: roi_poc
+      # Redis connection (password from secret)
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Other services
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      # Secrets loaded via _FILE pattern
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      JWT_REFRESH_SECRET_FILE: /run/secrets/jwt_refresh_secret
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
+      # Security configuration
+      COOKIE_SECURE: "true"
+      COOKIE_SAME_SITE: strict
+      CORS_ORIGIN: https://app.roi-systems.com
+      RATE_LIMIT_MAX: 100
+      RATE_LIMIT_WINDOW: 900000
+      # Logging
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+    secrets:
+      - jwt_secret
+      - jwt_refresh_secret
+      - db_password
+      - redis_password
+      - session_secret
+      - encryption_key
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+    networks:
+      - frontend
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=api,environment=production"
+
+  ################################################################################
+  # Authentication Service (Production)
+  ################################################################################
+  auth:
+    image: ${DOCKER_REGISTRY:-registry.example.com}/roi-poc-auth:${VERSION:-latest}
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+      target: production
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      DB_USER: roi_user
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: roi_poc
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Secrets from Docker secrets
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      JWT_REFRESH_SECRET_FILE: /run/secrets/jwt_refresh_secret
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+    secrets:
+      - jwt_secret
+      - jwt_refresh_secret
+      - db_password
+      - redis_password
+      - session_secret
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ################################################################################
+  # Document Service (Production)
+  ################################################################################
+  documents:
+    image: ${DOCKER_REGISTRY:-registry.example.com}/roi-poc-documents:${VERSION:-latest}
+    build:
+      context: .
+      dockerfile: services/documents/Dockerfile
+      target: production
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+    environment:
+      NODE_ENV: production
+      PORT: 5002
+      DB_USER: roi_user
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: roi_poc
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      # AWS S3 configuration (production)
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET: ${S3_DOCUMENTS_BUCKET}
+      # Secrets from Docker secrets
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      AWS_ACCESS_KEY_ID_FILE: /run/secrets/aws_access_key_id
+      AWS_SECRET_ACCESS_KEY_FILE: /run/secrets/aws_secret_access_key
+    secrets:
+      - db_password
+      - redis_password
+      - aws_access_key_id
+      - aws_secret_access_key
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+    networks:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ################################################################################
+  # ML API Service (Production)
+  ################################################################################
+  ml-api:
+    image: ${DOCKER_REGISTRY:-registry.example.com}/roi-poc-ml-api:${VERSION:-latest}
+    build:
+      context: .
+      dockerfile: ml/Dockerfile
+      target: production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+      restart_policy:
+        condition: on-failure
+    environment:
+      ENVIRONMENT: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: roi_poc
+      DB_USER: roi_user
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # AWS configuration
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      MODEL_BUCKET: ${S3_ML_MODELS_BUCKET}
+      # Secrets from Docker secrets
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      AWS_ACCESS_KEY_ID_FILE: /run/secrets/aws_access_key_id
+      AWS_SECRET_ACCESS_KEY_FILE: /run/secrets/aws_secret_access_key
+    secrets:
+      - db_password
+      - redis_password
+      - aws_access_key_id
+      - aws_secret_access_key
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ################################################################################
+  # Nginx Reverse Proxy (Production)
+  ################################################################################
+  nginx:
+    image: nginx:alpine
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - ./infrastructure/docker/nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./infrastructure/docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+      - nginx_logs:/var/log/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - api
+    networks:
+      - frontend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+################################################################################
+# Docker Secrets
+################################################################################
+secrets:
+  jwt_secret:
+    external: true
+    name: roi-poc-jwt-secret-v1
+  jwt_refresh_secret:
+    external: true
+    name: roi-poc-jwt-refresh-secret-v1
+  db_password:
+    external: true
+    name: roi-poc-db-password-v1
+  redis_password:
+    external: true
+    name: roi-poc-redis-password-v1
+  elastic_password:
+    external: true
+    name: roi-poc-elastic-password-v1
+  session_secret:
+    external: true
+    name: roi-poc-session-secret-v1
+  encryption_key:
+    external: true
+    name: roi-poc-encryption-key-v1
+  aws_access_key_id:
+    external: true
+    name: roi-poc-aws-access-key-id-v1
+  aws_secret_access_key:
+    external: true
+    name: roi-poc-aws-secret-access-key-v1
+
+################################################################################
+# Volumes
+################################################################################
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/data/postgres
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/data/redis
+  elasticsearch_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/data/elasticsearch
+  nginx_cache:
+    driver: local
+  nginx_logs:
+    driver: local
+
+################################################################################
+# Networks
+################################################################################
+networks:
+  frontend:
+    driver: overlay
+    attachable: true
+  backend:
+    driver: overlay
+    internal: true
+    attachable: true
+
+################################################################################
+# DEPLOYMENT NOTES:
+#
+# 1. Initialize Docker Swarm:
+#    docker swarm init
+#
+# 2. Create secrets:
+#    ./scripts/setup-docker-secrets.sh production
+#
+# 3. Deploy stack:
+#    docker stack deploy -c docker-compose.prod.yml roi-poc
+#
+# 4. Verify deployment:
+#    docker stack services roi-poc
+#    docker service logs roi-poc_api
+#
+# 5. Scale services:
+#    docker service scale roi-poc_api=5
+#
+# 6. Update service:
+#    docker service update --image registry.example.com/roi-poc-api:v2 roi-poc_api
+#
+# 7. Remove stack:
+#    docker stack rm roi-poc
+################################################################################

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Progress Dashboard - ROI Systems</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">🚀</div>
+                    <div>
+                        <h1>Team Progress Dashboard</h1>
+                        <p class="subtitle">Real-time monitoring for Claude Code Terminal</p>
+                    </div>
+                </div>
+                <div class="connection-status">
+                    <span class="status-indicator" id="connectionStatus"></span>
+                    <span id="connectionText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Overall Stats -->
+        <section class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                    <h3 id="totalCompleted">0</h3>
+                    <p>Tasks Completed</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-content">
+                    <h3 id="totalInProgress">0</h3>
+                    <p>In Progress</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-content">
+                    <h3 id="totalPending">0</h3>
+                    <p>Pending</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <h3 id="activeAgents">0</h3>
+                    <p>Active Agents</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Teams Section -->
+            <section class="teams-section">
+                <h2>Team Status</h2>
+                
+                <!-- Development Team -->
+                <div class="team-card" id="devTeam">
+                    <div class="team-header">
+                        <div class="team-title">
+                            <span class="team-icon">💻</span>
+                            <h3>Development Team</h3>
+                        </div>
+                        <div class="team-stats">
+                            <span class="badge badge-success"><span id="devCompleted">0</span> Completed</span>
+                            <span class="badge badge-warning"><span id="devInProgress">0</span> In Progress</span>
+                            <span class="badge badge-info"><span id="devPending">0</span> Pending</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="devProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="team-members" id="devMembers">
+                        <!-- Members will be populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- QA Team -->
+                <div class="team-card" id="qaTeam">
+                    <div class="team-header">
+                        <div class="team-title">
+                            <span class="team-icon">🧪</span>
+                            <h3>QA Team</h3>
+                        </div>
+                        <div class="team-stats">
+                            <span class="badge badge-success"><span id="qaCompleted">0</span> Completed</span>
+                            <span class="badge badge-warning"><span id="qaInProgress">0</span> In Progress</span>
+                            <span class="badge badge-info"><span id="qaPending">0</span> Pending</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="qaProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="team-members" id="qaMembers">
+                        <!-- Members will be populated dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activity Feed -->
+            <section class="activity-section">
+                <h2>Activity Feed</h2>
+                <div class="activity-feed" id="activityFeed">
+                    <!-- Activity items will be populated dynamically -->
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

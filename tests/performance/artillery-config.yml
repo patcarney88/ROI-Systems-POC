@@ -1,0 +1,266 @@
+# ROI Systems POC - Artillery Load Testing Configuration
+#
+# Performance targets:
+# - p95 response time: <200ms
+# - Error rate: <1%
+# - Throughput: 1K-5K req/s
+#
+# Usage:
+#   artillery run tests/performance/artillery-config.yml
+#   artillery run --target http://localhost:3000 tests/performance/artillery-config.yml
+
+config:
+  target: "http://localhost:3000"
+  phases:
+    # Warm up phase
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+
+    # Ramp up phase
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up to 50 users/sec"
+
+    # Sustained load
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained load - 50 users/sec"
+
+    # Peak load
+    - duration: 120
+      arrivalRate: 50
+      rampTo: 100
+      name: "Ramp to peak - 100 users/sec"
+
+    # Peak sustained
+    - duration: 300
+      arrivalRate: 100
+      name: "Peak load - 100 users/sec"
+
+    # Ramp down
+    - duration: 60
+      arrivalRate: 100
+      rampTo: 0
+      name: "Ramp down"
+
+  # Performance thresholds
+  ensure:
+    p95: 200  # 95th percentile must be under 200ms
+    p99: 500  # 99th percentile must be under 500ms
+    maxErrorRate: 1  # Maximum 1% error rate
+
+  # Environment variables
+  variables:
+    apiVersion: "v1"
+
+  # Payload settings
+  payload:
+    path: "./test-users.csv"
+    fields:
+      - "email"
+      - "password"
+    order: "sequence"
+    skipHeader: true
+
+  # HTTP settings
+  http:
+    timeout: 30  # 30 second timeout
+    pool: 50     # Connection pool size
+    maxSockets: 50
+
+  # Plugins
+  plugins:
+    expect: {}
+    metrics-by-endpoint:
+      stripQueryString: true
+    statsd:
+      host: "localhost"
+      port: 8125
+      prefix: "roi.load-test"
+
+  # Custom metrics
+  processor: "./artillery-processor.js"
+
+scenarios:
+  # Scenario 1: Authentication flow
+  - name: "Authentication Flow"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/{{ apiVersion }}/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.data.accessToken"
+              as: "authToken"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: "data.accessToken"
+
+      - think: 2
+
+      - get:
+          url: "/api/{{ apiVersion }}/auth/profile"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 2: Document operations
+  - name: "Document Operations"
+    weight: 40
+    flow:
+      # Login first
+      - post:
+          url: "/api/{{ apiVersion }}/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.data.accessToken"
+              as: "authToken"
+
+      - think: 1
+
+      # Get documents list
+      - get:
+          url: "/api/{{ apiVersion }}/documents"
+          qs:
+            page: 1
+            limit: 20
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+          capture:
+            - json: "$.data.documents[0].id"
+              as: "documentId"
+
+      - think: 1
+
+      # Get document statistics
+      - get:
+          url: "/api/{{ apiVersion }}/documents/stats"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+      - think: 1
+
+      # Search documents
+      - get:
+          url: "/api/{{ apiVersion }}/documents"
+          qs:
+            search: "contract"
+            page: 1
+            limit: 10
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+      - think: 2
+
+      # Get single document (if ID captured)
+      - get:
+          url: "/api/{{ apiVersion }}/documents/{{ documentId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          ifTrue: "documentId"
+          expect:
+            - statusCode: [200, 404]
+
+  # Scenario 3: Client operations
+  - name: "Client Operations"
+    weight: 30
+    flow:
+      # Login
+      - post:
+          url: "/api/{{ apiVersion }}/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.data.accessToken"
+              as: "authToken"
+
+      - think: 1
+
+      # Get clients list
+      - get:
+          url: "/api/{{ apiVersion }}/clients"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+      - think: 1
+
+      # Get client statistics
+      - get:
+          url: "/api/{{ apiVersion }}/clients/stats"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+      - think: 1
+
+      # Filter clients
+      - get:
+          url: "/api/{{ apiVersion }}/clients"
+          qs:
+            status: "active"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 4: Campaign operations
+  - name: "Campaign Operations"
+    weight: 20
+    flow:
+      # Login
+      - post:
+          url: "/api/{{ apiVersion }}/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.data.accessToken"
+              as: "authToken"
+
+      - think: 1
+
+      # Get campaigns list
+      - get:
+          url: "/api/{{ apiVersion }}/campaigns"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+      - think: 2
+
+      # Get campaign statistics
+      - get:
+          url: "/api/{{ apiVersion }}/campaigns/stats"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+after:
+  flow:
+    - log: "Load test completed successfully"
+
+# Performance reporting
+reporting:
+  json: "./artillery-report.json"
+  html: "./artillery-report.html"

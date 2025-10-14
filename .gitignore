@@ -6,13 +6,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Environment variables
+# Environment variables - CRITICAL SECURITY
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 *.env
+!.env.example
+.env.docker
+.env.production
+.env.staging
+.env.generated
 
 # IDE
 .vscode/
