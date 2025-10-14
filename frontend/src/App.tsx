@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
 import './App.css'
 import './styles/TitleAgentDashboard.css'
+import './styles/DocumentManagement.css'
 import Dashboard from './pages/Dashboard'
 import Documents from './pages/Documents'
 import Clients from './pages/Clients'
 import Campaigns from './pages/Campaigns'
 import Analytics from './pages/Analytics'
 import TitleAgentDashboard from './pages/TitleAgentDashboard'
+import DocumentManagement from './pages/DocumentManagement'
 
 interface Document {
   id: string;
@@ -406,6 +408,12 @@ function AppContent() {
             path="/dashboard/title-agent"
             element={
               <TitleAgentDashboard />
+            }
+          />
+          <Route
+            path="/dashboard/title-agent/documents"
+            element={
+              <DocumentManagement />
             }
           />
         </Routes>
