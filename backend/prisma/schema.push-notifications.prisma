@@ -1,0 +1,350 @@
+// ============================================================
+// PUSH NOTIFICATION SYSTEM MODELS
+// PostgreSQL-based push notification system for ROI Systems
+// Supports Web Push Protocol and Firebase Cloud Messaging
+// ============================================================
+
+// Push Subscription Model - Stores user device subscriptions
+model PushSubscription {
+  id                String          @id @default(uuid())
+  userId            String
+
+  // Subscription Details (Web Push Protocol)
+  endpoint          String          @unique @db.Text
+  p256dh            String          // Encryption key for push payload
+  auth              String          // Auth secret for push payload
+
+  // Device Information
+  deviceType        String          // "web", "ios", "android"
+  browserType       String?         // "chrome", "firefox", "safari", "edge"
+  userAgent         String?         @db.Text
+  deviceName        String?         // User-friendly device name
+
+  // Status & Health
+  active            Boolean         @default(true)
+  lastUsedAt        DateTime        @default(now())
+  failureCount      Int             @default(0)
+  lastFailureAt     DateTime?
+
+  // Timestamps
+  subscribedAt      DateTime        @default(now())
+  expiresAt         DateTime?
+  unsubscribedAt    DateTime?
+
+  // Relations
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveryLogs      DeliveryLog[]
+
+  @@index([userId])
+  @@index([active])
+  @@index([deviceType])
+  @@index([expiresAt])
+  @@map("push_subscriptions")
+}
+
+// Notification Queue Model - Queued notifications for delivery
+model NotificationQueue {
+  id                String          @id @default(uuid())
+  userId            String
+
+  // Notification Type & Priority
+  type              NotificationType
+  priority          NotificationPriority @default(MEDIUM)
+
+  // Content
+  title             String
+  body              String          @db.Text
+  icon              String?
+  image             String?
+  badge             String?
+  sound             String?
+
+  // Actions (buttons displayed on notification)
+  actions           Json?           // Array of { action, title, icon }
+  data              Json?           // Custom data payload
+
+  // Targeting
+  channel           String          // "business_alerts", "documents", "properties", etc.
+  tags              String[]        // User-defined tags for filtering
+
+  // Delivery Configuration
+  requireInteraction Boolean        @default(false)
+  silent            Boolean         @default(false)
+  renotify          Boolean         @default(false)
+  vibrate           Int[]           // Vibration pattern in milliseconds
+
+  // Delivery Status
+  status            QueueStatus     @default(PENDING)
+  attempts          Int             @default(0)
+  maxAttempts       Int             @default(3)
+  lastAttemptAt     DateTime?
+  nextRetryAt       DateTime?
+
+  // Timing
+  scheduledFor      DateTime?
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  clickedAt         DateTime?
+  closedAt          DateTime?
+
+  // Error Tracking
+  lastError         String?         @db.Text
+  errorCode         String?
+
+  // Expiry & TTL
+  expiresAt         DateTime?
+  ttl               Int?            // Time-to-live in seconds
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template          NotificationTemplate? @relation(fields: [templateId], references: [id])
+  templateId        String?
+  deliveryLogs      DeliveryLog[]
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledFor])
+  @@index([nextRetryAt])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("notification_queue")
+}
+
+// Notification Template Model - Reusable notification templates
+model NotificationTemplate {
+  id                String          @id @default(uuid())
+  name              String          @unique
+  type              NotificationType
+
+  // Template Content
+  title             String
+  body              String          @db.Text
+  icon              String?
+  image             String?
+  badge             String?
+  sound             String?
+
+  // Variables for personalization
+  variables         Json?           // { "userName": "string", "propertyAddress": "string" }
+
+  // Configuration
+  priority          NotificationPriority @default(MEDIUM)
+  actions           Json?           // Default action buttons
+  requireInteraction Boolean        @default(false)
+  silent            Boolean         @default(false)
+  vibrate           Int[]           // Default vibration pattern
+
+  // Channels
+  channel           String          // Notification channel/category
+
+  // Status
+  active            Boolean         @default(true)
+
+  // Localization
+  locale            String          @default("en")
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  notifications     NotificationQueue[]
+
+  @@index([type])
+  @@index([active])
+  @@map("notification_templates")
+}
+
+// Delivery Log Model - Tracks all notification delivery attempts
+model DeliveryLog {
+  id                String          @id @default(uuid())
+  userId            String
+  subscriptionId    String
+  notificationId    String
+
+  // Notification Reference
+  type              NotificationType
+  priority          NotificationPriority
+
+  // Delivery Attempt
+  attemptNumber     Int             @default(1)
+
+  // Delivery Status
+  status            DeliveryLogStatus
+  statusCode        Int?            // HTTP status code or FCM response code
+  responseCode      String?         // Provider-specific response code
+  responseMessage   String?         @db.Text
+
+  // Interaction Tracking
+  delivered         Boolean         @default(false)
+  clicked           Boolean         @default(false)
+  dismissed         Boolean         @default(false)
+
+  // Error Details
+  errorType         String?         // "network", "expired", "unsubscribed", "invalid_subscription"
+  errorMessage      String?         @db.Text
+
+  // Performance Metrics
+  deliveryTime      Int?            // Milliseconds from queue to delivery
+
+  // Timestamps
+  sentAt            DateTime        @default(now())
+  deliveredAt       DateTime?
+  clickedAt         DateTime?
+  dismissedAt       DateTime?
+
+  // Relations
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription      PushSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  notification      NotificationQueue @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([notificationId])
+  @@index([type])
+  @@index([status])
+  @@index([sentAt])
+  @@map("delivery_logs")
+}
+
+// User Notification Preferences Model - User-specific notification settings
+model UserNotificationPreferences {
+  id                String          @id @default(uuid())
+  userId            String          @unique
+
+  // Global Settings
+  enabled           Boolean         @default(true)
+  doNotDisturbStart Int?            // Hour of day (0-23)
+  doNotDisturbEnd   Int?            // Hour of day (0-23)
+  timezone          String          @default("UTC")
+
+  // Channel Preferences
+  businessAlerts    Boolean         @default(true)
+  documentUpdates   Boolean         @default(true)
+  propertyValues    Boolean         @default(true)
+  marketReports     Boolean         @default(false)
+  maintenance       Boolean         @default(true)
+  marketing         Boolean         @default(false)
+  systemAlerts      Boolean         @default(true)
+
+  // Priority Filtering
+  minPriority       NotificationPriority @default(LOW)
+  criticalOnly      Boolean         @default(false)
+
+  // Delivery Preferences
+  webPush           Boolean         @default(true)
+  email             Boolean         @default(true)
+  sms               Boolean         @default(false)
+  inApp             Boolean         @default(true)
+
+  // Batching & Throttling
+  batchNotifications Boolean        @default(false)
+  batchInterval     Int?            // Minutes between batched notifications
+  maxPerHour        Int?            // Maximum notifications per hour
+  maxPerDay         Int?            // Maximum notifications per day
+
+  // Sound & Vibration
+  soundEnabled      Boolean         @default(true)
+  vibrationEnabled  Boolean         @default(true)
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notification_preferences")
+}
+
+// Notification Analytics Model - Aggregate metrics
+model NotificationAnalytics {
+  id                String          @id @default(uuid())
+  userId            String
+
+  // Time Period
+  periodStart       DateTime
+  periodEnd         DateTime
+  periodType        String          // "hourly", "daily", "weekly", "monthly"
+
+  // Delivery Metrics
+  totalSent         Int             @default(0)
+  totalDelivered    Int             @default(0)
+  totalFailed       Int             @default(0)
+  totalExpired      Int             @default(0)
+
+  // Engagement Metrics
+  totalClicked      Int             @default(0)
+  totalDismissed    Int             @default(0)
+
+  // By Type
+  metricsByType     Json            // { "BUSINESS_ALERT": { sent: 10, clicked: 5 } }
+
+  // By Channel
+  metricsByChannel  Json            // { "business_alerts": { sent: 10, clicked: 5 } }
+
+  // Performance Metrics
+  avgDeliveryTime   Float?          // Average delivery time in milliseconds
+  deliveryRate      Float?          // Percentage of successful deliveries
+  clickThroughRate  Float?          // Percentage of notifications clicked
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodStart, periodType])
+  @@index([userId])
+  @@index([periodStart])
+  @@index([periodType])
+  @@map("notification_analytics")
+}
+
+// Enumerations
+
+enum NotificationType {
+  BUSINESS_ALERT      // High-value lead alerts
+  DOCUMENT_UPDATE     // Document status changes
+  PROPERTY_VALUE      // Property value updates
+  MARKET_REPORT       // Market intelligence reports
+  MAINTENANCE         // System maintenance notifications
+  MARKETING           // Marketing campaigns
+  SYSTEM              // System-level notifications
+  REMINDER            // Task/event reminders
+  MESSAGE             // Direct messages
+}
+
+enum NotificationPriority {
+  CRITICAL  // Immediate delivery, bypass DND
+  HIGH      // High priority, deliver quickly
+  MEDIUM    // Normal priority
+  LOW       // Low priority, can be batched
+}
+
+enum QueueStatus {
+  PENDING     // Waiting to be processed
+  QUEUED      // In queue for delivery
+  SENDING     // Currently being sent
+  SENT        // Successfully sent to provider
+  DELIVERED   // Confirmed delivered to device
+  FAILED      // Delivery failed
+  EXPIRED     // Notification expired before delivery
+  CANCELLED   // Manually cancelled
+}
+
+enum DeliveryLogStatus {
+  SUCCESS     // Successfully delivered
+  FAILED      // Delivery failed
+  PENDING     // Awaiting delivery
+  EXPIRED     // Expired before delivery
+  REJECTED    // Rejected by provider
+  UNSUBSCRIBED // User unsubscribed
+}

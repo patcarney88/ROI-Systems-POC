@@ -1,0 +1,423 @@
+{
+  "description": "Example Routing Rules for Alert Prioritization System",
+  "rules": [
+    {
+      "name": "Critical High-Value Leads to Top Performers",
+      "priority": 100,
+      "enabled": true,
+      "description": "Route high confidence, high-value leads to agents with luxury specialization",
+      "conditions": [
+        {
+          "field": "confidence",
+          "operator": "greater_than",
+          "value": 0.85
+        },
+        {
+          "field": "priority",
+          "operator": "equals",
+          "value": "CRITICAL"
+        },
+        {
+          "field": "metadata.propertyValue",
+          "operator": "greater_than",
+          "value": 2000000
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": ["luxury", "high_value"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Refinance Opportunities to Financial Specialists",
+      "priority": 90,
+      "enabled": true,
+      "description": "Route refinance alerts to agents with financial expertise",
+      "conditions": [
+        {
+          "field": "alertType",
+          "operator": "equals",
+          "value": "REFINANCE_OPPORTUNITY"
+        },
+        {
+          "field": "confidence",
+          "operator": "greater_than",
+          "value": 0.7
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": ["refinance", "financial_analysis"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Investment Leads to Commercial Specialists",
+      "priority": 85,
+      "enabled": true,
+      "description": "Route investment opportunities to commercial real estate agents",
+      "conditions": [
+        {
+          "field": "alertType",
+          "operator": "equals",
+          "value": "INVESTMENT_INTEREST"
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": ["investment", "commercial"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "San Francisco Bay Area Territory",
+      "priority": 80,
+      "enabled": true,
+      "description": "Route San Francisco area leads to local agents",
+      "conditions": [
+        {
+          "field": "territory",
+          "operator": "in",
+          "value": ["San Francisco", "Oakland", "Berkeley"]
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_to_territory",
+          "params": {
+            "territory": "San Francisco Bay Area"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Silicon Valley Territory",
+      "priority": 80,
+      "enabled": true,
+      "description": "Route Silicon Valley leads to agents familiar with tech industry",
+      "conditions": [
+        {
+          "field": "territory",
+          "operator": "in",
+          "value": ["San Jose", "Palo Alto", "Mountain View", "Cupertino"]
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_to_territory",
+          "params": {
+            "territory": "Silicon Valley"
+          }
+        }
+      ]
+    },
+    {
+      "name": "First-Time Buyer Alerts",
+      "priority": 70,
+      "enabled": true,
+      "description": "Route potential first-time buyers to specialized agents",
+      "conditions": [
+        {
+          "field": "metadata.firstTimeBuyer",
+          "operator": "equals",
+          "value": true
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": ["first_time_buyer", "buyer_education"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "High Priority Escalation",
+      "priority": 95,
+      "enabled": true,
+      "description": "Escalate very high confidence critical alerts to supervisors",
+      "conditions": [
+        {
+          "field": "confidence",
+          "operator": "greater_than",
+          "value": 0.9
+        },
+        {
+          "field": "priority",
+          "operator": "equals",
+          "value": "CRITICAL"
+        }
+      ],
+      "actions": [
+        {
+          "type": "escalate",
+          "params": {}
+        },
+        {
+          "type": "notify",
+          "params": {
+            "channel": "slack",
+            "message": "Critical high-confidence alert requires immediate attention"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Weekend Alerts to On-Call Agents",
+      "priority": 75,
+      "enabled": true,
+      "description": "Route weekend alerts to agents with weekend availability",
+      "conditions": [
+        {
+          "field": "metadata.dayOfWeek",
+          "operator": "in",
+          "value": ["Saturday", "Sunday"]
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": ["weekend_available"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "VIP Client Alerts",
+      "priority": 98,
+      "enabled": true,
+      "description": "Route VIP client alerts to relationship managers",
+      "conditions": [
+        {
+          "field": "metadata.clientTier",
+          "operator": "equals",
+          "value": "VIP"
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": ["vip_relationship_manager"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Repeat Client Alerts",
+      "priority": 88,
+      "enabled": true,
+      "description": "Route repeat clients back to their original agent",
+      "conditions": [
+        {
+          "field": "metadata.previousAgentId",
+          "operator": "not_equals",
+          "value": null
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_to_agent",
+          "params": {
+            "agentId": "${metadata.previousAgentId}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Spanish-Speaking Clients",
+      "priority": 65,
+      "enabled": true,
+      "description": "Route Spanish-speaking clients to bilingual agents",
+      "conditions": [
+        {
+          "field": "metadata.preferredLanguage",
+          "operator": "equals",
+          "value": "Spanish"
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": ["spanish_speaking"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "New Construction Alerts",
+      "priority": 72,
+      "enabled": true,
+      "description": "Route new construction opportunities to specialists",
+      "conditions": [
+        {
+          "field": "metadata.propertyType",
+          "operator": "equals",
+          "value": "new_construction"
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": ["new_construction", "development"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Medium Priority Round Robin",
+      "priority": 50,
+      "enabled": true,
+      "description": "Distribute medium priority alerts evenly among available agents",
+      "conditions": [
+        {
+          "field": "priority",
+          "operator": "equals",
+          "value": "MEDIUM"
+        },
+        {
+          "field": "confidence",
+          "operator": "greater_than",
+          "value": 0.5
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "Low Priority Bulk Assignment",
+      "priority": 20,
+      "enabled": true,
+      "description": "Batch assign low priority alerts to agents with availability",
+      "conditions": [
+        {
+          "field": "priority",
+          "operator": "equals",
+          "value": "LOW"
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "Default Fallback Rule",
+      "priority": 10,
+      "enabled": true,
+      "description": "Catch-all rule for alerts not matched by other rules",
+      "conditions": [
+        {
+          "field": "confidence",
+          "operator": "greater_than",
+          "value": 0.0
+        }
+      ],
+      "actions": [
+        {
+          "type": "assign_by_skill",
+          "params": {
+            "requiredSkills": []
+          }
+        }
+      ]
+    }
+  ],
+  "agentProfileExamples": [
+    {
+      "name": "Senior Luxury Agent",
+      "userId": "agent-123",
+      "maxConcurrentAlerts": 15,
+      "territories": ["San Francisco", "Pacific Heights", "Marina District"],
+      "primaryTerritory": "San Francisco",
+      "skills": ["sell", "buy", "luxury", "high_value"],
+      "specializations": ["luxury", "waterfront", "historic_homes"],
+      "available": true,
+      "autoAssign": true,
+      "preferredAlertTypes": ["LIKELY_TO_SELL", "LIKELY_TO_BUY"]
+    },
+    {
+      "name": "Refinance Specialist",
+      "userId": "agent-456",
+      "maxConcurrentAlerts": 20,
+      "territories": ["Bay Area"],
+      "primaryTerritory": "San Francisco Bay Area",
+      "skills": ["refinance", "financial_analysis", "investment"],
+      "specializations": ["refinance", "financial_planning", "debt_consolidation"],
+      "available": true,
+      "autoAssign": true,
+      "preferredAlertTypes": ["REFINANCE_OPPORTUNITY"]
+    },
+    {
+      "name": "First-Time Buyer Agent",
+      "userId": "agent-789",
+      "maxConcurrentAlerts": 12,
+      "territories": ["Oakland", "Berkeley", "Alameda"],
+      "primaryTerritory": "East Bay",
+      "skills": ["buy", "first_time_buyer", "buyer_education"],
+      "specializations": ["first_time_buyer", "affordable_housing", "loan_assistance"],
+      "available": true,
+      "autoAssign": true,
+      "preferredAlertTypes": ["LIKELY_TO_BUY"]
+    },
+    {
+      "name": "Commercial Investment Agent",
+      "userId": "agent-101",
+      "maxConcurrentAlerts": 10,
+      "territories": ["Silicon Valley", "San Jose", "Palo Alto"],
+      "primaryTerritory": "Silicon Valley",
+      "skills": ["investment", "commercial", "development"],
+      "specializations": ["commercial", "multi_family", "office_space"],
+      "available": true,
+      "autoAssign": true,
+      "preferredAlertTypes": ["INVESTMENT_INTEREST"]
+    },
+    {
+      "name": "Bilingual Agent (Spanish)",
+      "userId": "agent-202",
+      "maxConcurrentAlerts": 14,
+      "territories": ["Mission District", "Excelsior", "Bayview"],
+      "primaryTerritory": "San Francisco",
+      "skills": ["sell", "buy", "spanish_speaking"],
+      "specializations": ["bilingual_spanish", "cultural_specialist"],
+      "available": true,
+      "autoAssign": true,
+      "preferredAlertTypes": ["LIKELY_TO_SELL", "LIKELY_TO_BUY"]
+    }
+  ],
+  "notes": [
+    "Rules are evaluated in priority order (highest first)",
+    "All conditions in a rule must be satisfied for the rule to match",
+    "First matching rule determines the routing strategy",
+    "Use priority 100+ for critical business rules",
+    "Use priority 50-80 for standard routing logic",
+    "Use priority 10-20 for fallback rules",
+    "Always include a default fallback rule with lowest priority",
+    "Test rules in development before enabling in production",
+    "Monitor routing statistics to optimize rule effectiveness"
+  ]
+}

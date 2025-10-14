@@ -1,0 +1,669 @@
+/**
+ * Property Intelligence & Market Analysis Database Schema
+ * Supports automated property valuation, market intelligence, and financial calculations
+ * Uses PostgreSQL with PostGIS extensions and TimescaleDB for time-series data
+ */
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+// ============================================================================
+// PROPERTY CORE MODELS
+// ============================================================================
+
+model Property {
+  id                  String              @id @default(uuid())
+  // Property Identifiers
+  mlsNumber           String?             @unique
+  parcelNumber        String?             @unique
+  address             String
+  city                String
+  state               String
+  zipCode             String
+  county              String?
+
+  // Geographic Data (PostGIS Point geometry)
+  latitude            Float
+  longitude           Float
+  geolocation         String?             // PostGIS POINT(longitude latitude)
+
+  // Property Details
+  propertyType        PropertyType
+  yearBuilt           Int?
+  squareFeet          Int?
+  lotSize             Float?              // Acres
+  bedrooms            Int?
+  bathrooms           Float?
+  stories             Int?
+  garage              Int?                // Number of car spaces
+  pool                Boolean             @default(false)
+
+  // Ownership & Client Relationship
+  clientId            String?
+  organizationId      String
+  subscriberId        String?
+
+  // Purchase Information
+  purchaseDate        DateTime?
+  purchasePrice       Decimal?            @db.Decimal(12, 2)
+  originalLoanAmount  Decimal?            @db.Decimal(12, 2)
+  loanType            String?             // FHA, VA, Conventional
+  interestRate        Float?
+  loanTerm            Int?                // Months (e.g., 360 for 30-year)
+
+  // Current Valuation
+  currentValue        Decimal?            @db.Decimal(12, 2)
+  lastValuationDate   DateTime?
+  valuationConfidence Float?              // 0-100%
+
+  // Tax & Insurance
+  annualPropertyTax   Decimal?            @db.Decimal(10, 2)
+  annualInsurance     Decimal?            @db.Decimal(10, 2)
+  hoaFees             Decimal?            @db.Decimal(10, 2)
+
+  // Status & Tracking
+  trackingEnabled     Boolean             @default(true)
+  lastDataUpdate      DateTime?
+  dataQualityScore    Float?              // 0-100%
+
+  // Relationships
+  client              Client?             @relation(fields: [clientId], references: [id])
+  organization        Organization        @relation(fields: [organizationId], references: [id])
+  subscriber          EmailSubscriber?    @relation(fields: [subscriberId], references: [id])
+  valuations          PropertyValuation[]
+  comparables         ComparableSale[]
+  marketMetrics       MarketMetric[]
+  financialSnapshots  FinancialSnapshot[]
+  maintenanceSchedule MaintenanceItem[]
+  alerts              PropertyAlert[]
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([subscriberId])
+  @@index([zipCode])
+  @@index([city, state])
+  @@index([propertyType])
+  @@index([lastValuationDate])
+  @@map("properties")
+}
+
+enum PropertyType {
+  SINGLE_FAMILY
+  CONDO
+  TOWNHOUSE
+  MULTI_FAMILY
+  LAND
+  COMMERCIAL
+}
+
+// ============================================================================
+// AUTOMATED VALUATION MODELS (AVM)
+// ============================================================================
+
+model PropertyValuation {
+  id                  String              @id @default(uuid())
+  propertyId          String
+
+  // Valuation Data
+  estimatedValue      Decimal             @db.Decimal(12, 2)
+  lowEstimate         Decimal             @db.Decimal(12, 2)
+  highEstimate        Decimal             @db.Decimal(12, 2)
+  confidenceScore     Float               // 0-100%
+  valuationDate       DateTime            @default(now())
+
+  // Data Sources
+  source              ValuationSource
+  sourceRefId         String?             // External reference ID
+
+  // Valuation Factors
+  comparableCount     Int?
+  averageDaysOnMarket Int?
+  pricePerSqFt        Decimal?            @db.Decimal(10, 2)
+
+  // Change Metrics
+  valueChange         Decimal?            @db.Decimal(12, 2)
+  valueChangePercent  Float?
+  quarterOverQuarter  Float?
+  yearOverYear        Float?
+
+  // Model Details
+  modelVersion        String?
+  calculationMethod   String?             // Hedonic, AVM, CMA
+
+  // Metadata
+  metadata            Json?               // Store additional factors
+
+  // Relationships
+  property            Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  createdAt           DateTime            @default(now())
+
+  @@index([propertyId, valuationDate])
+  @@index([valuationDate])
+  @@index([source])
+  @@map("property_valuations")
+}
+
+enum ValuationSource {
+  INTERNAL_AVM
+  ZILLOW
+  REDFIN
+  REALTOR_COM
+  CORELOGIC
+  HOUSECANARY
+  MANUAL_APPRAISAL
+  TAX_ASSESSOR
+}
+
+// ============================================================================
+// COMPARABLE SALES ANALYSIS
+// ============================================================================
+
+model ComparableSale {
+  id                  String              @id @default(uuid())
+  propertyId          String              // Subject property
+
+  // Comparable Property Details
+  address             String
+  city                String
+  state               String
+  zipCode             String
+  latitude            Float
+  longitude           Float
+  distanceMiles       Float               // Distance from subject property
+
+  // Property Characteristics
+  propertyType        PropertyType
+  yearBuilt           Int?
+  squareFeet          Int?
+  lotSize             Float?
+  bedrooms            Int?
+  bathrooms           Float?
+
+  // Sale Information
+  saleDate            DateTime
+  salePrice           Decimal             @db.Decimal(12, 2)
+  pricePerSqFt        Decimal             @db.Decimal(10, 2)
+  daysOnMarket        Int?
+
+  // Similarity Scoring
+  similarityScore     Float               // 0-100% (based on characteristics)
+  adjustedValue       Decimal?            @db.Decimal(12, 2)
+
+  // Data Source
+  mlsNumber           String?
+  source              String              // MLS, Public Records, etc.
+
+  // Status
+  status              ComparableStatus    @default(ACTIVE)
+
+  // Relationships
+  property            Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([propertyId, saleDate])
+  @@index([zipCode, saleDate])
+  @@index([status])
+  @@index([distanceMiles])
+  @@map("comparable_sales")
+}
+
+enum ComparableStatus {
+  ACTIVE
+  ARCHIVED
+  EXCLUDED
+}
+
+// ============================================================================
+// MARKET INTELLIGENCE & NEIGHBORHOOD DATA
+// ============================================================================
+
+model NeighborhoodStats {
+  id                    String              @id @default(uuid())
+
+  // Geographic Definition
+  zipCode               String              @unique
+  city                  String
+  state                 String
+  county                String?
+
+  // Geographic Boundaries (PostGIS Polygon)
+  boundaryGeometry      String?             // PostGIS POLYGON
+  centerLatitude        Float
+  centerLongitude       Float
+
+  // Market Statistics (Updated Quarterly)
+  medianHomePrice       Decimal?            @db.Decimal(12, 2)
+  averageHomePrice      Decimal?            @db.Decimal(12, 2)
+  pricePerSqFt          Decimal?            @db.Decimal(10, 2)
+
+  // Sales Activity
+  totalListings         Int?
+  newListings30Days     Int?
+  soldListings30Days    Int?
+  averageDaysOnMarket   Int?
+  inventoryMonths       Float?              // Months of supply
+
+  // Price Trends
+  priceChangeQoQ        Float?              // Quarter over Quarter %
+  priceChangeYoY        Float?              // Year over Year %
+  appreciationRate      Float?              // Annual %
+
+  // Demographics & Amenities
+  population            Int?
+  medianHouseholdIncome Decimal?            @db.Decimal(12, 2)
+  schoolRating          Float?              // Average 0-10
+  crimeIndex            Int?                // Lower is better
+  walkScore             Int?                // 0-100
+  transitScore          Int?                // 0-100
+
+  // Risk Factors
+  floodZone             String?             // FEMA zone
+  earthquakeRisk        String?             // Low, Moderate, High
+  fireRisk              String?
+
+  // Data Quality
+  lastUpdated           DateTime            @default(now())
+  dataQualityScore      Float?              // 0-100%
+
+  // Relationships
+  marketMetrics         MarketMetric[]
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([zipCode])
+  @@index([city, state])
+  @@index([lastUpdated])
+  @@map("neighborhood_stats")
+}
+
+model MarketMetric {
+  id                  String              @id @default(uuid())
+  propertyId          String
+  zipCode             String
+
+  // Time Period
+  metricDate          DateTime            @default(now())
+  quarter             Int                 // 1-4
+  year                Int
+
+  // New Activity (within 0.5 miles)
+  newListingsCount    Int                 @default(0)
+  newSalesCount       Int                 @default(0)
+  priceReductionsCount Int                @default(0)
+
+  // Market Dynamics
+  averageListPrice    Decimal?            @db.Decimal(12, 2)
+  averageSalePrice    Decimal?            @db.Decimal(12, 2)
+  listToSaleRatio     Float?              // Sale price / List price %
+  averageDaysOnMarket Int?
+
+  // Inventory
+  activeListings      Int?
+  pendingListings     Int?
+
+  // Relationships
+  property            Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  neighborhood        NeighborhoodStats   @relation(fields: [zipCode], references: [zipCode])
+
+  createdAt           DateTime            @default(now())
+
+  @@unique([propertyId, metricDate])
+  @@index([propertyId, metricDate])
+  @@index([zipCode, metricDate])
+  @@index([year, quarter])
+  @@map("market_metrics")
+}
+
+// ============================================================================
+// FINANCIAL CALCULATIONS & EQUITY TRACKING
+// ============================================================================
+
+model FinancialSnapshot {
+  id                    String              @id @default(uuid())
+  propertyId            String
+
+  // Snapshot Date
+  snapshotDate          DateTime            @default(now())
+
+  // Property Value
+  estimatedValue        Decimal             @db.Decimal(12, 2)
+
+  // Loan Information
+  principalBalance      Decimal             @db.Decimal(12, 2)
+  interestRate          Float
+  monthlyPayment        Decimal?            @db.Decimal(10, 2)
+  remainingTerm         Int?                // Months remaining
+
+  // Equity Calculations
+  homeEquity            Decimal             @db.Decimal(12, 2)
+  equityPercent         Float               // (Equity / Value) * 100
+  loanToValue           Float               // (Loan / Value) * 100
+
+  // Monthly Costs
+  principalPayment      Decimal?            @db.Decimal(10, 2)
+  interestPayment       Decimal?            @db.Decimal(10, 2)
+  propertyTax           Decimal?            @db.Decimal(10, 2)
+  insurance             Decimal?            @db.Decimal(10, 2)
+  hoaFees               Decimal?            @db.Decimal(10, 2)
+  totalMonthlyPayment   Decimal?            @db.Decimal(10, 2)
+
+  // Refinance Analysis
+  potentialNewRate      Float?
+  potentialSavings      Decimal?            @db.Decimal(10, 2)
+  refinanceRecommended  Boolean             @default(false)
+
+  // Relationships
+  property              Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  createdAt             DateTime            @default(now())
+
+  @@index([propertyId, snapshotDate])
+  @@index([snapshotDate])
+  @@map("financial_snapshots")
+}
+
+// ============================================================================
+// HOME MAINTENANCE TRACKING
+// ============================================================================
+
+model MaintenanceItem {
+  id                  String              @id @default(uuid())
+  propertyId          String
+
+  // Item Details
+  title               String
+  description         String              @db.Text
+  category            MaintenanceCategory
+  priority            MaintenancePriority @default(ROUTINE)
+
+  // Scheduling
+  frequency           MaintenanceFrequency
+  nextDueDate         DateTime
+  lastCompletedDate   DateTime?
+
+  // Cost Estimation
+  estimatedCost       Decimal?            @db.Decimal(10, 2)
+  actualCost          Decimal?            @db.Decimal(10, 2)
+
+  // Property Age Based
+  triggeredByAge      Boolean             @default(false)
+  propertyAgeYears    Int?                // Years old when task is due
+
+  // Warranty Tracking
+  warrantyExpiration  DateTime?
+  warrantyProvider    String?
+
+  // Service Provider
+  recommendedProvider String?
+  providerContact     String?
+
+  // Status
+  status              MaintenanceStatus   @default(PENDING)
+  completedBy         String?
+  completedNotes      String?             @db.Text
+
+  // Notifications
+  notificationSent    Boolean             @default(false)
+  notificationDate    DateTime?
+
+  // Relationships
+  property            Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([propertyId, nextDueDate])
+  @@index([status, nextDueDate])
+  @@index([category])
+  @@map("maintenance_items")
+}
+
+enum MaintenanceCategory {
+  HVAC
+  PLUMBING
+  ELECTRICAL
+  ROOF
+  EXTERIOR
+  INTERIOR
+  LANDSCAPING
+  APPLIANCES
+  STRUCTURAL
+  SEASONAL
+}
+
+enum MaintenancePriority {
+  CRITICAL
+  HIGH
+  ROUTINE
+  OPTIONAL
+}
+
+enum MaintenanceFrequency {
+  MONTHLY
+  QUARTERLY
+  BIANNUAL
+  ANNUAL
+  BIENNIAL
+  ONE_TIME
+}
+
+enum MaintenanceStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  OVERDUE
+}
+
+// ============================================================================
+// ALERTS & NOTIFICATIONS
+// ============================================================================
+
+model PropertyAlert {
+  id                  String              @id @default(uuid())
+  propertyId          String
+  subscriberId        String?
+
+  // Alert Details
+  type                AlertType
+  severity            AlertSeverity       @default(INFO)
+  title               String
+  message             String              @db.Text
+
+  // Trigger Data
+  triggerValue        Decimal?            @db.Decimal(12, 2)
+  thresholdValue      Decimal?            @db.Decimal(12, 2)
+  changePercent       Float?
+
+  // Status
+  status              AlertStatus         @default(ACTIVE)
+  readAt              DateTime?
+  dismissedAt         DateTime?
+
+  // Notification
+  notificationSent    Boolean             @default(false)
+  notificationDate    DateTime?
+  emailSent           Boolean             @default(false)
+  smsSent             Boolean             @default(false)
+
+  // Metadata
+  metadata            Json?
+
+  // Relationships
+  property            Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  subscriber          EmailSubscriber?    @relation(fields: [subscriberId], references: [id])
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([propertyId, status])
+  @@index([subscriberId, status])
+  @@index([type, createdAt])
+  @@map("property_alerts")
+}
+
+enum AlertType {
+  VALUE_INCREASE
+  VALUE_DECREASE
+  NEW_COMPARABLE_SALE
+  REFINANCE_OPPORTUNITY
+  MAINTENANCE_DUE
+  WARRANTY_EXPIRING
+  TAX_ASSESSMENT_CHANGE
+  INSURANCE_RENEWAL
+  NEIGHBORHOOD_ACTIVITY
+  MARKET_SHIFT
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  READ
+  DISMISSED
+  EXPIRED
+}
+
+// ============================================================================
+// DATA INTEGRATION & EXTERNAL SOURCES
+// ============================================================================
+
+model DataSource {
+  id                  String              @id @default(uuid())
+
+  // Source Details
+  name                String              @unique
+  type                DataSourceType
+  provider            String              // Zillow, MLS, CoreLogic, etc.
+
+  // Connection
+  apiEndpoint         String?
+  apiKey              String?             // Encrypted
+  authType            String?             // OAuth, API Key, Basic
+
+  // Configuration
+  updateFrequency     String              // Daily, Weekly, Real-time
+  lastSyncDate        DateTime?
+  nextSyncDate        DateTime?
+
+  // Status
+  isActive            Boolean             @default(true)
+  healthStatus        String              @default("HEALTHY") // HEALTHY, DEGRADED, DOWN
+  lastError           String?             @db.Text
+  errorCount          Int                 @default(0)
+
+  // Rate Limiting
+  rateLimitPerDay     Int?
+  rateLimitPerHour    Int?
+  requestsToday       Int                 @default(0)
+
+  // Relationships
+  syncLogs            DataSyncLog[]
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([type, isActive])
+  @@map("data_sources")
+}
+
+enum DataSourceType {
+  MLS
+  PUBLIC_RECORDS
+  AVM_PROVIDER
+  SCHOOL_DATA
+  CRIME_DATA
+  ENVIRONMENTAL
+  FINANCIAL
+}
+
+model DataSyncLog {
+  id                  String              @id @default(uuid())
+  dataSourceId        String
+
+  // Sync Details
+  syncStarted         DateTime            @default(now())
+  syncCompleted       DateTime?
+  status              SyncStatus          @default(IN_PROGRESS)
+
+  // Metrics
+  recordsProcessed    Int                 @default(0)
+  recordsCreated      Int                 @default(0)
+  recordsUpdated      Int                 @default(0)
+  recordsFailed       Int                 @default(0)
+
+  // Error Tracking
+  errorMessage        String?             @db.Text
+  errorDetails        Json?
+
+  // Relationships
+  dataSource          DataSource          @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
+
+  @@index([dataSourceId, syncStarted])
+  @@index([status])
+  @@map("data_sync_logs")
+}
+
+enum SyncStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+// ============================================================================
+// SUPPORTING MODELS
+// ============================================================================
+
+model Organization {
+  id          String     @id @default(uuid())
+  name        String
+  properties  Property[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("organizations")
+}
+
+model Client {
+  id         String     @id @default(uuid())
+  name       String
+  email      String
+  properties Property[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@map("clients")
+}
+
+model EmailSubscriber {
+  id         String          @id @default(uuid())
+  email      String          @unique
+  firstName  String
+  lastName   String
+  properties Property[]
+  alerts     PropertyAlert[]
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@map("email_subscribers")
+}

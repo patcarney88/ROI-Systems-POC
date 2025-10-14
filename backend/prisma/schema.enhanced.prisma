@@ -1,0 +1,817 @@
+// Enhanced Prisma Schema for Multi-Tenant Real Estate SaaS Platform
+// Database: PostgreSQL
+// Features: Multi-tenancy, RBAC, MFA, OAuth, Session Management, Audit Trail
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// MULTI-TENANT ORGANIZATION MODELS
+// ============================================================================
+
+// Organization (Title Companies, Real Estate Agencies)
+model Organization {
+  id              String            @id @default(uuid())
+  name            String
+  type            OrganizationType
+  slug            String            @unique
+
+  // Contact information
+  email           String?
+  phone           String?
+  address         String?
+  city            String?
+  state           String?
+  zipCode         String?
+
+  // Subscription and limits
+  subscriptionTier SubscriptionTier @default(FREE)
+  maxUsers        Int               @default(5)
+  maxStorage      BigInt            @default(5368709120) // 5GB in bytes
+  storageUsed     BigInt            @default(0)
+
+  // Configuration
+  settings        Json?
+  branding        Json?             // Logo, colors, etc.
+
+  // Status
+  status          OrganizationStatus @default(ACTIVE)
+  suspendedAt     DateTime?
+  suspendedReason String?
+
+  // Timestamps
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?         // Soft delete
+
+  // Relations
+  users           UserOrganization[]
+  roles           Role[]
+  documents       Document[]
+  clients         Client[]
+  campaigns       Campaign[]
+  auditLogs       AuditLog[]
+  apiKeys         ApiKey[]
+  invitations     OrganizationInvitation[]
+
+  @@index([slug])
+  @@index([type])
+  @@index([status])
+  @@map("organizations")
+}
+
+enum OrganizationType {
+  TITLE_COMPANY
+  REAL_ESTATE_AGENCY
+  INDIVIDUAL_AGENT
+  HOMEOWNER
+}
+
+enum SubscriptionTier {
+  FREE
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+  CANCELLED
+}
+
+// ============================================================================
+// USER AUTHENTICATION MODELS
+// ============================================================================
+
+// Enhanced User model with comprehensive auth features
+model User {
+  id              String         @id @default(uuid())
+  email           String         @unique
+  emailVerified   Boolean        @default(false)
+  emailVerifiedAt DateTime?
+
+  // Password authentication
+  passwordHash    String?        // Nullable for OAuth-only users
+  passwordChangedAt DateTime?
+  passwordResetToken String?      @unique
+  passwordResetExpiry DateTime?
+
+  // Profile
+  firstName       String
+  lastName        String
+  phone           String?
+  phoneVerified   Boolean        @default(false)
+  avatar          String?
+  timezone        String?        @default("America/New_York")
+  locale          String?        @default("en-US")
+
+  // Security
+  mfaEnabled      Boolean        @default(false)
+  mfaSecret       String?        // TOTP secret (encrypted)
+  mfaBackupCodes  String[]       // Encrypted backup codes
+
+  // Account status
+  status          UserStatus     @default(ACTIVE)
+  lockedAt        DateTime?
+  lockReason      String?
+  failedLoginAttempts Int        @default(0)
+  lastFailedLoginAt DateTime?
+
+  // Session tracking
+  lastLoginAt     DateTime?
+  lastLoginIp     String?
+  lastActiveAt    DateTime?
+
+  // Preferences
+  preferences     Json?
+  notificationSettings Json?
+
+  // Timestamps
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?      // Soft delete
+
+  // Relations
+  organizations   UserOrganization[]
+  sessions        Session[]
+  refreshTokens   RefreshToken[]
+  loginHistory    LoginHistory[]
+  magicLinks      MagicLink[]
+  oauthAccounts   OAuthAccount[]
+  documents       Document[]
+  documentVersions DocumentVersion[]
+  documentAccessLogs DocumentAccessLog[]
+  clients         Client[]
+  campaigns       Campaign[]
+  auditLogs       AuditLog[]
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  LOCKED
+  PENDING_VERIFICATION
+}
+
+// Junction table for User-Organization with roles
+model UserOrganization {
+  id              String       @id @default(uuid())
+  userId          String
+  organizationId  String
+  roleId          String?      // Optional custom role
+
+  // Built-in role (fallback if no custom role)
+  builtInRole     BuiltInRole  @default(HOMEOWNER)
+
+  // Status
+  status          MemberStatus @default(ACTIVE)
+  joinedAt        DateTime     @default(now())
+  invitedBy       String?
+
+  // Permissions override
+  customPermissions Json?      // Override role permissions
+
+  // Relations
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role            Role?        @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([roleId])
+  @@map("user_organizations")
+}
+
+enum BuiltInRole {
+  ADMIN              // Platform super admin
+  COMPANY_ADMIN      // Organization admin
+  AGENT              // Real estate agent
+  HOMEOWNER          // End user/client
+}
+
+enum MemberStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  LEFT
+}
+
+// Organization Invitations
+model OrganizationInvitation {
+  id              String       @id @default(uuid())
+  organizationId  String
+  email           String
+  roleId          String?
+  builtInRole     BuiltInRole  @default(HOMEOWNER)
+
+  invitedBy       String
+  token           String       @unique
+  status          InvitationStatus @default(PENDING)
+
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime     @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([token])
+  @@index([organizationId])
+  @@map("organization_invitations")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+// ============================================================================
+// ROLE-BASED ACCESS CONTROL (RBAC)
+// ============================================================================
+
+// Custom Roles
+model Role {
+  id              String       @id @default(uuid())
+  organizationId  String
+  name            String
+  description     String?
+
+  // System roles cannot be deleted
+  isSystem        Boolean      @default(false)
+
+  // Permissions
+  permissions     String[]     // Array of permission keys
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users           UserOrganization[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("roles")
+}
+
+// Permissions are string-based and checked programmatically
+// Examples: "documents:read", "documents:write", "documents:delete"
+// "users:manage", "organization:admin", "clients:read", "campaigns:create"
+
+// ============================================================================
+// SESSION MANAGEMENT
+// ============================================================================
+
+// Active Sessions
+model Session {
+  id              String       @id @default(uuid())
+  userId          String
+  token           String       @unique
+
+  // Device information
+  ipAddress       String
+  userAgent       String?
+  device          String?
+  browser         String?
+  os              String?
+  location        String?      // City, Country
+
+  // Session data
+  data            Json?
+
+  // Expiry
+  expiresAt       DateTime
+  lastActivityAt  DateTime     @default(now())
+
+  createdAt       DateTime     @default(now())
+
+  // Relations
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// Refresh Tokens with rotation
+model RefreshToken {
+  id              String       @id @default(uuid())
+  userId          String
+  token           String       @unique
+
+  // Token family for rotation
+  family          String       // All rotated tokens share same family
+  previousTokenId String?      // For token rotation tracking
+
+  // Device information
+  ipAddress       String
+  userAgent       String?
+
+  // Status
+  revoked         Boolean      @default(false)
+  revokedAt       DateTime?
+  revokedReason   String?
+
+  // Expiry
+  expiresAt       DateTime
+  createdAt       DateTime     @default(now())
+
+  // Relations
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([family])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ============================================================================
+// ADVANCED AUTHENTICATION
+// ============================================================================
+
+// Magic Link Authentication
+model MagicLink {
+  id              String       @id @default(uuid())
+  userId          String
+  email           String
+  token           String       @unique
+
+  ipAddress       String?
+  userAgent       String?
+
+  used            Boolean      @default(false)
+  usedAt          DateTime?
+  expiresAt       DateTime
+  createdAt       DateTime     @default(now())
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([email])
+  @@map("magic_links")
+}
+
+// OAuth Account Linking
+model OAuthAccount {
+  id              String       @id @default(uuid())
+  userId          String
+  provider        OAuthProvider
+  providerId      String       // Provider's user ID
+
+  email           String?
+  accessToken     String?      @db.Text
+  refreshToken    String?      @db.Text
+  expiresAt       DateTime?
+
+  scope           String?
+  tokenType       String?
+  idToken         String?      @db.Text
+
+  profile         Json?        // Provider profile data
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("oauth_accounts")
+}
+
+enum OAuthProvider {
+  GOOGLE
+  MICROSOFT
+  FACEBOOK
+  APPLE
+  GITHUB
+}
+
+// ============================================================================
+// SECURITY & AUDIT
+// ============================================================================
+
+// Login History
+model LoginHistory {
+  id              String       @id @default(uuid())
+  userId          String
+
+  // Login details
+  success         Boolean
+  method          LoginMethod
+  ipAddress       String
+  userAgent       String?
+  location        String?
+
+  // Failure details
+  failureReason   String?
+
+  // Device info
+  device          String?
+  browser         String?
+  os              String?
+
+  timestamp       DateTime     @default(now())
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([success])
+  @@index([timestamp])
+  @@map("login_history")
+}
+
+enum LoginMethod {
+  PASSWORD
+  MAGIC_LINK
+  OAUTH
+  MFA
+  SSO
+}
+
+// Comprehensive Audit Log
+model AuditLog {
+  id              String       @id @default(uuid())
+  organizationId  String?
+  userId          String?
+
+  // Action details
+  action          AuditAction
+  resource        String       // e.g., "User", "Document", "Organization"
+  resourceId      String?
+
+  // Request details
+  method          String?      // HTTP method
+  endpoint        String?
+  ipAddress       String?
+  userAgent       String?
+
+  // Changes
+  changes         Json?        // Before/after data
+  metadata        Json?        // Additional context
+
+  // Status
+  success         Boolean      @default(true)
+  errorMessage    String?
+
+  timestamp       DateTime     @default(now())
+
+  // Relations
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  user            User?         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  // Auth actions
+  USER_LOGIN
+  USER_LOGOUT
+  USER_REGISTER
+  PASSWORD_CHANGE
+  PASSWORD_RESET
+  MFA_ENABLE
+  MFA_DISABLE
+  EMAIL_VERIFY
+
+  // CRUD operations
+  CREATE
+  READ
+  UPDATE
+  DELETE
+
+  // Organization actions
+  ORG_CREATE
+  ORG_UPDATE
+  ORG_DELETE
+  USER_INVITE
+  USER_REMOVE
+  ROLE_ASSIGN
+  ROLE_REVOKE
+
+  // Document actions
+  DOCUMENT_UPLOAD
+  DOCUMENT_VIEW
+  DOCUMENT_DOWNLOAD
+  DOCUMENT_SHARE
+  DOCUMENT_DELETE
+
+  // Security actions
+  SUSPICIOUS_ACTIVITY
+  ACCOUNT_LOCK
+  ACCOUNT_UNLOCK
+  TOKEN_REVOKE
+}
+
+// API Keys for integrations
+model ApiKey {
+  id              String       @id @default(uuid())
+  organizationId  String
+  name            String
+  key             String       @unique
+  keyPrefix       String       // First 8 chars for display
+
+  // Permissions
+  permissions     String[]
+  scopes          String[]
+
+  // Rate limiting
+  rateLimit       Int          @default(1000) // requests per hour
+
+  // Status
+  active          Boolean      @default(true)
+  lastUsedAt      DateTime?
+
+  expiresAt       DateTime?
+  createdAt       DateTime     @default(now())
+  revokedAt       DateTime?
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([key])
+  @@index([organizationId])
+  @@map("api_keys")
+}
+
+// ============================================================================
+// DOCUMENT MODELS (Updated with Multi-Tenant Support)
+// ============================================================================
+
+model DocumentCategory {
+  id              String       @id @default(uuid())
+  name            String       @unique
+  description     String?
+  color           String?
+  icon            String?
+  createdAt       DateTime     @default(now())
+
+  documents       Document[]
+
+  @@index([name])
+  @@map("document_categories")
+}
+
+model Document {
+  id                String            @id @default(uuid())
+  organizationId    String
+  userId            String
+  clientId          String?
+  categoryId        String
+
+  // File metadata
+  title             String
+  description       String?
+  originalFileName  String
+  fileSize          Int
+  mimeType          String
+
+  // Storage (encrypted)
+  s3Bucket          String
+  s3Key             String
+  s3ETag            String?
+  encryptionKey     String
+  presignedUrl      String?
+  presignedUrlExpiry DateTime?
+
+  // Status
+  status            DocumentStatus    @default(PENDING)
+  uploadStatus      UploadStatus      @default(PENDING)
+  virusScanStatus   VirusScanStatus   @default(PENDING)
+  virusScanResult   String?
+
+  // OCR and AI
+  ocrStatus         OCRStatus         @default(PENDING)
+  ocrText           String?           @db.Text
+  ocrConfidence     Float?
+  classifiedCategory String?
+  classificationConfidence Float?
+
+  // Retention
+  retentionDate     DateTime
+  expiryDate        DateTime?
+
+  // Timestamps
+  uploadedAt        DateTime          @default(now())
+  processedAt       DateTime?
+  lastAccessedAt    DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
+
+  // Relations
+  organization      Organization      @relation(fields: [organizationId], references: [id])
+  user              User              @relation(fields: [userId], references: [id])
+  client            Client?           @relation(fields: [clientId], references: [id])
+  category          DocumentCategory  @relation(fields: [categoryId], references: [id])
+  versions          DocumentVersion[]
+  accessLogs        DocumentAccessLog[]
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([clientId])
+  @@index([categoryId])
+  @@index([status])
+  @@map("documents")
+}
+
+enum DocumentStatus {
+  PENDING
+  ACTIVE
+  EXPIRING
+  EXPIRED
+  ARCHIVED
+}
+
+enum UploadStatus {
+  PENDING
+  UPLOADING
+  COMPLETED
+  FAILED
+}
+
+enum VirusScanStatus {
+  PENDING
+  SCANNING
+  CLEAN
+  INFECTED
+  FAILED
+}
+
+enum OCRStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  NOT_APPLICABLE
+}
+
+model DocumentVersion {
+  id                String   @id @default(uuid())
+  documentId        String
+  userId            String
+  version           Int
+  versionLabel      String?
+  s3Key             String
+  fileSize          Int
+  checksum          String
+  changeDescription String?  @db.Text
+  changeSummary     String?
+  createdAt         DateTime @default(now())
+
+  document          Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("document_versions")
+}
+
+model DocumentAccessLog {
+  id          String       @id @default(uuid())
+  documentId  String
+  userId      String?
+  action      AccessAction
+  method      String?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  success     Boolean      @default(true)
+  errorMessage String?
+  duration    Int?
+  timestamp   DateTime     @default(now())
+
+  document    Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user        User?        @relation(fields: [userId], references: [id])
+
+  @@index([documentId])
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
+  @@map("document_access_logs")
+}
+
+enum AccessAction {
+  UPLOAD
+  VIEW
+  DOWNLOAD
+  UPDATE
+  DELETE
+  SHARE
+  VERSION_CREATE
+  VIRUS_SCAN
+  OCR_PROCESS
+  CLASSIFY
+  RETENTION_CHECK
+}
+
+// ============================================================================
+// CLIENT & CAMPAIGN MODELS (Updated)
+// ============================================================================
+
+model Client {
+  id                String       @id @default(uuid())
+  organizationId    String
+  userId            String
+  name              String
+  email             String
+  phone             String?
+  address           String?
+  propertyCount     Int          @default(0)
+  lastContactDate   DateTime?
+  engagementScore   Float?
+  status            ClientStatus @default(ACTIVE)
+  notes             String?      @db.Text
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  deletedAt         DateTime?
+
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  user              User         @relation(fields: [userId], references: [id])
+  documents         Document[]
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([email])
+  @@map("clients")
+}
+
+enum ClientStatus {
+  ACTIVE
+  AT_RISK
+  DORMANT
+}
+
+model Campaign {
+  id              String         @id @default(uuid())
+  organizationId  String
+  userId          String
+  name            String
+  subject         String
+  template        String
+  message         String         @db.Text
+  recipients      RecipientType  @default(ALL)
+  schedule        ScheduleType   @default(NOW)
+  scheduleDate    DateTime?
+  status          CampaignStatus @default(DRAFT)
+  sentCount       Int            @default(0)
+  openedCount     Int            @default(0)
+  clickedCount    Int            @default(0)
+  bouncedCount    Int            @default(0)
+  sentAt          DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+  user            User           @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([status])
+  @@map("campaigns")
+}
+
+enum RecipientType {
+  ALL
+  ACTIVE
+  AT_RISK
+  DORMANT
+  RECENT
+}
+
+enum ScheduleType {
+  NOW
+  SCHEDULED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+}
