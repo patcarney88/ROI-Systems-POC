@@ -1,0 +1,1374 @@
+// ============================================================================
+// EMAIL MARKETING SYSTEM - COMPREHENSIVE SCHEMA EXTENSION
+// ============================================================================
+// Purpose: High-volume email campaign management for post-closing client retention
+// Capacity: 10,000+ emails/hour with 40-60% open rates
+// Features: Campaign automation, engagement tracking, A/B testing, co-branding
+// ============================================================================
+
+// NOTE: This is an EXTENSION to the existing schema.prisma
+// Append these models to your main schema file or use schema composition
+
+// ============================================================================
+// CAMPAIGN MANAGEMENT MODELS
+// ============================================================================
+
+/**
+ * EmailCampaign - Main campaign configuration and orchestration
+ *
+ * Supports automated lifecycle campaigns for real estate post-closing:
+ * - Closing anniversaries
+ * - Property value updates
+ * - Seasonal maintenance tips
+ * - Market reports
+ * - Tax reminders
+ * - Holiday greetings
+ * - Refinance opportunities
+ * - Insurance reviews
+ */
+model EmailCampaign {
+  id                    String              @id @default(uuid())
+  organizationId        String              // Multi-tenant isolation
+
+  // Campaign Identity
+  name                  String
+  description           String?             @db.Text
+  type                  CampaignType
+  category              CampaignCategory    @default(RETENTION)
+
+  // Configuration
+  subject               String
+  preheader             String?             // Preview text in email clients
+  fromName              String
+  fromEmail             String
+  replyTo               String?
+
+  // Template & Content
+  templateId            String?
+  contentHtml           String?             @db.Text
+  contentText           String?             @db.Text // Plain text version
+
+  // Scheduling & Automation
+  scheduleType          ScheduleType        @default(MANUAL)
+  scheduleConfig        Json?               // Cron, timezone, send window rules
+  sendWindow            Json?               // Optimal send times: {"start": "09:00", "end": "17:00", "timezone": "America/New_York"}
+  timezone              String              @default("America/New_York")
+
+  // Co-Branding Configuration
+  coBrandingEnabled     Boolean             @default(true)
+  titleCompanyBranding  Json?               // Logo, colors, footer
+  agentBranding         Json?               // Agent profile, signature
+
+  // Targeting & Segmentation
+  segmentIds            String[]            // Array of segment IDs
+  excludeSegmentIds     String[]            // Exclusion list
+  maxRecipients         Int?                // Safety limit
+
+  // A/B Testing
+  abTestEnabled         Boolean             @default(false)
+  abTestId              String?
+  abTestVariant         String?             // "A", "B", "C", etc.
+
+  // Status & Lifecycle
+  status                CampaignStatus      @default(DRAFT)
+  priority              Int                 @default(5) // 1-10, higher = more priority
+
+  // Processing Queue
+  queuedAt              DateTime?
+  processingStartedAt   DateTime?
+  processingCompletedAt DateTime?
+
+  // Delivery Tracking
+  recipientCount        Int                 @default(0)
+  sentCount             Int                 @default(0)
+  deliveredCount        Int                 @default(0)
+  failedCount           Int                 @default(0)
+
+  // Engagement Metrics (aggregated)
+  openCount             Int                 @default(0)
+  uniqueOpenCount       Int                 @default(0)
+  clickCount            Int                 @default(0)
+  uniqueClickCount      Int                 @default(0)
+  unsubscribeCount      Int                 @default(0)
+  bounceCount           Int                 @default(0)
+  spamComplaintCount    Int                 @default(0)
+
+  // Performance Metrics
+  openRate              Float?              // Percentage
+  clickRate             Float?              // Percentage
+  clickToOpenRate       Float?              // Percentage
+  bounceRate            Float?              // Percentage
+  unsubscribeRate       Float?              // Percentage
+
+  // CAN-SPAM Compliance
+  includeUnsubscribe    Boolean             @default(true)
+  includePhysicalAddress Boolean            @default(true)
+  physicalAddress       String?
+
+  // Validation & Testing
+  testEmailsSent        Boolean             @default(false)
+  testEmailRecipients   String[]            // Email addresses for test sends
+  spamScoreChecked      Boolean             @default(false)
+  spamScore             Float?              // 0-10, lower is better
+
+  // Error Handling
+  errorLog              Json[]              // Array of error objects
+  retryCount            Int                 @default(0)
+  maxRetries            Int                 @default(3)
+
+  // Timestamps
+  scheduledFor          DateTime?
+  sentAt                DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  deletedAt             DateTime?           // Soft delete
+
+  // Relations
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template              EmailTemplate?      @relation(fields: [templateId], references: [id])
+  abTest                ABTest?             @relation(fields: [abTestId], references: [id])
+  schedule              CampaignSchedule?
+  queue                 EmailQueue[]
+  events                EmailEvent[]
+  analytics             CampaignAnalytics[]
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([sentAt])
+  @@index([category])
+  @@index([priority])
+  @@map("email_campaigns")
+}
+
+enum CampaignType {
+  CLOSING_ANNIVERSARY       // Annual celebration of closing date
+  HOME_VALUE_UPDATE         // Quarterly property valuation
+  TAX_SEASON_REMINDER       // January tax document reminders
+  MAINTENANCE_TIPS          // Seasonal home maintenance
+  HOLIDAY_GREETING          // Holiday/special occasion greetings
+  MARKET_REPORT             // Quarterly neighborhood market data
+  REFINANCE_OPPORTUNITY     // Rate-triggered refinance alerts
+  INSURANCE_REVIEW          // Annual insurance checkup
+  CUSTOM                    // Custom one-off campaigns
+  TRANSACTIONAL             // System/transactional emails
+}
+
+enum CampaignCategory {
+  RETENTION                 // Client retention focus
+  ENGAGEMENT                // Re-engagement campaigns
+  EDUCATIONAL               // Tips, guides, resources
+  PROMOTIONAL               // Service promotion
+  TRANSACTIONAL             // Order confirmations, receipts
+  LIFECYCLE                 // Automated lifecycle emails
+}
+
+enum ScheduleType {
+  MANUAL                    // Manual send trigger
+  SCHEDULED                 // One-time scheduled send
+  RECURRING                 // Recurring schedule (cron)
+  TRIGGERED                 // Event-triggered (webhook, date-based)
+}
+
+enum CampaignStatus {
+  DRAFT                     // Being created/edited
+  SCHEDULED                 // Scheduled for future send
+  QUEUED                    // In processing queue
+  SENDING                   // Currently sending
+  SENT                      // Completed successfully
+  PAUSED                    // Temporarily paused
+  CANCELLED                 // Cancelled before completion
+  FAILED                    // Failed with errors
+  ARCHIVED                  // Archived for historical reference
+}
+
+/**
+ * EmailTemplate - Reusable email templates with versioning
+ *
+ * Supports modular template design with:
+ * - Responsive HTML
+ * - Dynamic content blocks
+ * - Merge tag support
+ * - Version control
+ * - Template variables
+ */
+model EmailTemplate {
+  id                    String              @id @default(uuid())
+  organizationId        String
+
+  // Template Identity
+  name                  String
+  description           String?             @db.Text
+  category              TemplateCategory
+  tags                  String[]            // For filtering/search
+
+  // Content
+  subject               String
+  preheader             String?
+  contentHtml           String              @db.Text
+  contentText           String?             @db.Text
+
+  // Template Configuration
+  variables             Json                // Required variables: {"propertyAddress": "string", "closingDate": "date"}
+  defaultValues         Json?               // Default variable values
+
+  // Design System
+  layout                String?             // Layout identifier
+  theme                 Json?               // Color scheme, fonts, styling
+
+  // Versioning
+  version               Int                 @default(1)
+  isActive              Boolean             @default(true)
+  previousVersionId     String?             // Link to previous version
+
+  // Usage Statistics
+  usageCount            Int                 @default(0)
+  lastUsedAt            DateTime?
+
+  // Validation
+  tested                Boolean             @default(false)
+  testResults           Json?               // Email client testing results
+  spamScore             Float?
+
+  // Timestamps
+  publishedAt           DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  deletedAt             DateTime?
+
+  // Relations
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaigns             EmailCampaign[]
+  blocks                EmailBlock[]
+
+  @@unique([organizationId, name, version])
+  @@index([organizationId])
+  @@index([category])
+  @@index([isActive])
+  @@map("email_templates")
+}
+
+enum TemplateCategory {
+  ANNIVERSARY                // Closing anniversary templates
+  VALUE_UPDATE              // Home value update templates
+  SEASONAL                  // Seasonal/holiday templates
+  MAINTENANCE               // Home maintenance templates
+  MARKET_REPORT             // Market report templates
+  PROMOTIONAL               // Promotional templates
+  TRANSACTIONAL             // Transactional email templates
+  CUSTOM                    // Custom templates
+}
+
+/**
+ * CampaignSchedule - Advanced scheduling rules and automation
+ *
+ * Features:
+ * - Recurring schedules (daily, weekly, monthly, yearly)
+ * - Timezone-aware sending
+ * - Optimal send time optimization
+ * - Blackout periods (holidays, weekends)
+ * - Send window constraints
+ */
+model CampaignSchedule {
+  id                    String              @id @default(uuid())
+  campaignId            String              @unique
+
+  // Schedule Type
+  scheduleType          ScheduleType
+
+  // Recurring Schedule (Cron-like)
+  cronExpression        String?             // "0 9 * * 1" = Every Monday at 9am
+  recurrenceRule        Json?               // RRULE for complex patterns
+
+  // Timezone & Send Window
+  timezone              String              @default("America/New_York")
+  sendWindowStart       String?             // "09:00" in 24h format
+  sendWindowEnd         String?             // "17:00" in 24h format
+  sendOnWeekends        Boolean             @default(false)
+
+  // Optimal Send Time (AI-powered)
+  useOptimalSendTime    Boolean             @default(false)
+  optimalSendConfig     Json?               // ML model configuration
+
+  // Blackout Periods
+  excludeDates          DateTime[]          // Specific dates to skip
+  excludeHolidays       Boolean             @default(true)
+  holidayCalendar       String?             // "US", "CA", etc.
+
+  // Next Run Calculation
+  nextRunAt             DateTime?
+  lastRunAt             DateTime?
+  runCount              Int                 @default(0)
+
+  // Status
+  enabled               Boolean             @default(true)
+
+  // Timestamps
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  campaign              EmailCampaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([nextRunAt])
+  @@index([enabled])
+  @@map("campaign_schedules")
+}
+
+/**
+ * EmailQueue - Processing queue with Bull/Redis integration
+ *
+ * Manages high-volume email sending with:
+ * - Priority queuing
+ * - Rate limiting
+ * - Retry logic
+ * - Dead letter queue
+ * - Batch processing
+ */
+model EmailQueue {
+  id                    String              @id @default(uuid())
+  campaignId            String
+  subscriberId          String
+
+  // Queue Management
+  queueName             String              @default("email:send") // Bull queue name
+  jobId                 String?             @unique // Bull job ID
+  priority              Int                 @default(5) // 1-10
+
+  // Recipient Info
+  recipientEmail        String
+  recipientName         String?
+
+  // Email Content (can be personalized)
+  subject               String
+  contentHtml           String              @db.Text
+  contentText           String?             @db.Text
+
+  // Personalization Data
+  mergeData             Json                // Personalization variables
+
+  // Status & Processing
+  status                QueueStatus         @default(PENDING)
+  attempts              Int                 @default(0)
+  maxAttempts           Int                 @default(3)
+
+  // Scheduling
+  scheduledFor          DateTime
+  processedAt           DateTime?
+
+  // Results
+  sentAt                DateTime?
+  messageId             String?             // Provider message ID
+  error                 String?             @db.Text
+  errorCode             String?
+
+  // Provider Info
+  provider              EmailProvider       @default(SENDGRID)
+  providerData          Json?               // Provider-specific data
+
+  // Timestamps
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  campaign              EmailCampaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  subscriber            EmailSubscriber     @relation(fields: [subscriberId], references: [id])
+
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([campaignId])
+  @@index([subscriberId])
+  @@index([recipientEmail])
+  @@index([queueName, priority]) // Composite for queue processing
+  @@map("email_queue")
+}
+
+enum QueueStatus {
+  PENDING               // Waiting to be processed
+  PROCESSING            // Currently being sent
+  SENT                  // Successfully sent
+  FAILED                // Failed after retries
+  DEFERRED              // Temporarily deferred (rate limit)
+  CANCELLED             // Manually cancelled
+}
+
+enum EmailProvider {
+  SENDGRID              // SendGrid
+  AWS_SES               // Amazon SES
+  MAILGUN               // Mailgun
+  POSTMARK              // Postmark
+  CUSTOM                // Custom SMTP
+}
+
+// ============================================================================
+// TRACKING & ANALYTICS MODELS
+// ============================================================================
+
+/**
+ * EmailEvent - Granular event tracking (HIGH VOLUME TABLE)
+ *
+ * Optimized for write-heavy workload:
+ * - Minimal indexes
+ * - Partitioning by timestamp
+ * - Efficient bulk inserts
+ * - 90-day retention with archival
+ *
+ * Event types: delivered, opened, clicked, bounced, unsubscribed, spam complaint
+ */
+model EmailEvent {
+  id                    String              @id @default(uuid())
+  campaignId            String
+  subscriberId          String
+
+  // Event Details
+  eventType             EmailEventType
+  eventData             Json?               // Event-specific data
+
+  // Message Identity
+  messageId             String              // Provider message ID
+  recipientEmail        String
+
+  // Event Context
+  ipAddress             String?
+  userAgent             String?
+  location              String?             // City, Country from IP
+  device                String?             // Desktop, Mobile, Tablet
+  deviceBrand           String?             // Apple, Samsung, etc.
+  deviceModel           String?
+  os                    String?             // iOS, Android, Windows, etc.
+  browser               String?             // Chrome, Safari, Firefox, etc.
+  emailClient           String?             // Gmail, Outlook, Apple Mail, etc.
+
+  // Link Tracking (for click events)
+  linkUrl               String?             @db.Text
+  linkIndex             Int?                // Position of link in email
+  linkCategory          String?             // CTA, footer, social, etc.
+
+  // Bounce Details (for bounce events)
+  bounceType            BounceType?         // hard, soft
+  bounceReason          String?
+  bounceCode            String?
+
+  // Timestamps
+  eventTimestamp        DateTime            @default(now())
+  processingTimestamp   DateTime            @default(now())
+
+  // Relations
+  campaign              EmailCampaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  subscriber            EmailSubscriber     @relation(fields: [subscriberId], references: [id])
+
+  @@index([campaignId, eventType]) // Primary query pattern
+  @@index([subscriberId, eventType])
+  @@index([eventTimestamp]) // For time-based queries and partitioning
+  @@index([messageId])
+  @@map("email_events")
+}
+
+enum EmailEventType {
+  QUEUED                // Added to queue
+  SENT                  // Successfully sent to provider
+  DELIVERED             // Delivered to recipient's server
+  OPENED                // Email opened (tracking pixel)
+  CLICKED               // Link clicked
+  BOUNCED               // Delivery failed
+  DEFERRED              // Temporarily delayed
+  DROPPED               // Dropped by provider
+  SPAM_REPORT           // Marked as spam
+  UNSUBSCRIBED          // Unsubscribed via link
+  PROCESSED             // Processed by provider
+}
+
+enum BounceType {
+  HARD                  // Permanent failure (invalid email)
+  SOFT                  // Temporary failure (full mailbox)
+  BLOCKED               // Blocked by recipient server
+}
+
+/**
+ * EmailEngagement - Aggregate engagement scores per subscriber
+ *
+ * Calculated metrics for personalization and segmentation:
+ * - Overall engagement score (0-100)
+ * - Open rate, click rate over time
+ * - Email client preferences
+ * - Optimal send time
+ * - Churn risk prediction
+ */
+model EmailEngagement {
+  id                    String              @id @default(uuid())
+  subscriberId          String              @unique
+  organizationId        String
+
+  // Engagement Metrics
+  engagementScore       Float               @default(50) // 0-100
+
+  // Activity Counts
+  emailsSent            Int                 @default(0)
+  emailsOpened          Int                 @default(0)
+  emailsClicked         Int                 @default(0)
+  uniqueOpens           Int                 @default(0)
+  uniqueClicks          Int                 @default(0)
+
+  // Rates
+  openRate              Float?              // Percentage
+  clickRate             Float?              // Percentage
+  clickToOpenRate       Float?              // Percentage
+
+  // Behavioral Patterns
+  avgTimeToOpen         Int?                // Seconds
+  avgTimeToClick        Int?                // Seconds
+  preferredSendTime     String?             // "09:00" in subscriber's timezone
+  preferredDayOfWeek    Int?                // 0-6 (Sunday-Saturday)
+
+  // Device & Client Preferences
+  primaryDevice         String?             // Desktop, Mobile, Tablet
+  primaryEmailClient    String?             // Gmail, Outlook, etc.
+  primaryBrowser        String?
+
+  // Lifecycle Stage
+  lifecycleStage        LifecycleStage      @default(NEW)
+  churnRisk             Float?              // 0-1 probability
+  churnPredictionDate   DateTime?
+
+  // Last Activity
+  lastOpenedAt          DateTime?
+  lastClickedAt         DateTime?
+  lastSentAt            DateTime?
+
+  // Timestamps
+  firstEngagementAt     DateTime?
+  calculatedAt          DateTime            @default(now())
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  subscriber            EmailSubscriber     @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([engagementScore])
+  @@index([lifecycleStage])
+  @@index([churnRisk])
+  @@map("email_engagement")
+}
+
+enum LifecycleStage {
+  NEW                   // Recently subscribed (<30 days)
+  ACTIVE                // Regularly engaged
+  ENGAGED               // Highly engaged
+  AT_RISK               // Declining engagement
+  DORMANT               // No engagement >90 days
+  CHURNED               // No engagement >180 days
+}
+
+/**
+ * CampaignAnalytics - Campaign-level aggregated metrics
+ *
+ * Pre-calculated analytics for fast dashboard queries:
+ * - Delivery, open, click metrics
+ * - Time-series data for charts
+ * - Cohort analysis
+ * - Revenue attribution (if applicable)
+ */
+model CampaignAnalytics {
+  id                    String              @id @default(uuid())
+  campaignId            String
+  organizationId        String
+
+  // Date Dimension (for time-series analysis)
+  dateKey               DateTime            // Date for this analytics record
+  hour                  Int?                // Hour of day (0-23) for hourly rollup
+
+  // Delivery Metrics
+  sentCount             Int                 @default(0)
+  deliveredCount        Int                 @default(0)
+  bouncedCount          Int                 @default(0)
+  droppedCount          Int                 @default(0)
+
+  // Engagement Metrics
+  openedCount           Int                 @default(0)
+  uniqueOpenCount       Int                 @default(0)
+  clickedCount          Int                 @default(0)
+  uniqueClickCount      Int                 @default(0)
+
+  // Negative Metrics
+  unsubscribeCount      Int                 @default(0)
+  spamComplaintCount    Int                 @default(0)
+
+  // Calculated Rates
+  deliveryRate          Float?              // %
+  openRate              Float?              // %
+  clickRate             Float?              // %
+  clickToOpenRate       Float?              // %
+  bounceRate            Float?              // %
+  unsubscribeRate       Float?              // %
+  spamRate              Float?              // %
+
+  // Device Breakdown
+  desktopOpens          Int                 @default(0)
+  mobileOpens           Int                 @default(0)
+  tabletOpens           Int                 @default(0)
+  unknownDeviceOpens    Int                 @default(0)
+
+  // Email Client Breakdown
+  emailClientBreakdown  Json?               // {"Gmail": 45, "Outlook": 30, ...}
+
+  // Geographic Breakdown
+  topCountries          Json?               // [{"country": "US", "count": 100}, ...]
+  topCities             Json?               // [{"city": "New York", "count": 50}, ...]
+
+  // Link Performance
+  topLinks              Json?               // [{"url": "...", "clicks": 50}, ...]
+
+  // Revenue Attribution (if applicable)
+  conversions           Int                 @default(0)
+  revenue               Decimal?            @db.Decimal(10, 2)
+
+  // Timestamps
+  calculatedAt          DateTime            @default(now())
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  campaign              EmailCampaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, dateKey, hour]) // Unique per time period
+  @@index([campaignId])
+  @@index([organizationId])
+  @@index([dateKey])
+  @@map("campaign_analytics")
+}
+
+/**
+ * ABTest - A/B testing configuration and results
+ *
+ * Supports multi-variate testing:
+ * - Subject line testing
+ * - Content testing
+ * - Send time testing
+ * - From name testing
+ * - Statistical significance calculation
+ */
+model ABTest {
+  id                    String              @id @default(uuid())
+  organizationId        String
+
+  // Test Configuration
+  name                  String
+  description           String?             @db.Text
+  testType              ABTestType
+
+  // Test Variants
+  variants              Json                // Array of variant configs
+  variantDistribution   Json                // {"A": 50, "B": 50} percentages
+
+  // Test Size
+  testSampleSize        Int                 // Number of recipients per variant
+  testSamplePercent     Int                 // Percentage of total list
+
+  // Winner Criteria
+  winnerMetric          WinnerMetric        @default(OPEN_RATE)
+  minConfidenceLevel    Float               @default(0.95) // 95% confidence
+
+  // Status
+  status                ABTestStatus        @default(DRAFT)
+
+  // Results
+  winnerVariant         String?             // "A", "B", etc.
+  winnerDeterminedAt    DateTime?
+  confidenceLevel       Float?              // Calculated confidence
+
+  // Test Duration
+  testStartedAt         DateTime?
+  testEndedAt           DateTime?
+  testDurationHours     Int                 @default(24)
+
+  // Winner Action
+  sendWinnerToRemaining Boolean             @default(true)
+  winnerSentAt          DateTime?
+
+  // Results Data
+  results               Json?               // Detailed results per variant
+
+  // Timestamps
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaigns             EmailCampaign[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("ab_tests")
+}
+
+enum ABTestType {
+  SUBJECT_LINE          // Test different subject lines
+  CONTENT               // Test different email content
+  FROM_NAME             // Test different from names
+  SEND_TIME             // Test different send times
+  CALL_TO_ACTION        // Test different CTAs
+  MULTI_VARIATE         // Test multiple elements
+}
+
+enum WinnerMetric {
+  OPEN_RATE             // Highest open rate wins
+  CLICK_RATE            // Highest click rate wins
+  CLICK_TO_OPEN_RATE    // Highest click-to-open wins
+  CONVERSIONS           // Most conversions wins
+  REVENUE               // Highest revenue wins
+}
+
+enum ABTestStatus {
+  DRAFT                 // Being configured
+  SCHEDULED             // Scheduled to start
+  RUNNING               // Currently running
+  ANALYZING             // Calculating winner
+  COMPLETED             // Winner determined
+  CANCELLED             // Cancelled before completion
+}
+
+// ============================================================================
+// SUBSCRIBER MANAGEMENT MODELS
+// ============================================================================
+
+/**
+ * EmailSubscriber - Subscriber profiles with preferences
+ *
+ * Features:
+ * - Multi-list management
+ * - Preference center
+ * - Engagement tracking
+ * - Compliance (CAN-SPAM, GDPR)
+ * - Custom fields
+ */
+model EmailSubscriber {
+  id                    String              @id @default(uuid())
+  organizationId        String
+  clientId              String?             // Link to existing client
+
+  // Identity
+  email                 String
+  firstName             String?
+  lastName              String?
+  fullName              String?             // Computed or provided
+
+  // Contact Info
+  phone                 String?
+
+  // Property Info (Real Estate Specific)
+  propertyAddress       String?
+  propertyCity          String?
+  propertyState         String?
+  propertyZip           String?
+  closingDate           DateTime?           // For anniversary campaigns
+  propertyValue         Decimal?            @db.Decimal(12, 2)
+  lastValueUpdate       DateTime?
+
+  // Subscription Status
+  status                SubscriberStatus    @default(SUBSCRIBED)
+  subscriptionSource    String?             // "website", "manual", "import"
+  confirmedAt           DateTime?           // Double opt-in confirmation
+
+  // Preferences
+  timezone              String?             @default("America/New_York")
+  locale                String?             @default("en-US")
+  emailFrequency        EmailFrequency      @default(NORMAL)
+
+  // Custom Fields (flexible schema)
+  customFields          Json?               // {"agent_name": "John Smith", "title_company": "ABC Title"}
+
+  // Tags & Segments
+  tags                  String[]            // ["vip", "luxury", "first-time-buyer"]
+
+  // Marketing Consent
+  marketingConsent      Boolean             @default(false)
+  consentDate           DateTime?
+  consentIp             String?
+  consentSource         String?
+
+  // Lifecycle
+  lifecycleStage        LifecycleStage      @default(NEW)
+
+  // Unsubscribe Tracking
+  unsubscribedAt        DateTime?
+  unsubscribeReason     String?
+  unsubscribeSource     String?             // "link", "complaint", "manual"
+
+  // Bounce Tracking
+  bounceCount           Int                 @default(0)
+  lastBounceAt          DateTime?
+  lastBounceType        BounceType?
+
+  // Timestamps
+  firstSeenAt           DateTime            @default(now())
+  lastEmailSentAt       DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  deletedAt             DateTime?           // Soft delete
+
+  // Relations
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client                Client?             @relation(fields: [clientId], references: [id])
+  segments              SubscriberSegment[]
+  preferences           PreferenceCenter?
+  unsubscribeRecord     UnsubscribeRecord?
+  engagement            EmailEngagement?
+  queue                 EmailQueue[]
+  events                EmailEvent[]
+  propertyData          PropertyMarketData[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([email])
+  @@index([status])
+  @@index([closingDate]) // For anniversary campaigns
+  @@index([tags])
+  @@map("email_subscribers")
+}
+
+enum SubscriberStatus {
+  SUBSCRIBED            // Active subscriber
+  UNSUBSCRIBED          // Opted out
+  PENDING               // Awaiting confirmation (double opt-in)
+  BOUNCED               // Hard bounced (invalid email)
+  COMPLAINED            // Marked as spam
+  SUPPRESSED            // On suppression list
+}
+
+enum EmailFrequency {
+  DAILY                 // Daily emails OK
+  NORMAL                // Normal frequency
+  WEEKLY                // Weekly digest only
+  MONTHLY               // Monthly only
+  MINIMAL               // Minimal emails
+}
+
+/**
+ * SubscriberSegment - Dynamic segmentation for targeted campaigns
+ *
+ * Features:
+ * - Dynamic rule-based segments
+ * - Static imported segments
+ * - Behavioral segments
+ * - Property-based segments
+ * - Engagement-based segments
+ */
+model SubscriberSegment {
+  id                    String              @id @default(uuid())
+  organizationId        String
+
+  // Segment Identity
+  name                  String
+  description           String?             @db.Text
+
+  // Segment Type
+  type                  SegmentType         @default(MANUAL)
+
+  // Dynamic Segmentation Rules (JSON-based query)
+  rules                 Json?               // Query DSL for dynamic segments
+
+  // Static Members (for manual segments)
+  subscriberIds         String[]            // For MANUAL type
+
+  // Segment Metadata
+  memberCount           Int                 @default(0)
+  lastCalculatedAt      DateTime?
+
+  // Auto-update
+  autoUpdate            Boolean             @default(true)
+  updateFrequency       String?             // "hourly", "daily", "weekly"
+
+  // Status
+  status                SegmentStatus       @default(ACTIVE)
+
+  // Timestamps
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscribers           EmailSubscriber[]
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([status])
+  @@map("subscriber_segments")
+}
+
+enum SegmentType {
+  MANUAL                // Manually added members
+  DYNAMIC               // Rule-based auto-update
+  IMPORTED              // Imported from file/API
+  BEHAVIORAL            // Based on engagement behavior
+  PROPERTY              // Based on property attributes
+}
+
+enum SegmentStatus {
+  ACTIVE                // Active and available
+  CALCULATING           // Currently recalculating
+  INACTIVE              // Paused
+  ARCHIVED              // Archived
+}
+
+/**
+ * UnsubscribeRecord - Detailed unsubscribe tracking
+ *
+ * Compliance and insights:
+ * - CAN-SPAM compliance
+ * - Unsubscribe reason tracking
+ * - Feedback collection
+ * - Re-subscription handling
+ */
+model UnsubscribeRecord {
+  id                    String              @id @default(uuid())
+  subscriberId          String              @unique
+  organizationId        String
+
+  // Unsubscribe Details
+  unsubscribedAt        DateTime            @default(now())
+  reason                String?
+  feedback              String?             @db.Text
+
+  // Source Tracking
+  campaignId            String?             // Which campaign triggered unsubscribe
+  source                UnsubscribeSource
+
+  // Context
+  ipAddress             String?
+  userAgent             String?
+
+  // Re-subscription
+  resubscribedAt        DateTime?
+  resubscribeCount      Int                 @default(0)
+
+  // Relations
+  subscriber            EmailSubscriber     @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([unsubscribedAt])
+  @@map("unsubscribe_records")
+}
+
+enum UnsubscribeSource {
+  EMAIL_LINK            // Clicked unsubscribe link
+  PREFERENCE_CENTER     // Updated preferences
+  SPAM_COMPLAINT        // Marked as spam
+  MANUAL                // Manually unsubscribed by admin
+  API                   // API request
+  BOUNCE                // Hard bounce
+}
+
+/**
+ * SuppressionList - Global suppression list
+ *
+ * Maintains list of emails that should never be sent:
+ * - Hard bounces
+ * - Spam complaints
+ * - Legal requests
+ * - Role accounts (abuse@, postmaster@)
+ * - Competitors
+ */
+model SuppressionList {
+  id                    String              @id @default(uuid())
+  organizationId        String?             // NULL = global suppression
+
+  // Email Identity
+  email                 String
+  emailHash             String              // SHA-256 hash for privacy
+
+  // Suppression Details
+  reason                SuppressionReason
+  reasonDetails         String?             @db.Text
+
+  // Source
+  source                String?             // "bounce", "complaint", "manual"
+
+  // Scope
+  scope                 SuppressionScope    @default(ORGANIZATION)
+
+  // Status
+  active                Boolean             @default(true)
+
+  // Timestamps
+  addedAt               DateTime            @default(now())
+  expiresAt             DateTime?           // Optional expiry for soft bounces
+
+  // Relations
+  organization          Organization?       @relation(fields: [organizationId], references: [id])
+
+  @@unique([email, organizationId])
+  @@index([email])
+  @@index([emailHash])
+  @@index([organizationId])
+  @@index([reason])
+  @@index([active])
+  @@map("suppression_list")
+}
+
+enum SuppressionReason {
+  HARD_BOUNCE           // Permanent delivery failure
+  SPAM_COMPLAINT        // Recipient marked as spam
+  UNSUBSCRIBED          // Opted out
+  MANUAL                // Manually suppressed
+  LEGAL                 // Legal request (GDPR, etc.)
+  ROLE_ACCOUNT          // abuse@, postmaster@, etc.
+  INVALID_EMAIL         // Invalid email format
+  COMPETITOR            // Known competitor
+  BLACKLIST             // External blacklist
+}
+
+enum SuppressionScope {
+  GLOBAL                // Never send from any org
+  ORGANIZATION          // Never send from this org
+  CAMPAIGN              // Never send this campaign type
+}
+
+/**
+ * PreferenceCenter - Detailed subscriber preferences
+ *
+ * Features:
+ * - Granular email type preferences
+ * - Frequency control
+ * - Channel preferences
+ * - Topic subscriptions
+ */
+model PreferenceCenter {
+  id                    String              @id @default(uuid())
+  subscriberId          String              @unique
+  organizationId        String
+
+  // Communication Preferences
+  emailEnabled          Boolean             @default(true)
+  smsEnabled            Boolean             @default(false)
+  pushEnabled           Boolean             @default(false)
+
+  // Email Type Preferences
+  marketingEmails       Boolean             @default(true)
+  transactionalEmails   Boolean             @default(true)
+  newsletterEmails      Boolean             @default(true)
+  promotionalEmails     Boolean             @default(true)
+
+  // Campaign Type Preferences (Real Estate Specific)
+  closingAnniversary    Boolean             @default(true)
+  homeValueUpdates      Boolean             @default(true)
+  taxReminders          Boolean             @default(true)
+  maintenanceTips       Boolean             @default(true)
+  holidayGreetings      Boolean             @default(true)
+  marketReports         Boolean             @default(true)
+  refinanceOpportunities Boolean            @default(true)
+  insuranceReviews      Boolean             @default(true)
+
+  // Frequency Preferences
+  maxEmailsPerWeek      Int?                @default(3)
+  maxEmailsPerMonth     Int?                @default(12)
+
+  // Custom Preferences
+  customPreferences     Json?               // Flexible schema for custom prefs
+
+  // Last Updated
+  lastUpdatedAt         DateTime            @default(now())
+  updateSource          String?             // "user", "admin", "import"
+
+  // Timestamps
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  subscriber            EmailSubscriber     @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("preference_center")
+}
+
+// ============================================================================
+// CONTENT & PERSONALIZATION MODELS
+// ============================================================================
+
+/**
+ * EmailBlock - Reusable content blocks for modular templates
+ *
+ * Features:
+ * - Drag-and-drop template builder
+ * - Reusable components
+ * - Version control
+ * - A/B test different blocks
+ */
+model EmailBlock {
+  id                    String              @id @default(uuid())
+  organizationId        String
+  templateId            String?             // Optional: belongs to template
+
+  // Block Identity
+  name                  String
+  description           String?
+  type                  BlockType
+
+  // Content
+  contentHtml           String              @db.Text
+  contentText           String?             @db.Text
+
+  // Configuration
+  config                Json?               // Block-specific configuration
+  variables             Json?               // Required merge tags
+
+  // Styling
+  styles                Json?               // CSS/styling overrides
+
+  // Reusability
+  reusable              Boolean             @default(true)
+  usageCount            Int                 @default(0)
+
+  // Status
+  published             Boolean             @default(false)
+
+  // Timestamps
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template              EmailTemplate?      @relation(fields: [templateId], references: [id])
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([reusable])
+  @@map("email_blocks")
+}
+
+enum BlockType {
+  HEADER                // Header/logo block
+  HERO                  // Hero image/content
+  TEXT                  // Text content
+  IMAGE                 // Image block
+  BUTTON                // Call-to-action button
+  DIVIDER               // Section divider
+  SOCIAL                // Social media links
+  FOOTER                // Footer/legal
+  PROPERTY_DATA         // Property-specific data
+  MARKET_DATA           // Market statistics
+  CUSTOM                // Custom HTML
+}
+
+/**
+ * MergeTag - Dynamic content placeholders
+ *
+ * Features:
+ * - Personalization variables
+ * - Conditional content
+ * - Dynamic data sources
+ * - Formatting options
+ */
+model MergeTag {
+  id                    String              @id @default(uuid())
+  organizationId        String
+
+  // Tag Identity
+  name                  String              // e.g., "subscriber_first_name"
+  displayName           String              // e.g., "First Name"
+  description           String?
+
+  // Tag Configuration
+  tag                   String              // e.g., "{{first_name}}"
+  category              MergeTagCategory
+
+  // Data Source
+  dataSource            String              // "subscriber", "property", "market", "custom"
+  dataField             String              // Field name in data source
+
+  // Formatting
+  format                String?             // "uppercase", "capitalize", "currency", "date"
+  defaultValue          String?             // Fallback if data missing
+
+  // Validation
+  required              Boolean             @default(false)
+  validation            Json?               // Validation rules
+
+  // Usage
+  usageCount            Int                 @default(0)
+
+  // Status
+  active                Boolean             @default(true)
+
+  // Timestamps
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, tag])
+  @@index([organizationId])
+  @@index([category])
+  @@map("merge_tags")
+}
+
+enum MergeTagCategory {
+  SUBSCRIBER            // Subscriber fields
+  PROPERTY              // Property data
+  MARKET                // Market data
+  CAMPAIGN              // Campaign data
+  ORGANIZATION          // Organization data
+  CUSTOM                // Custom fields
+  SYSTEM                // System-generated
+}
+
+/**
+ * PropertyMarketData - Property valuations and market data for personalization
+ *
+ * Features:
+ * - Automated home value estimates
+ * - Market statistics
+ * - Neighborhood comparables
+ * - Historical trends
+ * - Data sources (Zillow API, CoreLogic, etc.)
+ */
+model PropertyMarketData {
+  id                    String              @id @default(uuid())
+  subscriberId          String
+  organizationId        String
+
+  // Property Identity
+  address               String
+  city                  String
+  state                 String
+  zipCode               String
+
+  // Current Valuation
+  currentValue          Decimal             @db.Decimal(12, 2)
+  valueDate             DateTime
+  valueSource           String              // "Zillow", "CoreLogic", "Manual"
+  valueConfidence       Float?              // 0-1 confidence score
+
+  // Historical Data
+  purchasePrice         Decimal?            @db.Decimal(12, 2)
+  purchaseDate          DateTime?
+  valueChange           Decimal?            @db.Decimal(12, 2) // Change since purchase
+  valueChangePercent    Float?              // Percentage change
+
+  // Market Statistics
+  medianNeighborhoodValue Decimal?          @db.Decimal(12, 2)
+  neighborhoodValueChange Float?            // Percentage change
+  daysOnMarket          Int?                // Average in neighborhood
+
+  // Comparables
+  comparables           Json?               // Array of comparable properties
+
+  // Tax Information
+  annualPropertyTax     Decimal?            @db.Decimal(10, 2)
+  taxAssessedValue      Decimal?            @db.Decimal(12, 2)
+
+  // Data Refresh
+  nextUpdateDate        DateTime?
+  autoUpdate            Boolean             @default(true)
+
+  // Timestamps
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  subscriber            EmailSubscriber     @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([subscriberId])
+  @@index([organizationId])
+  @@index([zipCode])
+  @@index([valueDate])
+  @@map("property_market_data")
+}
+
+/**
+ * NeighborhoodData - Neighborhood-level market reports and statistics
+ *
+ * Features:
+ * - Quarterly market reports
+ * - Trend analysis
+ * - School ratings
+ * - Crime statistics
+ * - Demographics
+ */
+model NeighborhoodData {
+  id                    String              @id @default(uuid())
+  organizationId        String
+
+  // Location
+  neighborhoodName      String
+  city                  String
+  state                 String
+  zipCode               String
+
+  // Market Statistics
+  medianHomeValue       Decimal             @db.Decimal(12, 2)
+  medianRentPrice       Decimal?            @db.Decimal(10, 2)
+  averageDaysOnMarket   Int
+  inventoryCount        Int
+  monthsOfSupply        Float?
+
+  // Sales Activity
+  salesVolume           Int                 // Number of sales
+  medianSalePrice       Decimal             @db.Decimal(12, 2)
+  averageSalePrice      Decimal             @db.Decimal(12, 2)
+
+  // Trends (YoY)
+  valueChangeYoY        Float               // Percentage
+  salesVolumeChangeYoY  Float               // Percentage
+
+  // Additional Data
+  schoolRatings         Json?               // Array of school ratings
+  crimeRate             Float?              // Per 1000 residents
+  demographics          Json?               // Population stats
+  amenities             Json?               // Parks, shopping, etc.
+
+  // Data Period
+  reportPeriod          DateTime            // Quarter/month this data represents
+  reportType            String              @default("quarterly")
+
+  // Data Source
+  dataSource            String
+  dataProvider          String?             // API provider
+
+  // Timestamps
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([zipCode, reportPeriod])
+  @@index([organizationId])
+  @@index([city, state])
+  @@index([zipCode])
+  @@index([reportPeriod])
+  @@map("neighborhood_data")
+}
+
+// ============================================================================
+// RELATION EXTENSIONS TO EXISTING MODELS
+// ============================================================================
+
+// Add these to existing models in schema.prisma:
+
+// Organization model - add these relations:
+// emailCampaigns        EmailCampaign[]
+// emailTemplates        EmailTemplate[]
+// emailSubscribers      EmailSubscriber[]
+// segments              SubscriberSegment[]
+// suppressionList       SuppressionList[]
+// preferenceCenter      PreferenceCenter[]
+// emailBlocks           EmailBlock[]
+// mergeTags             MergeTag[]
+// propertyMarketData    PropertyMarketData[]
+// neighborhoodData      NeighborhoodData[]
+// emailEngagement       EmailEngagement[]
+// campaignAnalytics     CampaignAnalytics[]
+// abTests               ABTest[]
+// unsubscribeRecords    UnsubscribeRecord[]
+
+// Client model - add this relation:
+// emailSubscriber       EmailSubscriber?

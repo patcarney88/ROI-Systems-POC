@@ -1,0 +1,549 @@
+// ============================================================================
+// MULTI-PROVIDER EMAIL SERVICE SCHEMA
+// ============================================================================
+// Purpose: Multi-provider email service with automatic failover
+// Providers: SendGrid, AWS SES, Mailgun
+// Features: Provider health monitoring, automatic failover, cost optimization
+// ============================================================================
+
+// NOTE: This extends the existing schema.email-marketing.prisma
+// Merge these models with existing email schema
+
+// ============================================================================
+// EMAIL PROVIDER MANAGEMENT
+// ============================================================================
+
+/**
+ * EmailProvider - Multi-provider configuration and health monitoring
+ *
+ * Supports automatic failover between:
+ * - SendGrid (primary)
+ * - AWS SES (secondary)
+ * - Mailgun (tertiary)
+ *
+ * Features:
+ * - Priority-based provider selection
+ * - Health scoring (0-100)
+ * - Daily quota management
+ * - Cost tracking
+ * - Performance metrics
+ */
+model EmailProvider {
+  id                String          @id @default(uuid())
+  organizationId    String?         // null for system-level providers
+
+  // Provider Details
+  provider          EmailProviderType
+  priority          Int             @default(0) // 0=primary, 1=secondary, 2=tertiary
+  name              String          // User-friendly name (e.g., "SendGrid Production")
+
+  // Authentication (encrypted in application)
+  apiKey            String          @db.Text // Encrypted
+  apiSecret         String?         @db.Text // Encrypted (for providers that need it)
+  region            String?         // AWS SES region (e.g., "us-east-1")
+  domain            String?         // Verified sending domain
+
+  // Status & Health
+  status            ProviderStatus  @default(ACTIVE)
+  enabled           Boolean         @default(true)
+  lastHealthCheck   DateTime?
+  healthScore       Float           @default(100.0) // 0-100
+  consecutiveFailures Int           @default(0)
+  lastFailureAt     DateTime?
+
+  // Limits & Quotas
+  dailyQuota        Int?            // Max emails per day
+  dailySent         Int             @default(0)
+  quotaResetAt      DateTime?
+  rateLimit         Int?            // Max emails per second
+
+  // Performance Metrics
+  totalSent         Int             @default(0)
+  totalDelivered    Int             @default(0)
+  totalBounced      Int             @default(0)
+  totalComplaints   Int             @default(0)
+  totalFailed       Int             @default(0)
+  avgDeliveryTime   Float?          // milliseconds
+  avgResponseTime   Float?          // API response time in ms
+
+  // Success Rates
+  deliveryRate      Float           @default(100.0) // %
+  bounceRate        Float           @default(0.0) // %
+  complaintRate     Float           @default(0.0) // %
+  failureRate       Float           @default(0.0) // %
+
+  // Cost Tracking
+  costPerEmail      Float?          // in cents
+  totalCost         Float           @default(0)
+  monthlyBudget     Float?          // Optional monthly budget limit
+
+  // Configuration
+  metadata          Json?           // Provider-specific config
+  webhookSecret     String?         // For webhook validation
+  webhookUrl        String?         // Webhook endpoint
+
+  // Failover Configuration
+  failoverEnabled   Boolean         @default(true)
+  failoverThreshold Int             @default(3) // Consecutive failures before failover
+  autoRecovery      Boolean         @default(true)
+  recoveryInterval  Int             @default(300) // Seconds before retry after failure
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?       // Soft delete
+
+  // Relations
+  organization      Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  emails            Email[]
+  events            EmailEvent[]
+
+  @@unique([organizationId, provider, priority])
+  @@index([status])
+  @@index([priority])
+  @@index([enabled])
+  @@index([healthScore])
+  @@map("email_providers")
+}
+
+enum EmailProviderType {
+  SENDGRID
+  AWS_SES
+  MAILGUN
+}
+
+enum ProviderStatus {
+  ACTIVE              // Healthy and active
+  DEGRADED            // Experiencing issues but operational
+  FAILED              // Not operational, failover triggered
+  DISABLED            // Manually disabled
+  MAINTENANCE         // Under maintenance
+}
+
+/**
+ * Email - Enhanced email queue and history
+ *
+ * Extends existing EmailQueue with:
+ * - Multi-provider support
+ * - Provider failover tracking
+ * - Enhanced delivery tracking
+ * - Retry management
+ */
+model Email {
+  id                String          @id @default(uuid())
+  organizationId    String
+  providerId        String?         // Current provider
+
+  // Email Type
+  type              EmailType
+  category          EmailCategory   @default(TRANSACTIONAL)
+
+  // Sender
+  fromEmail         String
+  fromName          String?
+  replyTo           String?
+
+  // Recipients
+  toEmails          String[]        // Array of email addresses
+  ccEmails          String[]        @default([])
+  bccEmails         String[]        @default([])
+
+  // Content
+  subject           String
+  htmlContent       String?         @db.Text
+  textContent       String?         @db.Text
+  templateId        String?
+  templateData      Json?           // Template variables
+
+  // Attachments
+  attachments       Json?           // Array of attachment metadata
+
+  // Headers & Metadata
+  customHeaders     Json?           // Custom email headers
+  tags              String[]        @default([])
+  metadata          Json?           // Additional metadata
+
+  // Tracking
+  trackOpens        Boolean         @default(true)
+  trackClicks       Boolean         @default(true)
+  trackConversion   Boolean         @default(false)
+
+  // Status
+  status            EmailStatus     @default(PENDING)
+  providerMessageId String?         // Provider's message ID
+
+  // Delivery
+  scheduledFor      DateTime?       // For scheduled sending
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  openedAt          DateTime?
+  clickedAt         DateTime?
+
+  // Failover Tracking
+  attemptedProviders Json?          // Array of {providerId, timestamp, error}
+  failoverCount     Int             @default(0)
+  lastProviderId    String?         // Last attempted provider
+
+  // Errors & Retry
+  errorCode         String?
+  errorMessage      String?         @db.Text
+  attempts          Int             @default(0)
+  maxAttempts       Int             @default(3)
+  nextRetryAt       DateTime?
+
+  // Performance
+  sendDuration      Int?            // Time to send in ms
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  provider          EmailProvider?  @relation(fields: [providerId], references: [id])
+  events            EmailEvent[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([type])
+  @@index([scheduledFor])
+  @@index([sentAt])
+  @@index([providerMessageId])
+  @@index([nextRetryAt])
+  @@map("emails")
+}
+
+enum EmailType {
+  TRANSACTIONAL
+  MARKETING
+  NOTIFICATION
+  SYSTEM
+  CAMPAIGN
+}
+
+enum EmailCategory {
+  TRANSACTIONAL
+  MARKETING
+  PROMOTIONAL
+  NOTIFICATION
+  ALERT
+  WELCOME
+  PASSWORD_RESET
+  VERIFICATION
+  RECEIPT
+  NEWSLETTER
+  ANNIVERSARY
+  VALUE_UPDATE
+  MAINTENANCE
+}
+
+enum EmailStatus {
+  PENDING             // Not yet processed
+  QUEUED              // In queue
+  SENDING             // Currently sending
+  SENT                // Successfully sent to provider
+  DELIVERED           // Delivered to recipient
+  OPENED              // Opened by recipient
+  CLICKED             // Link clicked
+  BOUNCED             // Delivery failed (hard or soft bounce)
+  COMPLAINED          // Marked as spam
+  UNSUBSCRIBED        // Recipient unsubscribed
+  FAILED              // Failed to send (all retries exhausted)
+  DEFERRED            // Temporarily deferred
+  DROPPED             // Dropped by provider
+}
+
+// ============================================================================
+// EMAIL EVENTS & TRACKING
+// ============================================================================
+
+/**
+ * EmailEvent - Granular event tracking with provider data
+ *
+ * Enhanced with:
+ * - Provider-specific event data
+ * - Device & browser tracking
+ * - Geographic data
+ * - Link tracking
+ */
+model EmailEvent {
+  id                String          @id @default(uuid())
+  emailId           String
+  providerId        String
+
+  // Event Details
+  eventType         EmailEventType
+  timestamp         DateTime        @default(now())
+
+  // User Information
+  userAgent         String?         @db.Text
+  ipAddress         String?
+  location          Json?           // Geographic data {country, city, region}
+  device            String?         // Desktop, mobile, tablet
+  os                String?         // Operating system
+  browser           String?         // Browser name and version
+  emailClient       String?         // Gmail, Outlook, Apple Mail, etc.
+
+  // Tracking Data (for click events)
+  url               String?         @db.Text
+  linkId            String?         // Link identifier
+  linkIndex         Int?            // Position of link in email
+
+  // Bounce Data (for bounce events)
+  bounceType        BounceType?     // hard, soft, blocked
+  bounceReason      String?         @db.Text
+  bounceCode        String?
+
+  // Complaint Data (for spam complaints)
+  complaintType     String?         // abuse, fraud, virus
+  complaintFeedbackType String?     // abuse, fraud, virus, not-spam, other
+
+  // Provider Data
+  providerEventId   String?         // Provider's event ID
+  providerTimestamp DateTime?       // Provider's timestamp
+  rawData           Json?           @db.JsonB // Raw provider data
+
+  // Processing
+  processed         Boolean         @default(false)
+  processedAt       DateTime?
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+
+  // Relations
+  email             Email           @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  provider          EmailProvider   @relation(fields: [providerId], references: [id])
+
+  @@index([emailId])
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([providerEventId])
+  @@index([processed])
+  @@map("email_events")
+}
+
+enum EmailEventType {
+  QUEUED              // Added to queue
+  SENT                // Successfully sent to provider
+  DELIVERED           // Delivered to recipient's server
+  OPENED              // Email opened (tracking pixel)
+  CLICKED             // Link clicked
+  BOUNCED             // Delivery failed
+  DEFERRED            // Temporarily delayed
+  DROPPED             // Dropped by provider
+  SPAM_REPORT         // Marked as spam
+  UNSUBSCRIBED        // Unsubscribed via link
+  PROCESSED           // Processed by provider
+  FAILED              // Failed to send
+  REJECTED            // Rejected by provider
+}
+
+enum BounceType {
+  HARD                // Permanent failure (invalid email)
+  SOFT                // Temporary failure (full mailbox)
+  BLOCKED             // Blocked by recipient server
+}
+
+// ============================================================================
+// SUPPRESSION LIST MANAGEMENT
+// ============================================================================
+
+/**
+ * EmailSuppressionList - Unified suppression across all providers
+ *
+ * Features:
+ * - Cross-provider suppression sync
+ * - Automatic suppression from bounces/complaints
+ * - Manual suppression management
+ * - Expiration for soft bounces
+ */
+model EmailSuppressionList {
+  id                String          @id @default(uuid())
+  organizationId    String
+
+  // Email Address
+  email             String
+  emailHash         String?         // SHA-256 hash for privacy
+  domain            String?         // Email domain for domain-level blocking
+
+  // Suppression Details
+  reason            SuppressionReason
+  reasonDetails     String?         @db.Text
+
+  // Source Tracking
+  source            String?         // Which provider or system reported it
+  sourceProviderId  String?         // Provider ID if from provider
+  sourceEventId     String?         // Event ID if from event
+
+  // Bounce Details
+  bounceType        BounceType?
+  bounceCount       Int             @default(0)
+  lastBounceAt      DateTime?
+
+  // Complaint Details
+  complaintType     String?
+  complaintCount    Int             @default(0)
+  lastComplaintAt   DateTime?
+
+  // Status
+  active            Boolean         @default(true)
+
+  // Expiration (for temporary suppressions)
+  expiresAt         DateTime?       // Optional expiry for soft bounces
+  autoRemove        Boolean         @default(false)
+
+  // Metadata
+  metadata          Json?           // Additional suppression data
+  notes             String?         @db.Text
+
+  // Sync Status
+  syncedToProviders Json?           // {providerId: syncTimestamp}
+  lastSyncAt        DateTime?
+
+  // Timestamps
+  suppressedAt      DateTime        @default(now())
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, email])
+  @@index([email])
+  @@index([emailHash])
+  @@index([domain])
+  @@index([reason])
+  @@index([active])
+  @@index([expiresAt])
+  @@map("email_suppression_lists")
+}
+
+enum SuppressionReason {
+  HARD_BOUNCE         // Permanent delivery failure
+  SOFT_BOUNCE         // Temporary delivery failure
+  SPAM_COMPLAINT      // Marked as spam
+  UNSUBSCRIBE         // User unsubscribed
+  MANUAL              // Manually suppressed
+  INVALID_EMAIL       // Invalid email format
+  ROLE_ACCOUNT        // Role-based email (abuse@, noreply@)
+  DISPOSABLE_EMAIL    // Temporary/disposable email
+  BLACKLIST           // On external blacklist
+  LEGAL_REQUEST       // Legal/GDPR request
+}
+
+// ============================================================================
+// EMAIL TEMPLATES (Enhanced)
+// ============================================================================
+
+/**
+ * EmailTemplate - Reusable templates with provider-specific optimizations
+ */
+model EmailTemplate {
+  id                String          @id @default(uuid())
+  organizationId    String
+
+  // Template Info
+  name              String
+  description       String?         @db.Text
+  category          EmailCategory
+
+  // Content
+  subject           String
+  htmlContent       String          @db.Text
+  textContent       String          @db.Text
+  preheaderText     String?         // Preview text
+
+  // Variables
+  variables         Json?           // List of available variables
+  defaultData       Json?           // Default variable values
+  sampleData        Json?           // Sample data for preview
+
+  // Design
+  designJson        Json?           // MJML or visual editor JSON
+  thumbnailUrl      String?         // Template thumbnail
+
+  // Provider Optimizations
+  providerSettings  Json?           // Provider-specific settings
+
+  // Status
+  active            Boolean         @default(true)
+  version           Int             @default(1)
+  publishedAt       DateTime?
+
+  // Testing
+  tested            Boolean         @default(false)
+  testResults       Json?           // Email client testing results
+  spamScore         Float?          // Spam filter score
+
+  // Usage Stats
+  usageCount        Int             @default(0)
+  lastUsedAt        DateTime?
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+
+  // Relations
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  emails            Email[]
+
+  @@unique([organizationId, name])
+  @@index([category])
+  @@index([active])
+  @@map("email_templates")
+}
+
+// ============================================================================
+// PROVIDER HEALTH MONITORING
+// ============================================================================
+
+/**
+ * ProviderHealthLog - Health check history for monitoring
+ */
+model ProviderHealthLog {
+  id                String          @id @default(uuid())
+  providerId        String
+
+  // Health Check Results
+  timestamp         DateTime        @default(now())
+  status            ProviderStatus
+  healthScore       Float           // 0-100
+
+  // Check Details
+  responseTime      Int?            // API response time in ms
+  checkType         String          // "ping", "send_test", "quota_check"
+
+  // Errors
+  errorCode         String?
+  errorMessage      String?         @db.Text
+
+  // Metrics Snapshot
+  dailySent         Int?
+  dailyQuota        Int?
+  quotaRemaining    Int?
+  deliveryRate      Float?
+  bounceRate        Float?
+
+  // Metadata
+  metadata          Json?
+
+  // Relations
+  provider          EmailProvider   @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+  @@index([timestamp])
+  @@index([status])
+  @@map("provider_health_logs")
+}
+
+// ============================================================================
+// RELATION ADDITIONS TO EXISTING MODELS
+// ============================================================================
+
+// Add these relations to Organization model:
+// emailProviders        EmailProvider[]
+// emails                Email[]
+// emailSuppressionList  EmailSuppressionList[]
+// emailTemplates        EmailTemplate[]
+// providerHealthLogs    ProviderHealthLog[]
