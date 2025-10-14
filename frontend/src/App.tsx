@@ -57,6 +57,7 @@ function AppContent() {
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Data states
   const [documents, setDocuments] = useState<Document[]>([
@@ -291,9 +292,59 @@ function AppContent() {
             <button className="nav-action-btn avatar">
               <span>AG</span>
             </button>
+            <button 
+              className={`mobile-menu-toggle ${mobileMenuOpen ? 'open' : ''}`}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle mobile menu"
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
           </div>
         </div>
       </header>
+
+      {/* Mobile Menu */}
+      <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
+        <div className="mobile-nav-links">
+          <Link 
+            to="/" 
+            className={location.pathname === '/' ? 'mobile-nav-link active' : 'mobile-nav-link'}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Dashboard
+          </Link>
+          <Link 
+            to="/documents" 
+            className={location.pathname === '/documents' ? 'mobile-nav-link active' : 'mobile-nav-link'}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Documents
+          </Link>
+          <Link 
+            to="/clients" 
+            className={location.pathname === '/clients' ? 'mobile-nav-link active' : 'mobile-nav-link'}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Clients
+          </Link>
+          <Link 
+            to="/campaigns" 
+            className={location.pathname === '/campaigns' ? 'mobile-nav-link active' : 'mobile-nav-link'}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Campaigns
+          </Link>
+          <Link 
+            to="/analytics" 
+            className={location.pathname === '/analytics' ? 'mobile-nav-link active' : 'mobile-nav-link'}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Analytics
+          </Link>
+        </div>
+      </div>
 
       {/* Main Content with Routes */}
       <main>
