@@ -1453,6 +1453,211 @@ a:focus-visible {
   box-shadow: var(--shadow-lg);
 }
 
+/* === Analytics Page Styles === */
+.section {
+  margin-bottom: var(--space-12);
+}
+
+.section-title {
+  font-size: var(--font-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-6);
+  letter-spacing: -0.02em;
+}
+
+/* ROI Cards */
+.roi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-6);
+}
+
+.roi-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-base);
+}
+
+.roi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.roi-card h3 {
+  font-size: var(--font-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.roi-metric {
+  margin-bottom: var(--space-4);
+}
+
+.roi-value {
+  font-size: var(--font-4xl);
+  font-weight: var(--font-bold);
+  color: var(--primary);
+  line-height: 1;
+  margin-bottom: var(--space-2);
+}
+
+.roi-label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.roi-bar {
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.roi-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow);
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: var(--space-8);
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--gray-200);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: var(--space-6);
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -28px;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  background: var(--primary);
+  border: 3px solid var(--bg-primary);
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 0 4px var(--primary-50);
+}
+
+.timeline-content {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.timeline-content:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateX(4px);
+}
+
+.timeline-title {
+  font-size: var(--font-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.timeline-description {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.timeline-time {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+/* Insights */
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-6);
+}
+
+.insight-card {
+  display: flex;
+  gap: var(--space-4);
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-base);
+}
+
+.insight-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.insight-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
+
+.insight-icon.success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.insight-icon.warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.insight-icon.info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.insight-icon.danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.insight-content h4 {
+  font-size: var(--font-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.insight-content p {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
 /* === Responsive Design === */
 
 /* Tablet */
@@ -1577,6 +1782,22 @@ a:focus-visible {
 
   .documents-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .roi-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .timeline {
+    padding-left: var(--space-6);
+  }
+  
+  .timeline-dot {
+    left: -22px;
   }
 
   .footer-links {
