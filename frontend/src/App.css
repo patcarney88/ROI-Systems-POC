@@ -1453,6 +1453,151 @@ a:focus-visible {
   box-shadow: var(--shadow-lg);
 }
 
+/* === Clients Page Styles === */
+.clients-table {
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.clients-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.clients-table thead {
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.clients-table th {
+  padding: var(--space-4) var(--space-4);
+  text-align: left;
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.clients-table tbody tr {
+  border-bottom: 1px solid var(--gray-200);
+  transition: background var(--transition-base);
+}
+
+.clients-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.clients-table tbody tr:hover {
+  background: var(--bg-secondary);
+}
+
+.clients-table td {
+  padding: var(--space-4) var(--space-4);
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.client-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.client-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+}
+
+.client-name {
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.contact-info .text-muted {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+.engagement-bar {
+  position: relative;
+  width: 100px;
+  height: 24px;
+  background: var(--gray-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.engagement-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--success) 0%, var(--success-light) 100%);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow);
+}
+
+.engagement-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  z-index: 1;
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btn-icon:hover {
+  background: var(--gray-100);
+  color: var(--primary);
+}
+
+/* Mobile Clients Table */
+@media (max-width: 1024px) {
+  .clients-table {
+    overflow-x: auto;
+  }
+  
+  .clients-table table {
+    min-width: 800px;
+  }
+}
+
 /* === Campaigns Page Styles === */
 .campaigns-grid {
   display: grid;
