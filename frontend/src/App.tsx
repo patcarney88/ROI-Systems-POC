@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import './App.css'
 import './styles/TitleAgentDashboard.css'
 import './styles/DocumentManagement.css'
+import './styles/RealtorDashboard.css'
 import Dashboard from './pages/Dashboard'
 import Documents from './pages/Documents'
 import Clients from './pages/Clients'
@@ -10,6 +11,7 @@ import Campaigns from './pages/Campaigns'
 import Analytics from './pages/Analytics'
 import TitleAgentDashboard from './pages/TitleAgentDashboard'
 import DocumentManagement from './pages/DocumentManagement'
+import RealtorDashboard from './pages/RealtorDashboard'
 
 interface Document {
   id: string;
@@ -414,6 +416,12 @@ function AppContent() {
             path="/dashboard/title-agent/documents"
             element={
               <DocumentManagement />
+            }
+          />
+          <Route
+            path="/dashboard/realtor"
+            element={
+              <RealtorDashboard />
             }
           />
         </Routes>
