@@ -124,3 +124,4 @@ secrets/
 # Lock files (except package-lock.json)
 yarn.lock
 pnpm-lock.yaml
+.vercel
