@@ -13,7 +13,7 @@ const logger = createLogger('client-controller');
  * Create a new client
  */
 export const createClient = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, phone, propertyCount = 0, status = 'active', notes } = req.body;
+  const { name, email, phone, address, propertyCount = 0, status = 'active', notes } = req.body;
   const userId = req.user?.userId;
 
   if (!userId) {
@@ -32,6 +32,7 @@ export const createClient = asyncHandler(async (req: Request, res: Response) => 
     name,
     email,
     phone,
+    address,
     propertyCount,
     lastContact: new Date(),
     engagementScore: 50, // Default score
@@ -109,12 +110,12 @@ export const getClients = asyncHandler(async (req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
-      clients: clientsList,
+      clients: paginatedClients,
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total: count,
-        pages: Math.ceil(count / limitNum)
+        total: filteredClients.length,
+        pages: Math.ceil(filteredClients.length / limitNum)
       }
     }
   });
@@ -131,17 +132,7 @@ export const getClient = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError(401, 'UNAUTHORIZED', 'User not authenticated');
   }
 
-  const client = await Client.findOne({
-    where: { id, userId },
-    include: [
-      { 
-        model: Document, 
-        as: 'documents',
-        attributes: ['id', 'title', 'type', 'status', 'uploadDate']
-      },
-      { model: User, as: 'agent', attributes: ['id', 'email', 'firstName', 'lastName'] }
-    ]
-  });
+  const client = clients.find(c => c.id === id && c.userId === userId);
 
   if (!client) {
     throw new AppError(404, 'CLIENT_NOT_FOUND', 'Client not found');
@@ -165,41 +156,34 @@ export const updateClient = asyncHandler(async (req: Request, res: Response) => 
     throw new AppError(401, 'UNAUTHORIZED', 'User not authenticated');
   }
 
-  const client = await Client.findOne({ where: { id, userId } });
+  const clientIndex = clients.findIndex(c => c.id === id && c.userId === userId);
 
-  if (!client) {
+  if (clientIndex === -1) {
     throw new AppError(404, 'CLIENT_NOT_FOUND', 'Client not found');
   }
 
   // Update client fields
-  if (name) client.name = name;
-  if (email) client.email = email;
-  if (phone) client.phone = phone;
-  if (propertyCount !== undefined) client.propertyCount = propertyCount;
-  if (status) client.status = status as ClientStatus;
-  if (notes !== undefined) client.notes = notes;
-  if (engagementScore !== undefined) client.engagementScore = engagementScore;
+  if (name) clients[clientIndex].name = name;
+  if (email) clients[clientIndex].email = email;
+  if (phone) clients[clientIndex].phone = phone;
+  if (propertyCount !== undefined) clients[clientIndex].propertyCount = propertyCount;
+  if (status) clients[clientIndex].status = status;
+  if (notes !== undefined) clients[clientIndex].notes = notes;
+  if (engagementScore !== undefined) clients[clientIndex].engagementScore = engagementScore;
 
-  client.lastContact = new Date();
-  await client.save();
-
-  // Reload with associations
-  await client.reload({
-    include: [
-      { model: User, as: 'agent', attributes: ['id', 'email', 'firstName', 'lastName'] }
-    ]
-  });
+  clients[clientIndex].lastContact = new Date();
+  clients[clientIndex].updatedAt = new Date();
 
   logger.info(`Client updated: ${id} by user ${userId}`);
 
   res.json({
     success: true,
-    data: { client }
+    data: { client: clients[clientIndex] }
   });
 });
 
 /**
- * Delete a client (soft delete)
+ * Delete a client
  */
 export const deleteClient = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -209,15 +193,14 @@ export const deleteClient = asyncHandler(async (req: Request, res: Response) => 
     throw new AppError(401, 'UNAUTHORIZED', 'User not authenticated');
   }
 
-  const client = await Client.findOne({ where: { id, userId } });
+  const clientIndex = clients.findIndex(c => c.id === id && c.userId === userId);
 
-  if (!client) {
+  if (clientIndex === -1) {
     throw new AppError(404, 'CLIENT_NOT_FOUND', 'Client not found');
   }
 
-  // Soft delete - mark as dormant
-  client.status = ClientStatus.DORMANT;
-  await client.save();
+  // Remove client
+  clients.splice(clientIndex, 1);
 
   logger.info(`Client deleted: ${id} by user ${userId}`);
 
@@ -237,31 +220,23 @@ export const getClientStats = asyncHandler(async (req: Request, res: Response) =
     throw new AppError(401, 'UNAUTHORIZED', 'User not authenticated');
   }
 
-  // Get total count
-  const total = await Client.count({ where: { userId } });
-
-  // Get counts by status
-  const byStatus = {
-    active: await Client.count({ where: { userId, status: ClientStatus.ACTIVE } }),
-    atRisk: await Client.count({ where: { userId, status: ClientStatus.AT_RISK } }),
-    dormant: await Client.count({ where: { userId, status: ClientStatus.DORMANT } })
-  };
-
-  // Get average engagement score
-  const result = await Client.findOne({
-    where: { userId },
-    attributes: [
-      [sequelize.fn('AVG', sequelize.col('engagementScore')), 'avgScore'],
-      [sequelize.fn('SUM', sequelize.col('propertyCount')), 'totalProperties']
-    ],
-    raw: true
-  }) as any;
+  const userClients = clients.filter(c => c.userId === userId);
 
   const stats = {
-    total,
-    byStatus,
-    averageEngagementScore: result?.avgScore ? Math.round(parseFloat(result.avgScore)) : 0,
-    totalProperties: result?.totalProperties ? parseInt(result.totalProperties) : 0
+    total: userClients.length,
+    byStatus: {
+      active: userClients.filter(c => c.status === 'active').length,
+      'at-risk': userClients.filter(c => c.status === 'at-risk').length,
+      dormant: userClients.filter(c => c.status === 'dormant').length
+    },
+    averageEngagementScore: userClients.length > 0
+      ? Math.round(userClients.reduce((sum, c) => sum + c.engagementScore, 0) / userClients.length)
+      : 0,
+    totalProperties: userClients.reduce((sum, c) => sum + c.propertyCount, 0),
+    recentActivity: userClients.filter(c => {
+      const daysSinceContact = Math.floor((Date.now() - c.lastContact.getTime()) / (1000 * 60 * 60 * 24));
+      return daysSinceContact <= 30;
+    }).length
   };
 
   res.json({
