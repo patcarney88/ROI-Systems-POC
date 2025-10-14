@@ -1,0 +1,388 @@
+// Prisma schema for Document Intelligence System
+// Database: PostgreSQL
+// Features: AI summarization, change detection, compliance checking, document relationships
+
+// Note: This schema extends the base schema.prisma
+// Ensure this is included in your main schema or use Prisma's multiple schema files feature
+
+// ============================================================
+// DOCUMENT INTELLIGENCE MODELS
+// ============================================================
+
+// Document Summary Model - AI-generated summaries
+model DocumentSummary {
+  id                String          @id @default(uuid())
+  documentId        String          @unique
+
+  // Summaries
+  executiveSummary  String          @db.Text  // 2-3 sentences
+  detailedSummary   String          @db.Text  // 1-2 paragraphs
+  keyPoints         String[]                  // Bullet points
+
+  // Metadata
+  summaryMethod     SummaryMethod
+  wordCount         Int
+  originalWordCount Int
+  compressionRatio  Float
+
+  // Key information extracted
+  mainParties       String[]        // People/entities involved
+  keyDates          Json            @db.JsonB  // Important dates with context
+  keyAmounts        Json            @db.JsonB  // Financial amounts with context
+  actionItems       String[]        // Required actions
+
+  // AI metadata
+  modelVersion      String?         // Summarization model version
+  confidence        Float?          // Overall confidence score
+  processingTime    Int?            // Processing time in milliseconds
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([documentId])
+  @@index([summaryMethod])
+  @@index([createdAt])
+  @@map("document_summaries")
+}
+
+enum SummaryMethod {
+  EXTRACTIVE        // Key sentence extraction using TF-IDF
+  ABSTRACTIVE       // Generated summary using BART/T5
+  HYBRID            // Combination of both methods
+}
+
+// Document Version Model - Version control and change tracking
+model DocumentVersion {
+  id                String          @id @default(uuid())
+  documentId        String
+  versionNumber     Int
+  changeType        ChangeType
+
+  // Change details
+  changesSummary    String          @db.Text
+  addedContent      Json?           @db.JsonB  // Added text/sections
+  removedContent    Json?           @db.JsonB  // Removed text/sections
+  modifiedContent   Json?           @db.JsonB  // Modified text with before/after
+
+  // Diff analysis
+  textDiff          String?         @db.Text   // Full text diff
+  visualDiffUrl     String?                    // S3 URL to highlighted PDF
+  changePercentage  Float?                     // Percentage of content changed
+
+  // File references
+  s3Key             String          // S3 key for this version
+  fileSize          Int             // File size in bytes
+  checksum          String          // SHA-256 hash for integrity
+
+  // Metadata
+  changedBy         String?         // User ID who made changes
+  changeReason      String?         @db.Text
+  significance      SignificanceLevel
+
+  // Version relationship
+  previousVersionId String?
+  previousVersion   DocumentVersion? @relation("VersionHistory", fields: [previousVersionId], references: [id])
+  nextVersions      DocumentVersion[] @relation("VersionHistory")
+
+  createdAt         DateTime        @default(now())
+
+  @@unique([documentId, versionNumber])
+  @@index([documentId])
+  @@index([changeType])
+  @@index([significance])
+  @@index([createdAt])
+  @@map("document_versions_intelligence")
+}
+
+enum ChangeType {
+  CREATION          // Initial document creation
+  MINOR_EDIT        // Small text changes, typos
+  MAJOR_REVISION    // Significant content changes
+  CORRECTION        // Error corrections
+  AMENDMENT         // Legal amendments
+}
+
+enum SignificanceLevel {
+  CRITICAL          // Contract terms, amounts, dates changed
+  HIGH              // Important clauses or information changed
+  MEDIUM            // Non-critical information updated
+  LOW               // Formatting, typos, minor corrections
+}
+
+// Compliance Check Model - Automated compliance validation
+model ComplianceCheck {
+  id                String          @id @default(uuid())
+  documentId        String
+  transactionId     String?
+
+  // Check results
+  overallStatus     ComplianceStatus
+  checkDate         DateTime        @default(now())
+  checkVersion      String          // Compliance rules version
+
+  // Individual checks (stored as array of check results)
+  checks            Json            @db.JsonB
+  // Example structure: [{
+  //   name: "Required Fields",
+  //   status: "PASS|FAIL|WARNING",
+  //   details: "...",
+  //   affectedFields: []
+  // }]
+
+  // Issue counters
+  criticalIssues    Int             @default(0)
+  warnings          Int             @default(0)
+  suggestions       Int             @default(0)
+
+  // Specific issues
+  missingSignatures String[]
+  missingFields     String[]
+  dateInconsistencies Json?         @db.JsonB
+  formatIssues      String[]
+
+  // Actions and review
+  requiresReview    Boolean         @default(false)
+  reviewedBy        String?         // User ID
+  reviewedAt        DateTime?
+  resolvedAt        DateTime?
+  resolutionNotes   String?         @db.Text
+
+  // Document category specific
+  category          String          // Document category for rules
+  transactionType   String?         // Transaction type for context
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([documentId])
+  @@index([transactionId])
+  @@index([overallStatus])
+  @@index([requiresReview])
+  @@index([checkDate])
+  @@index([category])
+  @@map("compliance_checks")
+}
+
+enum ComplianceStatus {
+  COMPLIANT                 // All checks passed
+  NON_COMPLIANT            // Critical issues found
+  PARTIALLY_COMPLIANT      // Some issues, not critical
+  NEEDS_REVIEW             // Manual review required
+}
+
+// Transaction Documents Model - Track document completeness
+model TransactionDocuments {
+  id                String          @id @default(uuid())
+  transactionId     String          @unique
+  transactionType   TransactionType
+
+  // Document tracking (stored as structured JSON)
+  requiredDocuments Json            @db.JsonB
+  // Example: [{
+  //   name: "Purchase Agreement",
+  //   category: "PURCHASE_AGREEMENT",
+  //   required: true,
+  //   received: true,
+  //   documentId: "uuid",
+  //   receivedDate: "2024-01-01"
+  // }]
+
+  submittedDocuments Json           @db.JsonB
+  // Status tracking for each document
+
+  // Completeness metrics
+  completionPercent Float           @default(0)
+  missingDocuments  String[]
+  pendingDocuments  String[]
+
+  // Status
+  status            DocumentSetStatus
+  lastChecked       DateTime
+
+  // Alerts
+  criticalMissing   Boolean         @default(false)
+  daysUntilDeadline Int?
+  deadline          DateTime?
+
+  // Metadata
+  propertyAddress   String?
+  buyerName         String?
+  sellerName        String?
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([transactionId])
+  @@index([transactionType])
+  @@index([status])
+  @@index([criticalMissing])
+  @@index([deadline])
+  @@map("transaction_documents")
+}
+
+enum TransactionType {
+  PURCHASE          // Home purchase
+  SALE              // Home sale
+  REFINANCE         // Mortgage refinance
+  HELOC             // Home equity line of credit
+  CASH_OUT_REFI     // Cash-out refinance
+  REVERSE_MORTGAGE  // Reverse mortgage
+}
+
+enum DocumentSetStatus {
+  INCOMPLETE        // Missing required documents
+  COMPLETE          // All required documents submitted
+  UNDER_REVIEW      // Being reviewed for compliance
+  APPROVED          // All documents approved
+  REJECTED          // Documents rejected, need resubmission
+}
+
+// Document Relationship Model - Track relationships between documents
+model DocumentRelationship {
+  id                String          @id @default(uuid())
+  sourceDocumentId  String
+  targetDocumentId  String
+  relationshipType  RelationType
+
+  // Relationship details
+  description       String?         @db.Text
+  confidence        Float?          // AI confidence in relationship
+
+  // References (specific sections or clauses)
+  sourceReference   String?         // e.g., "Section 5.2"
+  targetReference   String?         // e.g., "Clause 3.1"
+
+  // Metadata
+  detectedBy        String?         // "manual" or "ai"
+  detectedAt        DateTime        @default(now())
+  verifiedBy        String?         // User ID who verified
+  verifiedAt        DateTime?
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([sourceDocumentId, targetDocumentId, relationshipType])
+  @@index([sourceDocumentId])
+  @@index([targetDocumentId])
+  @@index([relationshipType])
+  @@map("document_relationships")
+}
+
+enum RelationType {
+  REFERENCES        // Document references another
+  SUPERSEDES        // Document replaces another
+  AMENDS            // Document amends another
+  SUPPORTS          // Document provides supporting info
+  CONTRADICTS       // Document contradicts another
+  SUPPLEMENTS       // Document supplements another
+  DEPENDS_ON        // Document depends on another
+}
+
+// Compliance Rule Model - Configurable compliance rules
+model ComplianceRule {
+  id                String          @id @default(uuid())
+
+  // Rule identification
+  name              String          @unique
+  description       String          @db.Text
+  category          String          // Document category this applies to
+  transactionType   String?         // Optional transaction type filter
+
+  // Rule definition
+  ruleType          RuleType
+  ruleConfig        Json            @db.JsonB
+  // Example: {
+  //   field: "buyer_name",
+  //   operator: "exists",
+  //   value: true,
+  //   errorMessage: "Buyer name is required"
+  // }
+
+  // Severity
+  severity          ComplianceSeverity
+
+  // Status
+  enabled           Boolean         @default(true)
+  version           String          @default("1.0")
+
+  // Usage tracking
+  checkCount        Int             @default(0)
+  failureCount      Int             @default(0)
+  lastUsed          DateTime?
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([category])
+  @@index([enabled])
+  @@index([severity])
+  @@map("compliance_rules")
+}
+
+enum RuleType {
+  REQUIRED_FIELD    // Field must exist and have value
+  SIGNATURE         // Signature requirement
+  DATE_CHECK        // Date validation and logic
+  AMOUNT_CHECK      // Amount validation and logic
+  FORMAT_CHECK      // Format validation (email, phone, etc.)
+  CLAUSE_CHECK      // Required clause presence
+  RELATIONSHIP      // Relationship validation between fields
+}
+
+enum ComplianceSeverity {
+  CRITICAL          // Must be fixed before proceeding
+  HIGH              // Important but not blocking
+  MEDIUM            // Should be fixed
+  LOW               // Nice to have
+}
+
+// Document Intelligence Job - Track async processing jobs
+model DocumentIntelligenceJob {
+  id                String          @id @default(uuid())
+  documentId        String
+
+  // Job type
+  jobType           IntelligenceJobType
+
+  // Status
+  status            JobStatus       @default(PENDING)
+  progress          Float           @default(0)  // 0-100
+
+  // Results
+  result            Json?           @db.JsonB
+  error             String?         @db.Text
+
+  // Timing
+  startedAt         DateTime?
+  completedAt       DateTime?
+  duration          Int?            // milliseconds
+
+  // Retry logic
+  attempts          Int             @default(0)
+  maxAttempts       Int             @default(3)
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([documentId])
+  @@index([jobType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("document_intelligence_jobs")
+}
+
+enum IntelligenceJobType {
+  SUMMARIZATION     // Generate document summary
+  CHANGE_DETECTION  // Detect changes between versions
+  COMPLIANCE_CHECK  // Run compliance checks
+  RELATIONSHIP_DETECTION  // Detect document relationships
+  FULL_ANALYSIS     // Complete intelligence analysis
+}
+
+enum JobStatus {
+  PENDING           // Waiting to start
+  RUNNING           // Currently processing
+  COMPLETED         // Successfully completed
+  FAILED            // Failed with error
+  CANCELLED         // Manually cancelled
+}
