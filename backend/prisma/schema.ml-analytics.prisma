@@ -1,0 +1,349 @@
+// ML Analytics Schema
+// Feature store, model registry, predictions, and monitoring
+// Database: PostgreSQL ONLY
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// FEATURE STORE
+// ============================================================
+
+// Feature Store - Feature definitions
+model MLFeature {
+  id                String          @id @default(uuid())
+
+  // Feature Identity
+  featureName       String          @unique
+  featureType       FeatureType
+  category          FeatureCategory
+  description       String          @db.Text
+
+  // Computation Logic
+  sqlQuery          String?         @db.Text
+  pythonFunction    String?         @db.Text
+  dependencies      String[]        // Other features this depends on
+
+  // Configuration
+  dataType          DataType
+  nullable          Boolean         @default(false)
+  defaultValue      String?
+  validationRules   Json?           @db.JsonB // Min/max, regex, etc.
+
+  // Statistics (updated periodically)
+  importance        Float?          // Feature importance score
+  nullRate          Float?          // % of null values
+  meanValue         Float?
+  stdDev            Float?
+  minValue          Float?
+  maxValue          Float?
+
+  // Metadata
+  version           Int             @default(1)
+  deprecated        Boolean         @default(false)
+  createdBy         String
+  lastUpdated       DateTime        @updatedAt
+  createdAt         DateTime        @default(now())
+
+  // Relations
+  featureValues     MLFeatureValue[]
+
+  @@index([featureType])
+  @@index([category])
+  @@index([deprecated])
+  @@map("ml_features")
+}
+
+// Feature Values - Time-series feature store
+model MLFeatureValue {
+  id                String          @id @default(uuid())
+  featureId         String
+
+  // Subject
+  entityType        EntityType      // USER, PROPERTY, TRANSACTION
+  entityId          String
+
+  // Value (stored as JSON for flexibility)
+  value             String          @db.Text
+  computedAt        DateTime        @default(now())
+
+  // Metadata
+  version           Int             @default(1)
+
+  // Relations
+  feature           MLFeature       @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([featureId, entityId, computedAt])
+  @@index([entityType, entityId])
+  @@index([computedAt])
+  @@index([featureId])
+  @@map("ml_feature_values")
+}
+
+// ============================================================
+// MODEL REGISTRY
+// ============================================================
+
+// Model Registry - Track all ML models
+model MLModel {
+  id                String          @id @default(uuid())
+
+  // Model Identity
+  modelName         String
+  modelType         ModelType
+  version           String
+  status            ModelStatus     @default(TRAINING)
+
+  // Model Details
+  algorithm         String          // "RandomForest", "XGBoost", "NeuralNetwork"
+  framework         String          // "scikit-learn", "tensorflow", "pytorch"
+  description       String          @db.Text
+
+  // Training Configuration
+  hyperparameters   Json            @db.JsonB
+  features          String[]        // Feature names used
+  targetVariable    String
+  trainingDataQuery String          @db.Text
+
+  // Performance Metrics
+  accuracy          Float?
+  precision         Float?
+  recall            Float?
+  f1Score           Float?
+  roc_auc           Float?
+  mse               Float?
+  mae               Float?
+  r2Score           Float?
+
+  // Training Metadata
+  trainingStarted   DateTime?
+  trainingCompleted DateTime?
+  trainingDuration  Int?            // seconds
+  trainingDataSize  Int?            // number of samples
+
+  // Model Artifacts
+  modelPath         String          // S3/local path to model file
+  metricsPath       String?         // Path to detailed metrics
+
+  // Deployment
+  deployedAt        DateTime?
+  endpoint          String?         // API endpoint
+  servingLatency    Float?          // Average prediction latency (ms)
+
+  // Monitoring
+  predictionCount   Int             @default(0)
+  lastPredictionAt  DateTime?
+  driftDetected     Boolean         @default(false)
+  driftScore        Float?
+
+  // Metadata
+  createdBy         String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  predictions       MLPrediction[]
+  experiments       MLExperiment[]
+
+  @@unique([modelName, version])
+  @@index([modelType])
+  @@index([status])
+  @@index([modelName])
+  @@map("ml_models")
+}
+
+// ML Experiments - MLflow integration
+model MLExperiment {
+  id                String          @id @default(uuid())
+  modelId           String
+
+  // Experiment Details
+  experimentName    String
+  runId             String          @unique // MLflow run ID
+
+  // Parameters
+  parameters        Json            @db.JsonB
+
+  // Metrics
+  metrics           Json            @db.JsonB
+
+  // Artifacts
+  artifactsPath     String?
+
+  // Timing
+  startTime         DateTime        @default(now())
+  endTime           DateTime?
+  duration          Int?            // seconds
+
+  // Status
+  status            String          // "RUNNING", "FINISHED", "FAILED"
+
+  // Relations
+  model             MLModel         @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@index([experimentName])
+  @@index([status])
+  @@index([modelId])
+  @@map("ml_experiments")
+}
+
+// ============================================================
+// PREDICTIONS
+// ============================================================
+
+// Predictions - Store all model predictions
+model MLPrediction {
+  id                String          @id @default(uuid())
+  modelId           String
+
+  // Subject
+  entityType        EntityType
+  entityId          String
+
+  // Prediction
+  predictionType    PredictionType
+  predictedValue    Float
+  predictedClass    String?
+  confidence        Float           // 0-1
+
+  // Explanation (SHAP values)
+  featureContributions Json?        @db.JsonB
+  topFeatures       Json?           @db.JsonB // Top 5 contributing features
+
+  // Context
+  features          Json            @db.JsonB // Feature values used
+
+  // Metadata
+  predictedAt       DateTime        @default(now())
+  predictionLatency Int?            // milliseconds
+
+  // Feedback
+  actualValue       Float?
+  actualClass       String?
+  feedbackAt        DateTime?
+  correct           Boolean?
+
+  // Relations
+  model             MLModel         @relation(fields: [modelId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([predictionType])
+  @@index([predictedAt])
+  @@index([modelId])
+  @@map("ml_predictions")
+}
+
+// ============================================================
+// MODEL MONITORING
+// ============================================================
+
+// Model Monitoring - Performance tracking
+model MLMonitoring {
+  id                String          @id @default(uuid())
+  modelId           String
+
+  // Time Window
+  periodStart       DateTime
+  periodEnd         DateTime
+
+  // Performance Metrics
+  predictionCount   Int
+  avgConfidence     Float
+  avgLatency        Float
+  errorRate         Float?
+
+  // Data Drift Metrics
+  featureDrift      Json?           @db.JsonB // Drift scores per feature
+  labelDrift        Float?
+  conceptDrift      Boolean         @default(false)
+
+  // Distribution Stats
+  inputDistribution Json?           @db.JsonB
+  outputDistribution Json?          @db.JsonB
+
+  // Alerts
+  alertsTriggered   String[]        @default([])
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+
+  @@index([modelId])
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@map("ml_monitoring")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum FeatureType {
+  NUMERIC
+  CATEGORICAL
+  BOOLEAN
+  DATETIME
+  TEXT
+  ARRAY
+}
+
+enum FeatureCategory {
+  DEMOGRAPHIC
+  BEHAVIORAL
+  TRANSACTIONAL
+  MARKET
+  PROPERTY
+  TEMPORAL
+  ENGAGEMENT
+}
+
+enum DataType {
+  INTEGER
+  FLOAT
+  STRING
+  BOOLEAN
+  DATE
+  TIMESTAMP
+  JSON
+}
+
+enum EntityType {
+  USER
+  PROPERTY
+  TRANSACTION
+  CONTACT
+  DOCUMENT
+}
+
+enum ModelType {
+  MOVE_PROBABILITY
+  TRANSACTION_TYPE
+  CONTACT_TIMING
+  PROPERTY_VALUE
+  EMAIL_ENGAGEMENT
+  CHURN_RISK
+  DOCUMENT_CLASSIFICATION
+}
+
+enum ModelStatus {
+  TRAINING
+  VALIDATING
+  DEPLOYED
+  DEPRECATED
+  FAILED
+}
+
+enum PredictionType {
+  MOVE_PROBABILITY
+  TRANSACTION_TYPE
+  CONTACT_TIMING
+  PROPERTY_VALUE_FORECAST
+  EMAIL_ENGAGEMENT
+  CHURN_RISK
+  DOCUMENT_CLASS
+}
