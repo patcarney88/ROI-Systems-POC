@@ -81,6 +81,7 @@ function AppContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [journeysMenuOpen, setJourneysMenuOpen] = useState(false);
 
   // Data states
   const [documents, setDocuments] = useState<Document[]>([
@@ -226,6 +227,23 @@ function AppContent() {
     };
   }, [profileMenuOpen]);
 
+  // Close journeys menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (journeysMenuOpen) {
+        setJourneysMenuOpen(false);
+      }
+    };
+    
+    if (journeysMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [journeysMenuOpen]);
+
   // Document upload handler
   const handleDocumentUpload = (files: File[], metadata: any) => {
     const newDocs = files.map((file, index) => ({
@@ -334,6 +352,232 @@ function AppContent() {
           </nav>
 
           <div className="nav-actions">
+            {/* Demo Journeys Button */}
+            <button 
+              className="btn btn-primary"
+              onClick={() => setJourneysMenuOpen(!journeysMenuOpen)}
+              style={{ position: 'relative', marginRight: '1rem' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              <span>Demo Journeys</span>
+              
+              {/* Journeys Dropdown */}
+              {journeysMenuOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 10px)',
+                  right: 0,
+                  width: '280px',
+                  background: 'white',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  border: '1px solid #e5e7eb',
+                  zIndex: 1000,
+                  overflow: 'hidden'
+                }} onClick={(e) => e.stopPropagation()}>
+                  <div style={{
+                    padding: '1rem',
+                    borderBottom: '1px solid #e5e7eb',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white'
+                  }}>
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Role Journeys</h3>
+                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', opacity: 0.9 }}>
+                      Navigate to different user experiences
+                    </p>
+                  </div>
+                  
+                  <div style={{ padding: '0.5rem 0' }}>
+                    <Link 
+                      to="/dashboard/title-agent"
+                      onClick={() => setJourneysMenuOpen(false)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.75rem 1rem',
+                        textDecoration: 'none',
+                        color: '#374151',
+                        fontSize: '0.875rem',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    >
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white'
+                      }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: '600' }}>Title Agent</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Document management</div>
+                      </div>
+                    </Link>
+                    
+                    <Link 
+                      to="/dashboard/realtor/communications"
+                      onClick={() => setJourneysMenuOpen(false)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.75rem 1rem',
+                        textDecoration: 'none',
+                        color: '#374151',
+                        fontSize: '0.875rem',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    >
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white'
+                      }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: '600' }}>Realtor - Communications</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Client messaging</div>
+                      </div>
+                    </Link>
+                    
+                    <Link 
+                      to="/dashboard/realtor/analytics"
+                      onClick={() => setJourneysMenuOpen(false)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.75rem 1rem',
+                        textDecoration: 'none',
+                        color: '#374151',
+                        fontSize: '0.875rem',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    >
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white'
+                      }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: '600' }}>Realtor - Analytics</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Performance insights</div>
+                      </div>
+                    </Link>
+                    
+                    <Link 
+                      to="/dashboard/marketing"
+                      onClick={() => setJourneysMenuOpen(false)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.75rem 1rem',
+                        textDecoration: 'none',
+                        color: '#374151',
+                        fontSize: '0.875rem',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    >
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white'
+                      }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                          <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                        </svg>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: '600' }}>Marketing Center</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Campaign management</div>
+                      </div>
+                    </Link>
+                    
+                    <Link 
+                      to="/dashboard/homeowner"
+                      onClick={() => setJourneysMenuOpen(false)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.75rem 1rem',
+                        textDecoration: 'none',
+                        color: '#374151',
+                        fontSize: '0.875rem',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    >
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white'
+                      }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: '600' }}>Homeowner Portal</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Consumer experience</div>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </button>
+            
             <button className="nav-action-btn">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8"></circle>
