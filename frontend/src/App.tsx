@@ -595,7 +595,10 @@ function AppContent() {
             </button>
             <button 
               className="nav-action-btn" 
-              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setNotificationsOpen(!notificationsOpen);
+              }}
               style={{ position: 'relative' }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -709,7 +712,10 @@ function AppContent() {
             </button>
             <button 
               className="nav-action-btn avatar"
-              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setProfileMenuOpen(!profileMenuOpen);
+              }}
               style={{ position: 'relative' }}
             >
               <span>AG</span>
