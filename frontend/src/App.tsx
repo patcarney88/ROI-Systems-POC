@@ -80,6 +80,7 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   // Data states
   const [documents, setDocuments] = useState<Document[]>([
@@ -207,6 +208,23 @@ function AppContent() {
       document.removeEventListener('click', handleClickOutside);
     };
   }, [notificationsOpen]);
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (profileMenuOpen) {
+        setProfileMenuOpen(false);
+      }
+    };
+    
+    if (profileMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [profileMenuOpen]);
 
   // Document upload handler
   const handleDocumentUpload = (files: File[], metadata: any) => {
@@ -436,8 +454,168 @@ function AppContent() {
                 </div>
               )}
             </button>
-            <button className="nav-action-btn avatar">
+            <button 
+              className="nav-action-btn avatar"
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              style={{ position: 'relative' }}
+            >
               <span>AG</span>
+              
+              {/* Profile Dropdown */}
+              {profileMenuOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 10px)',
+                  right: 0,
+                  width: '240px',
+                  background: 'white',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  border: '1px solid #e5e7eb',
+                  zIndex: 1000,
+                  overflow: 'hidden'
+                }} onClick={(e) => e.stopPropagation()}>
+                  {/* Profile Header */}
+                  <div style={{
+                    padding: '1rem',
+                    borderBottom: '1px solid #e5e7eb',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white'
+                  }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.25rem',
+                      fontWeight: '600',
+                      marginBottom: '0.5rem',
+                      border: '2px solid rgba(255,255,255,0.3)'
+                    }}>
+                      AG
+                    </div>
+                    <div style={{ fontWeight: '600', fontSize: '1rem' }}>Agent User</div>
+                    <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>agent@roisystems.com</div>
+                  </div>
+                  
+                  {/* Menu Items */}
+                  <div style={{ padding: '0.5rem 0' }}>
+                    <button style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      background: 'none',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      fontSize: '0.875rem',
+                      color: '#374151',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      // Navigate to profile
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      My Profile
+                    </button>
+                    
+                    <button style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      background: 'none',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      fontSize: '0.875rem',
+                      color: '#374151',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m-6-6h6m6 0h6"></path>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                      </svg>
+                      Settings
+                    </button>
+                    
+                    <button style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      background: 'none',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      fontSize: '0.875rem',
+                      color: '#374151',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16v-4m0-4h.01"></path>
+                      </svg>
+                      Help & Support
+                    </button>
+                    
+                    <div style={{ height: '1px', background: '#e5e7eb', margin: '0.5rem 0' }} />
+                    
+                    <button style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      background: 'none',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      fontSize: '0.875rem',
+                      color: '#ef4444',
+                      fontWeight: '500',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      // Handle logout
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                      </svg>
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </button>
             <button 
               className={`mobile-menu-toggle ${mobileMenuOpen ? 'open' : ''}`}
