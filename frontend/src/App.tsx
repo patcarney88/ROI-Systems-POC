@@ -7,6 +7,7 @@ import './styles/RealtorDashboard.css'
 import './styles/Auth.css'
 import './styles/CommunicationCenter.css'
 import './styles/AnalyticsDashboard.css'
+import './styles/HomeownerPortal.css'
 import { AuthProvider } from './contexts/AuthContext'
 import Dashboard from './pages/Dashboard'
 import Documents from './pages/Documents'
@@ -23,6 +24,7 @@ import ResetPassword from './pages/ResetPassword'
 import VerifyEmail from './pages/VerifyEmail'
 import CommunicationCenter from './pages/CommunicationCenter'
 import AnalyticsDashboard from './pages/AnalyticsDashboard'
+import HomeownerPortal from './pages/HomeownerPortal'
 
 interface Document {
   id: string;
@@ -442,6 +444,7 @@ function AppContent() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/dashboard/realtor/communications" element={<CommunicationCenter />} />
           <Route path="/dashboard/realtor/analytics" element={<AnalyticsDashboard />} />
+          <Route path="/dashboard/homeowner" element={<HomeownerPortal />} />
         </Routes>
       </main>
 
