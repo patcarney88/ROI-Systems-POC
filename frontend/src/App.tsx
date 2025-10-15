@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
 import './styles/TitleAgentDashboard.css'
 import './styles/DocumentManagement.css'
@@ -28,6 +28,9 @@ import CommunicationCenter from './pages/CommunicationCenter'
 import AnalyticsDashboard from './pages/AnalyticsDashboard'
 import HomeownerPortal from './pages/HomeownerPortal'
 import MarketingCenter from './pages/MarketingCenter'
+import MyProfile from './pages/MyProfile'
+import Settings from './pages/Settings'
+import HelpSupport from './pages/HelpSupport'
 
 interface Document {
   id: string;
@@ -77,6 +80,7 @@ interface Stats {
 
 function AppContent() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -780,7 +784,7 @@ function AppContent() {
                     onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                     onClick={() => {
                       setProfileMenuOpen(false);
-                      // Navigate to profile
+                      navigate('/profile');
                     }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -807,6 +811,7 @@ function AppContent() {
                     onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                     onClick={() => {
                       setProfileMenuOpen(false);
+                      navigate('/settings');
                     }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -834,6 +839,7 @@ function AppContent() {
                     onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                     onClick={() => {
                       setProfileMenuOpen(false);
+                      navigate('/help');
                     }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -1018,6 +1024,9 @@ function AppContent() {
           <Route path="/dashboard/realtor/analytics" element={<AnalyticsDashboard />} />
           <Route path="/dashboard/homeowner" element={<HomeownerPortal />} />
           <Route path="/dashboard/marketing" element={<MarketingCenter />} />
+          <Route path="/profile" element={<MyProfile />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/help" element={<HelpSupport />} />
         </Routes>
       </main>
 
