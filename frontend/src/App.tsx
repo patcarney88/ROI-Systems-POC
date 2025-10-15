@@ -4,6 +4,8 @@ import './App.css'
 import './styles/TitleAgentDashboard.css'
 import './styles/DocumentManagement.css'
 import './styles/RealtorDashboard.css'
+import './styles/Auth.css'
+import { AuthProvider } from './contexts/AuthContext'
 import Dashboard from './pages/Dashboard'
 import Documents from './pages/Documents'
 import Clients from './pages/Clients'
@@ -12,6 +14,11 @@ import Analytics from './pages/Analytics'
 import TitleAgentDashboard from './pages/TitleAgentDashboard'
 import DocumentManagement from './pages/DocumentManagement'
 import RealtorDashboard from './pages/RealtorDashboard'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import VerifyEmail from './pages/VerifyEmail'
 
 interface Document {
   id: string;
@@ -424,6 +431,11 @@ function AppContent() {
               <RealtorDashboard />
             }
           />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
         </Routes>
       </main>
 
@@ -480,10 +492,12 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
 
-export default App
+export default App;
