@@ -10,6 +10,7 @@ import './styles/AnalyticsDashboard.css'
 import './styles/HomeownerPortal.css'
 import './styles/MarketingCenter.css'
 import { AuthProvider } from './contexts/AuthContext'
+import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
 import Documents from './pages/Documents'
 import Clients from './pages/Clients'
@@ -318,9 +319,13 @@ function AppContent() {
     );
   }
 
+  // Hide navigation on landing page
+  const isLandingPage = location.pathname === '/';
+
   return (
     <div className="app-wrapper">
       {/* Navigation Header */}
+      {!isLandingPage && (
       <header className="main-nav">
         <div className="nav-container">
           <Link to="/" className="nav-logo">
@@ -873,8 +878,10 @@ function AppContent() {
           </div>
         </div>
       </header>
+      )}
 
       {/* Mobile Menu */}
+      {!isLandingPage && (
       <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
         <div className="mobile-nav-links">
           <Link 
@@ -914,12 +921,17 @@ function AppContent() {
           </Link>
         </div>
       </div>
+      )}
 
       {/* Main Content with Routes */}
       <main>
         <Routes>
           <Route
             path="/"
+            element={<LandingPage />}
+          />
+          <Route
+            path="/dashboard"
             element={
               <Dashboard
                 documents={documents}
