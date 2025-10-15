@@ -79,6 +79,7 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Data states
   const [documents, setDocuments] = useState<Document[]>([
@@ -186,8 +187,26 @@ function AppContent() {
   };
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 800);
+    const timer = setTimeout(() => setLoading(false), 1000);
+    return () => clearTimeout(timer);
   }, []);
+
+  // Close notifications dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (notificationsOpen) {
+        setNotificationsOpen(false);
+      }
+    };
+    
+    if (notificationsOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [notificationsOpen]);
 
   // Document upload handler
   const handleDocumentUpload = (files: File[], metadata: any) => {
@@ -303,12 +322,119 @@ function AppContent() {
                 <path d="m21 21-4.35-4.35"></path>
               </svg>
             </button>
-            <button className="nav-action-btn">
+            <button 
+              className="nav-action-btn" 
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              style={{ position: 'relative' }}
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
               {notifications.length > 0 && <span className="notification-badge">{notifications.length}</span>}
+              
+              {/* Notifications Dropdown */}
+              {notificationsOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 10px)',
+                  right: 0,
+                  width: '320px',
+                  maxHeight: '400px',
+                  background: 'white',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  border: '1px solid #e5e7eb',
+                  zIndex: 1000,
+                  overflow: 'hidden'
+                }} onClick={(e) => e.stopPropagation()}>
+                  <div style={{
+                    padding: '1rem',
+                    borderBottom: '1px solid #e5e7eb',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Notifications</h3>
+                    {notifications.length > 0 && (
+                      <button 
+                        onClick={() => setNotifications([])}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#3b82f6',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          fontWeight: '500'
+                        }}
+                      >
+                        Clear all
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
+                    {notifications.length === 0 ? (
+                      <div style={{
+                        padding: '2rem',
+                        textAlign: 'center',
+                        color: '#6b7280'
+                      }}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ margin: '0 auto 1rem' }}>
+                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <p style={{ margin: 0, fontSize: '0.875rem' }}>No notifications</p>
+                      </div>
+                    ) : (
+                      notifications.map((notification, index) => (
+                        <div 
+                          key={index}
+                          style={{
+                            padding: '1rem',
+                            borderBottom: index < notifications.length - 1 ? '1px solid #f3f4f6' : 'none',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                        >
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.75rem'
+                          }}>
+                            <div style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: '#3b82f6',
+                              marginTop: '0.5rem',
+                              flexShrink: 0
+                            }} />
+                            <div style={{ flex: 1 }}>
+                              <p style={{
+                                margin: 0,
+                                fontSize: '0.875rem',
+                                color: '#111827',
+                                lineHeight: '1.5'
+                              }}>
+                                {notification}
+                              </p>
+                              <p style={{
+                                margin: '0.25rem 0 0 0',
+                                fontSize: '0.75rem',
+                                color: '#6b7280'
+                              }}>
+                                Just now
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </button>
             <button className="nav-action-btn avatar">
               <span>AG</span>
