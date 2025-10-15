@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FileText, Users, TrendingUp, Mail, Clock, Shield, Zap, BarChart3, MessageSquare, Home, ArrowRight, Star, Sparkles } from 'lucide-react';
+import { FileText, Users, TrendingUp, Clock, Shield, Zap, BarChart3, ArrowRight, Star, Sparkles } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -116,7 +116,7 @@ export default function LandingPage() {
             fontWeight: '500'
           }}>
             <Star size={16} fill="#667eea" color="#667eea" />
-            <span>Trusted by 500+ Real Estate Professionals</span>
+            <span>Trusted by 500+ Title Agencies Nationwide</span>
           </div>
 
           <h1 style={{
@@ -130,18 +130,18 @@ export default function LandingPage() {
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
           }}>
-            Transform Your<br />Real Estate Business
+            The Modern Title Agent's<br />Complete Platform
           </h1>
           
           <p style={{
             fontSize: '1.375rem',
             marginBottom: '3rem',
             color: 'rgba(255,255,255,0.7)',
-            maxWidth: '700px',
+            maxWidth: '750px',
             margin: '0 auto 3rem',
             lineHeight: '1.6'
           }}>
-            AI-powered document management, client engagement, and marketing automation built for modern real estate professionals
+            AI-powered document management, automated workflows, and seamless collaboration tools built specifically for title agencies and escrow professionals
           </p>
           
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '4rem' }}>
@@ -286,7 +286,7 @@ export default function LandingPage() {
               Everything You Need to Succeed
             </h2>
             <p style={{ fontSize: '1.25rem', color: 'rgba(255,255,255,0.6)', maxWidth: '700px', margin: '0 auto', lineHeight: '1.6' }}>
-              Powerful tools designed specifically for real estate professionals
+              Purpose-built tools for title agencies, escrow officers, and closing coordinators
             </p>
           </div>
 
@@ -298,38 +298,38 @@ export default function LandingPage() {
             {[
               {
                 icon: FileText,
-                title: 'AI Document Management',
-                description: 'Automatically extract, analyze, and organize real estate documents with advanced AI technology.',
+                title: 'Intelligent Document Processing',
+                description: 'Automatically extract data from title documents, deeds, and closing files. AI-powered OCR eliminates manual data entry.',
                 gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
               },
               {
-                icon: MessageSquare,
-                title: 'Smart Communication Hub',
-                description: 'Centralized inbox with AI-powered templates and automated responses for faster client communication.',
+                icon: Shield,
+                title: 'Compliance & Security',
+                description: 'Bank-level encryption, audit trails, and automated compliance checks. Meet all ALTA Best Practices requirements.',
                 gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
               },
               {
-                icon: Mail,
-                title: 'Marketing Automation',
-                description: 'Create and launch personalized email campaigns that engage clients and drive conversions.',
+                icon: Users,
+                title: 'Realtor & Lender Collaboration',
+                description: 'Seamless communication with realtors, lenders, and buyers. Real-time status updates and document sharing.',
                 gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
               },
               {
-                icon: BarChart3,
-                title: 'Advanced Analytics',
-                description: 'Real-time insights into your business performance, client engagement, and revenue opportunities.',
+                icon: Zap,
+                title: 'Automated Workflows',
+                description: 'Streamline title searches, commitments, and closing processes. Reduce closing time by 40%.',
                 gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
               },
               {
-                icon: Users,
-                title: 'Client Relationship Management',
-                description: 'Track every interaction, manage relationships, and never miss a follow-up opportunity.',
+                icon: BarChart3,
+                title: 'Title Agency Analytics',
+                description: 'Track order volume, revenue per file, and team productivity. Make data-driven decisions.',
                 gradient: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)'
               },
               {
-                icon: Home,
-                title: 'Homeowner Portal',
-                description: 'Give your clients a beautiful portal to track their property value and stay connected.',
+                icon: Clock,
+                title: 'Faster Closings',
+                description: 'Digital signatures, automated reminders, and instant notifications keep deals moving forward.',
                 gradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
               }
             ].map((feature, index) => (
@@ -434,7 +434,7 @@ export default function LandingPage() {
               Why Choose ROI Systems?
             </h2>
             <p style={{ fontSize: '1.25rem', color: 'rgba(255,255,255,0.6)', lineHeight: '1.6' }}>
-              Built by real estate professionals, for real estate professionals
+              Built by title professionals, for title professionals
             </p>
           </div>
 
@@ -547,7 +547,7 @@ export default function LandingPage() {
             Ready to Transform Your Business?
           </h2>
           <p style={{ fontSize: '1.375rem', marginBottom: '3rem', opacity: 0.95, lineHeight: '1.6' }}>
-            Join hundreds of successful real estate professionals using ROI Systems to save time, increase revenue, and delight their clients
+            Join hundreds of title agencies using ROI Systems to close faster, reduce errors, and scale operations
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link to="/dashboard/title-agent" style={{
@@ -625,7 +625,7 @@ export default function LandingPage() {
             color: 'rgba(255,255,255,0.4)',
             fontSize: '0.875rem'
           }}>
-            © 2025 ROI Systems. All rights reserved. Built for real estate professionals.
+            © 2025 ROI Systems. All rights reserved. Built for title agencies and escrow professionals.
           </div>
         </div>
       </footer>
