@@ -388,7 +388,7 @@ function AppContent() {
                   borderRadius: '12px',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
                   border: '1px solid #e5e7eb',
-                  zIndex: 1000,
+                  zIndex: 10001,
                   overflow: 'hidden'
                 }} onClick={(e) => e.stopPropagation()}>
                   <div style={{
@@ -623,7 +623,7 @@ function AppContent() {
                   borderRadius: '12px',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
                   border: '1px solid #e5e7eb',
-                  zIndex: 1000,
+                  zIndex: 10001,
                   overflow: 'hidden'
                 }} onClick={(e) => e.stopPropagation()}>
                   <div style={{
@@ -735,7 +735,7 @@ function AppContent() {
                   borderRadius: '12px',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
                   border: '1px solid #e5e7eb',
-                  zIndex: 1000,
+                  zIndex: 10001,
                   overflow: 'hidden'
                 }} onClick={(e) => e.stopPropagation()}>
                   {/* Profile Header */}
