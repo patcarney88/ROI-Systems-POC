@@ -117,46 +117,6 @@ export default function TitleAgentDashboard() {
 
   return (
     <div className="title-agent-dashboard">
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="header-content">
-          <button 
-            className="mobile-menu-btn"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-
-          <div className="header-logo">
-            <Home size={28} />
-            <span>ROI Systems</span>
-          </div>
-
-          <div className="header-search">
-            <Search size={20} />
-            <input 
-              type="text" 
-              placeholder="Search transactions, clients, documents..." 
-              aria-label="Search"
-            />
-          </div>
-
-          <div className="header-actions">
-            <button className="notification-btn" aria-label="Notifications">
-              <Bell size={20} />
-              {notifications > 0 && <span className="notification-badge">{notifications}</span>}
-            </button>
-            
-            <div className="user-menu">
-              <div className="user-avatar">AG</div>
-              <span className="user-name">Agent Name</span>
-              <ChevronDown size={16} />
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="dashboard-layout">
         {/* Sidebar */}
         <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : 'closed'} ${mobileMenuOpen ? 'mobile-open' : ''}`}>
