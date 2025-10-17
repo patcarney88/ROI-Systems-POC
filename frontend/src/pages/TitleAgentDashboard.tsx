@@ -121,31 +121,31 @@ export default function TitleAgentDashboard() {
         {/* Sidebar */}
         <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : 'closed'} ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           <nav className="sidebar-nav">
-            <a href="#" className="nav-item active">
+            <a href="#overview" className="nav-item active" onClick={() => setMobileMenuOpen(false)}>
               <Home size={20} />
               <span>Dashboard</span>
             </a>
-            <a href="#" className="nav-item">
+            <a href="#overview" className="nav-item" onClick={() => setMobileMenuOpen(false)}>
               <FileText size={20} />
               <span>Transactions</span>
             </a>
-            <a href="#" className="nav-item">
+            <a href="#documents-processing" className="nav-item" onClick={() => setMobileMenuOpen(false)}>
               <FileText size={20} />
               <span>Documents</span>
             </a>
-            <a href="#" className="nav-item">
+            <a href="#engagement-metrics" className="nav-item" onClick={() => setMobileMenuOpen(false)}>
               <Users size={20} />
               <span>Clients</span>
             </a>
-            <a href="#" className="nav-item">
+            <a href="#marketing-performance" className="nav-item" onClick={() => setMobileMenuOpen(false)}>
               <Mail size={20} />
               <span>Marketing</span>
             </a>
-            <a href="#" className="nav-item">
+            <a href="#alerts" className="nav-item" onClick={() => setMobileMenuOpen(false)}>
               <Bell size={20} />
               <span>Alerts</span>
             </a>
-            <a href="#" className="nav-item">
+            <a href="#engagement-metrics" className="nav-item" onClick={() => setMobileMenuOpen(false)}>
               <BarChart3 size={20} />
               <span>Reports</span>
             </a>
@@ -168,7 +168,7 @@ export default function TitleAgentDashboard() {
           </div>
 
           {/* Transaction Overview Widget */}
-          <section className="widget-section">
+          <section className="widget-section" id="overview">
             <h2 className="widget-title">Transaction Overview</h2>
             <div className="stats-grid">
               <div className="stat-card gradient-blue">
@@ -222,7 +222,7 @@ export default function TitleAgentDashboard() {
           </section>
 
           {/* Instant Business Alerts Widget */}
-          <section className="widget-section">
+          <section className="widget-section" id="alerts">
             <div className="widget-header">
               <h2 className="widget-title">Instant Business Alerts</h2>
               <button className="btn-secondary-sm">View All</button>
@@ -265,7 +265,7 @@ export default function TitleAgentDashboard() {
 
           <div className="widget-row">
             {/* Document Processing Status */}
-            <section className="widget-section widget-half">
+            <section className="widget-section widget-half" id="documents-processing">
               <h2 className="widget-title">Document Processing</h2>
               
               <div 
@@ -308,7 +308,7 @@ export default function TitleAgentDashboard() {
             </section>
 
             {/* Forever Marketing Performance */}
-            <section className="widget-section widget-half">
+            <section className="widget-section widget-half" id="marketing-performance">
               <h2 className="widget-title">Forever Marketing Performance</h2>
               
               <div className="marketing-metrics">
@@ -359,7 +359,7 @@ export default function TitleAgentDashboard() {
           </div>
 
           {/* Client Engagement Metrics */}
-          <section className="widget-section">
+          <section className="widget-section" id="engagement-metrics">
             <h2 className="widget-title">Client Engagement Metrics</h2>
             
             <div className="charts-grid">
@@ -385,18 +385,18 @@ export default function TitleAgentDashboard() {
               <div className="chart-container">
                 <h3>Document Access Frequency</h3>
                 <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
+                  <PieChart margin={{ top: 0, right: 8, bottom: 0, left: 8 }}>
                     <Pie
                       data={documentAccessData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
+                      label={false}
+                      outerRadius={70}
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {documentAccessData.map((entry, index) => (
+                      {documentAccessData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>

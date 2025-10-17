@@ -165,10 +165,14 @@ export default function CommunicationCenter() {
   const [isMobileView, setIsMobileView] = useState(false);
   const [showConversationList, setShowConversationList] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = messagesContainerRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -378,7 +382,7 @@ export default function CommunicationCenter() {
             </div>
           </div>
 
-          <div className="messages-container">
+          <div className="messages-container" ref={messagesContainerRef}>
             {messages
               .filter(msg => msg.conversationId === selectedConversation.id)
               .map(message => (

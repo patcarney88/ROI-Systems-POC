@@ -516,6 +516,57 @@ html {
   width: 100%;
 }
 
+/* === Page Layout (Internal Pages) === */
+.page-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-6);
+  width: 100%;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-4xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: var(--leading-tight);
+}
+
+.page-subtitle {
+  font-size: var(--font-lg);
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+}
+
+.filters-section {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-primary);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+}
+
 /* === Section Headers === */
 .section-header {
   margin-bottom: var(--space-8);
