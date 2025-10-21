@@ -1,0 +1,742 @@
+// Prisma Schema for Document Classification & Processing
+// Database: PostgreSQL (AWS RDS)
+// Features: ML-based classification, OCR processing, audit trail
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// DOCUMENT CLASSIFICATION MODELS
+// ============================================================================
+
+model DocumentClassification {
+  id                String          @id @default(uuid())
+  documentId        String
+
+  // Classification Results
+  category          DocumentCategory
+  confidence        Float           // 0-1 confidence score
+  modelVersion      String
+  processingTime    Int             // milliseconds
+  status            ProcessingStatus @default(PENDING)
+
+  // Secondary predictions (top 3 alternatives)
+  secondaryPredictions Json?        @db.JsonB // { predictions: [{ category, confidence }] }
+
+  // Feature vector for model explainability
+  featureVector     Json?           @db.JsonB
+  topFeatures       Json?           @db.JsonB // Top contributing features
+
+  // Manual review and correction
+  requiresReview    Boolean         @default(false)
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  correctedCategory DocumentCategory?
+  correctionReason  String?         @db.Text
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([documentId])
+  @@index([category])
+  @@index([status])
+  @@index([requiresReview])
+  @@index([modelVersion])
+  @@index([createdAt])
+  @@map("document_classifications")
+}
+
+enum DocumentCategory {
+  // Title Documents
+  DEED
+  MORTGAGE
+  TITLE_INSURANCE
+  TITLE_COMMITMENT
+  SETTLEMENT_STATEMENT
+
+  // Financial Documents
+  TAX_RETURN
+  BANK_STATEMENT
+  PAY_STUB
+  W2_FORM
+  FORM_1099
+
+  // Legal Documents
+  PURCHASE_AGREEMENT
+  LISTING_AGREEMENT
+  POWER_OF_ATTORNEY
+  AFFIDAVIT
+  DIVORCE_DECREE
+
+  // Property Documents
+  PROPERTY_APPRAISAL
+  HOME_INSPECTION
+  SURVEY
+  HOMEOWNER_INSURANCE
+
+  // Identification
+  DRIVERS_LICENSE
+  PASSPORT
+  SOCIAL_SECURITY_CARD
+
+  // Other
+  OTHER
+  UNKNOWN
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REQUIRES_REVIEW
+}
+
+// ============================================================================
+// DOCUMENT PROCESSING PIPELINE
+// ============================================================================
+
+model DocumentProcessingLog {
+  id                String          @id @default(uuid())
+  documentId        String
+
+  // Pipeline Stage
+  stage             ProcessingStage
+  status            ProcessingStatus
+
+  // Performance Metrics
+  duration          Int             // milliseconds
+  cpuUsage          Float?
+  memoryUsage       Float?
+
+  // Error Handling
+  errorMessage      String?         @db.Text
+  errorStack        String?         @db.Text
+  retryCount        Int             @default(0)
+
+  // Additional Context
+  metadata          Json?           @db.JsonB
+
+  // Timestamps
+  startedAt         DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime        @default(now())
+
+  @@index([documentId])
+  @@index([stage])
+  @@index([status])
+  @@index([createdAt])
+  @@map("document_processing_logs")
+}
+
+enum ProcessingStage {
+  INGESTION
+  FORMAT_DETECTION
+  PREPROCESSING
+  OCR
+  CLASSIFICATION
+  EXTRACTION
+  VALIDATION
+  STORAGE
+  NOTIFICATION
+}
+
+// ============================================================================
+// ML MODEL MANAGEMENT
+// ============================================================================
+
+model MLModelVersion {
+  id                String          @id @default(uuid())
+
+  // Model Identification
+  modelName         String
+  version           String          @unique
+  modelType         String          // "CNN", "ResNet50", "EfficientNet-B3"
+  framework         String          // "PyTorch", "TensorFlow"
+
+  // Performance Metrics
+  accuracy          Float
+  precision         Float
+  recall            Float
+  f1Score           Float
+
+  // Per-class metrics
+  classMetrics      Json            @db.JsonB // { "DEED": { precision, recall, f1 }, ... }
+  confusionMatrix   Json            @db.JsonB
+
+  // Training Information
+  trainingDataSize  Int
+  validationAccuracy Float
+  testAccuracy      Float
+  trainingDuration  Int             // seconds
+  hyperparameters   Json            @db.JsonB
+
+  // Data Augmentation
+  augmentationConfig Json?          @db.JsonB
+
+  // Deployment
+  modelPath         String          // S3 path
+  weightsChecksum   String          // SHA-256 checksum
+  status            ModelStatus     @default(TRAINING)
+  deployedAt        DateTime?
+  retiredAt         DateTime?
+
+  // Usage Statistics
+  predictionCount   Int             @default(0)
+  avgLatency        Float?          // milliseconds
+  p95Latency        Float?
+  p99Latency        Float?
+  errorRate         Float?
+
+  // Model Drift Detection
+  driftDetected     Boolean         @default(false)
+  driftScore        Float?
+  lastDriftCheck    DateTime?
+
+  // Metadata
+  description       String?         @db.Text
+  tags              String[]
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  predictions       DocumentClassification[]
+
+  @@index([modelName])
+  @@index([status])
+  @@index([version])
+  @@index([deployedAt])
+  @@map("ml_model_versions")
+}
+
+enum ModelStatus {
+  TRAINING
+  VALIDATING
+  DEPLOYED
+  SHADOW_MODE
+  RETIRED
+  FAILED
+}
+
+// ============================================================================
+// TRAINING DATA MANAGEMENT
+// ============================================================================
+
+model TrainingDataset {
+  id                String          @id @default(uuid())
+
+  // Dataset Information
+  name              String          @unique
+  description       String?         @db.Text
+  version           String
+
+  // Dataset Statistics
+  totalSamples      Int
+  classDistribution Json            @db.JsonB // { "DEED": 1234, "MORTGAGE": 2345, ... }
+
+  // Data Quality
+  qualityScore      Float           // 0-1
+  annotationQuality Float?          // 0-1
+
+  // Storage
+  dataPath          String          // S3 path
+  dataSize          BigInt          // bytes
+  dataChecksum      String
+
+  // Split Information
+  trainSize         Int
+  valSize           Int
+  testSize          Int
+  splitStrategy     String          // "stratified", "random", "temporal"
+
+  // Status
+  status            String          @default("CREATED") // CREATED, VALIDATED, APPROVED, ARCHIVED
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([name])
+  @@index([version])
+  @@index([status])
+  @@map("training_datasets")
+}
+
+// ============================================================================
+// ANNOTATION & REVIEW
+// ============================================================================
+
+model DocumentAnnotation {
+  id                String          @id @default(uuid())
+  documentId        String
+
+  // Annotation Details
+  annotatedCategory DocumentCategory
+  confidence        Float           @default(1.0)
+  annotatorId       String
+  annotatorType     String          // "HUMAN", "MODEL", "HYBRID"
+
+  // Quality Metrics
+  reviewStatus      String          @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedBy        String?
+  reviewedAt        DateTime?
+
+  // Disagreement Resolution
+  isDisagreement    Boolean         @default(false)
+  originalPrediction DocumentCategory?
+  resolutionNotes   String?         @db.Text
+
+  // Metadata
+  metadata          Json?           @db.JsonB
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([documentId])
+  @@index([annotatorId])
+  @@index([reviewStatus])
+  @@index([isDisagreement])
+  @@map("document_annotations")
+}
+
+// ============================================================================
+// MODEL PERFORMANCE TRACKING
+// ============================================================================
+
+model ModelPredictionLog {
+  id                String          @id @default(uuid())
+
+  // Prediction Context
+  modelVersion      String
+  documentId        String
+
+  // Prediction Results
+  predictedCategory DocumentCategory
+  confidence        Float
+  latency           Int             // milliseconds
+
+  // Actual Result (for accuracy tracking)
+  actualCategory    DocumentCategory?
+  isCorrect         Boolean?
+
+  // Feature Importance
+  topFeatures       Json?           @db.JsonB
+
+  // Timestamps
+  predictedAt       DateTime        @default(now())
+  verifiedAt        DateTime?
+
+  @@index([modelVersion])
+  @@index([documentId])
+  @@index([predictedAt])
+  @@index([isCorrect])
+  @@map("model_prediction_logs")
+}
+
+// ============================================================================
+// PREPROCESSING CACHE
+// ============================================================================
+
+model DocumentPreprocessingCache {
+  id                String          @id @default(uuid())
+  documentId        String          @unique
+
+  // Preprocessed Data
+  preprocessedPath  String          // S3 path to preprocessed image
+  imageSize         Json            @db.JsonB // { width, height, channels }
+  normalizedData    Json?           @db.JsonB // Normalized pixel values (if needed)
+
+  // Preprocessing Metadata
+  preprocessingSteps Json           @db.JsonB // Array of applied transformations
+  checksum          String
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  expiresAt         DateTime        // Cache expiry
+
+  @@index([documentId])
+  @@index([expiresAt])
+  @@map("document_preprocessing_cache")
+}
+
+// ============================================================================
+// MODEL A/B TESTING
+// ============================================================================
+
+model ModelExperiment {
+  id                String          @id @default(uuid())
+
+  // Experiment Configuration
+  name              String          @unique
+  description       String?         @db.Text
+
+  // Models Being Tested
+  controlModelVersion String
+  experimentModelVersion String
+
+  // Traffic Split
+  trafficSplit      Float           @default(0.5) // 0-1, % to experiment
+
+  // Status
+  status            String          @default("DRAFT") // DRAFT, RUNNING, PAUSED, COMPLETED
+
+  // Results
+  controlMetrics    Json?           @db.JsonB
+  experimentMetrics Json?           @db.JsonB
+  statisticalSignificance Float?
+  winner            String?         // "control", "experiment", "no_difference"
+
+  // Duration
+  startedAt         DateTime?
+  endedAt           DateTime?
+  plannedDuration   Int?            // days
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([name])
+  @@index([status])
+  @@map("model_experiments")
+}
+
+// ============================================================================
+// OCR & DATA EXTRACTION MODELS
+// ============================================================================
+
+// Document OCR Results (Hybrid: Tesseract + AWS Textract)
+model DocumentOCR {
+  id                String          @id @default(uuid())
+  documentId        String
+  ocrProvider       OCRProvider
+  fullText          String          @db.Text
+  confidence        Float           // Average confidence 0-1
+  pageCount         Int
+  processingTime    Int             // milliseconds
+  cost              Decimal?        @db.Decimal(10, 4)  // USD
+  language          String          @default("en")
+
+  // Page-level OCR data
+  pages             Json            @db.JsonB
+
+  // Processing status
+  status            ProcessingStatus @default(COMPLETED)
+  errorMessage      String?         @db.Text
+
+  // Preprocessing metadata
+  preprocessingApplied Boolean       @default(false)
+  preprocessingSteps   String[]      // ["deskew", "denoise", "threshold"]
+
+  // Fallback tracking
+  fallbackUsed      Boolean         @default(false)
+  fallbackReason    String?
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  entities          ExtractedEntity[]
+  keyValues         ExtractedKeyValue[]
+  tables            ExtractedTable[]
+  signatures        SignatureDetection[]
+
+  @@index([documentId])
+  @@index([ocrProvider])
+  @@index([status])
+  @@index([createdAt])
+  @@map("document_ocr")
+}
+
+enum OCRProvider {
+  TESSERACT
+  AWS_TEXTRACT
+  HYBRID
+}
+
+// ============================================================================
+// NAMED ENTITY RECOGNITION (NER)
+// ============================================================================
+
+// Extracted Entities from Documents
+model ExtractedEntity {
+  id                String          @id @default(uuid())
+  documentId        String
+  ocrId             String?
+  entityType        EntityType
+  entityValue       String
+  confidence        Float
+  pageNumber        Int
+  boundingBox       Json?           @db.JsonB  // {x, y, width, height}
+
+  // Context information
+  contextText       String?         @db.Text  // Surrounding text
+  startPosition     Int?
+  endPosition       Int?
+
+  // Normalized values
+  normalizedValue   String?         // Standardized format
+  inferredType      String?         // More specific type inference
+
+  // Metadata
+  metadata          Json?           @db.JsonB
+  extractionMethod  String          @default("SPACY") // SPACY, REGEX, TEXTRACT
+
+  // Verification
+  verified          Boolean         @default(false)
+  verifiedBy        String?
+  verifiedAt        DateTime?
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  ocr               DocumentOCR?    @relation(fields: [ocrId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([ocrId])
+  @@index([entityType])
+  @@index([pageNumber])
+  @@index([verified])
+  @@index([createdAt])
+  @@map("extracted_entities")
+}
+
+enum EntityType {
+  PERSON_NAME
+  PROPERTY_ADDRESS
+  MAILING_ADDRESS
+  DATE
+  MONETARY_AMOUNT
+  PHONE_NUMBER
+  EMAIL_ADDRESS
+  SSN
+  TAX_ID
+  PARCEL_NUMBER
+  LEGAL_DESCRIPTION
+  COMPANY_NAME
+  LICENSE_NUMBER
+  LOAN_NUMBER
+  CASE_NUMBER
+  CONTRACT_DATE
+  CLOSING_DATE
+  BIRTH_DATE
+  NOTARY_NAME
+  ATTORNEY_NAME
+  AGENT_NAME
+  LENDER_NAME
+  ESCROW_NUMBER
+}
+
+// ============================================================================
+// KEY-VALUE EXTRACTION (FORMS)
+// ============================================================================
+
+// Extracted Key-Value Pairs from Forms
+model ExtractedKeyValue {
+  id                String          @id @default(uuid())
+  documentId        String
+  ocrId             String?
+  fieldLabel        String
+  fieldValue        String
+  confidence        Float
+  pageNumber        Int
+  boundingBox       Json?           @db.JsonB
+
+  // Field type inference
+  inferredType      String?         // text, number, date, boolean, currency
+  normalizedValue   String?         // Standardized format
+
+  // Form context
+  formSection       String?         // Section of form
+  fieldOrder        Int?            // Order in form
+
+  // Related fields
+  relatedFields     String[]        // IDs of related fields
+
+  // Validation
+  validationStatus  ValidationStatus @default(PENDING)
+  validationErrors  String[]
+
+  // Verification
+  verified          Boolean         @default(false)
+  verifiedBy        String?
+  verifiedAt        DateTime?
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  ocr               DocumentOCR?    @relation(fields: [ocrId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([ocrId])
+  @@index([pageNumber])
+  @@index([verified])
+  @@index([validationStatus])
+  @@map("extracted_key_values")
+}
+
+enum ValidationStatus {
+  PENDING
+  VALID
+  INVALID
+  NEEDS_REVIEW
+}
+
+// ============================================================================
+// TABLE EXTRACTION
+// ============================================================================
+
+// Extracted Tables from Documents
+model ExtractedTable {
+  id                String          @id @default(uuid())
+  documentId        String
+  ocrId             String?
+  tableName         String?
+  pageNumber        Int
+  rowCount          Int
+  columnCount       Int
+
+  // Table structure
+  headers           String[]
+  rows              Json            @db.JsonB
+
+  // Metadata
+  confidence        Float
+  boundingBox       Json?           @db.JsonB
+  tableType         String?         // "financial", "property_details", "closing_costs"
+
+  // Multi-page tables
+  continuesOnNextPage Boolean       @default(false)
+  continuedFromPreviousPage Boolean @default(false)
+  tableGroupId      String?         // Group ID for multi-page tables
+
+  // Cell-level metadata
+  cellMetadata      Json?           @db.JsonB  // Merged cells, special formatting
+
+  // Verification
+  verified          Boolean         @default(false)
+  verifiedBy        String?
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  ocr               DocumentOCR?    @relation(fields: [ocrId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([ocrId])
+  @@index([pageNumber])
+  @@index([tableGroupId])
+  @@index([verified])
+  @@map("extracted_tables")
+}
+
+// ============================================================================
+// SIGNATURE DETECTION
+// ============================================================================
+
+// Signature Detection Results
+model SignatureDetection {
+  id                String          @id @default(uuid())
+  documentId        String
+  ocrId             String?
+  pageNumber        Int
+  signatureType     SignatureType
+  confidence        Float
+  boundingBox       Json            @db.JsonB
+
+  // Signature analysis
+  signed            Boolean
+  signerName        String?
+  signerRole        String?         // "buyer", "seller", "notary", "witness"
+  signatureDate     DateTime?
+
+  // Location context
+  fieldLabel        String?         // Associated form field
+  sectionName       String?         // "Buyer Signature", "Seller Signature"
+
+  // Verification
+  verified          Boolean         @default(false)
+  verifiedBy        String?
+  verifiedAt        DateTime?
+
+  // Notary verification (if applicable)
+  notaryVerified    Boolean         @default(false)
+  notaryName        String?
+  notarySeal        Boolean         @default(false)
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  ocr               DocumentOCR?    @relation(fields: [ocrId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([ocrId])
+  @@index([pageNumber])
+  @@index([signatureType])
+  @@index([verified])
+  @@map("signature_detections")
+}
+
+enum SignatureType {
+  HANDWRITTEN
+  DIGITAL
+  INITIALS
+  NOTARY_SEAL
+  WITNESS_SIGNATURE
+  COMPANY_STAMP
+}
+
+// ============================================================================
+// OCR PERFORMANCE TRACKING
+// ============================================================================
+
+// OCR Performance Metrics
+model OCRProcessingMetrics {
+  id                String          @id @default(uuid())
+  documentId        String
+  ocrProvider       OCRProvider
+
+  // Performance metrics
+  processingTimeMs  Int
+  pageCount         Int
+  averageConfidence Float
+
+  // Cost tracking
+  estimatedCost     Decimal?        @db.Decimal(10, 4)
+
+  // Quality metrics
+  entitiesExtracted Int             @default(0)
+  keyValuePairs     Int             @default(0)
+  tablesExtracted   Int             @default(0)
+  signaturesFound   Int             @default(0)
+
+  // Fallback tracking
+  fallbackUsed      Boolean         @default(false)
+  fallbackReason    String?
+
+  // Timestamp
+  processedAt       DateTime        @default(now())
+
+  @@index([documentId])
+  @@index([ocrProvider])
+  @@index([processedAt])
+  @@map("ocr_processing_metrics")
+}
