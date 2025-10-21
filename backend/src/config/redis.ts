@@ -33,6 +33,7 @@ export const redisClient = new Redis({
   maxRetriesPerRequest: REDIS_MAX_RETRIES_PER_REQUEST,
   enableReadyCheck: REDIS_ENABLE_READY_CHECK,
   connectTimeout: REDIS_CONNECT_TIMEOUT,
+  lazyConnect: true, // Prevent automatic connection to avoid unhandled rejections
   retryStrategy(times: number) {
     const delay = Math.min(times * 50, 2000);
     logger.warn(`Redis connection retry attempt ${times}, next retry in ${delay}ms`);
@@ -60,7 +61,8 @@ export const redisPubSubClient = new Redis({
   keyPrefix: REDIS_KEY_PREFIX,
   maxRetriesPerRequest: REDIS_MAX_RETRIES_PER_REQUEST,
   enableReadyCheck: REDIS_ENABLE_READY_CHECK,
-  connectTimeout: REDIS_CONNECT_TIMEOUT
+  connectTimeout: REDIS_CONNECT_TIMEOUT,
+  lazyConnect: true // Prevent automatic connection to avoid unhandled rejections
 });
 
 // Event handlers for main client

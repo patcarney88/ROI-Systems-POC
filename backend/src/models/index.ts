@@ -1,11 +1,19 @@
-import sequelize from '../config/database';
-import User from './User';
-import Client from './Client';
-import Document from './Document';
-import Campaign from './Campaign';
+import sequelize from '../config/sequelize';
+import User, { initUserModel } from './User';
+import Client, { initClientModel } from './Client';
+import Document, { initDocumentModel } from './Document';
+import Campaign, { initCampaignModel } from './Campaign';
+
+// Initialize all models
+export const initializeModels = () => {
+  initUserModel();
+  initClientModel();
+  initDocumentModel();
+  initCampaignModel();
+};
 
 // Define associations
-const initializeAssociations = () => {
+export const initializeAssociations = () => {
   // User associations
   User.hasMany(Client, {
     foreignKey: 'userId',
@@ -55,9 +63,6 @@ const initializeAssociations = () => {
   });
 };
 
-// Initialize associations
-initializeAssociations();
-
 // Sync database (only in development)
 export const syncDatabase = async (force: boolean = false): Promise<void> => {
   try {
@@ -83,6 +88,7 @@ export default {
   Client,
   Document,
   Campaign,
+  initializeModels,
   initializeAssociations,
   syncDatabase
 };
