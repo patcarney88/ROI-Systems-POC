@@ -6,6 +6,8 @@ import { Client } from '../models/Client';
 import { User } from '../models/User';
 import { Op } from 'sequelize';
 import sequelize from '../config/database';
+import { localStorageService } from '../services/local-storage.service';
+import path from 'path';
 
 const logger = createLogger('document-controller');
 
@@ -32,38 +34,58 @@ export const uploadDocument = asyncHandler(async (req: Request, res: Response) =
     }
   }
 
-  // Create document record
-  const newDocument = await Document.create({
-    userId,
-    clientId: clientId,
-    title: title || req.file.originalname,
-    type: (type as DocumentType) || DocumentType.OTHER,
-    status: DocumentStatus.PENDING,
-    fileUrl: `/uploads/${req.file.filename}`,
-    size: req.file.size,
-    uploadDate: new Date(),
-    expiryDate: expiryDate ? new Date(expiryDate) : null,
-    metadata: {
-      originalName: req.file.originalname,
-      mimeType: req.file.mimetype,
-      ...(metadata ? JSON.parse(metadata) : {})
+  try {
+    // Upload file using local storage service
+    const uploadResult = await localStorageService.uploadFile(req.file, {
+      folder: `user_${userId}`,
+      allowedTypes: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']
+    });
+
+    // Create document record
+    const newDocument = await Document.create({
+      userId,
+      clientId: clientId,
+      title: title || req.file.originalname,
+      type: (type as DocumentType) || DocumentType.OTHER,
+      status: DocumentStatus.PENDING,
+      fileUrl: uploadResult.url,
+      size: uploadResult.size,
+      uploadDate: new Date(),
+      expiryDate: expiryDate ? new Date(expiryDate) : null,
+      metadata: {
+        originalName: uploadResult.originalName,
+        mimeType: uploadResult.mimetype,
+        filename: uploadResult.filename,
+        path: uploadResult.path,
+        ...(metadata ? JSON.parse(metadata) : {})
+      }
+    });
+
+    // Load associations
+    await newDocument.reload({
+      include: [
+        { model: Client, as: 'client' },
+        { model: User, as: 'uploader', attributes: ['id', 'email', 'firstName', 'lastName'] }
+      ]
+    });
+
+    logger.info(`Document uploaded: ${newDocument.id} by user ${userId}`);
+
+    res.status(201).json({
+      success: true,
+      data: { document: newDocument }
+    });
+  } catch (error) {
+    // Clean up file if database operation fails
+    if (req.file) {
+      try {
+        await localStorageService.deleteFile(req.file.path);
+      } catch (cleanupError) {
+        logger.error('Failed to clean up file after error', cleanupError);
+      }
     }
-  });
-
-  // Load associations
-  await newDocument.reload({
-    include: [
-      { model: Client, as: 'client' },
-      { model: User, as: 'uploader', attributes: ['id', 'email', 'firstName', 'lastName'] }
-    ]
-  });
-
-  logger.info(`Document uploaded: ${newDocument.id} by user ${userId}`);
-
-  res.status(201).json({
-    success: true,
-    data: { document: newDocument }
-  });
+    throw error;
+  }
 });
 
 /**
@@ -287,4 +309,87 @@ export const getDocumentStats = asyncHandler(async (req: Request, res: Response)
     success: true,
     data: { stats }
   });
+});
+
+/**
+ * Download a document file
+ */
+export const downloadDocument = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    throw new AppError(401, 'UNAUTHORIZED', 'User not authenticated');
+  }
+
+  // Find document and verify ownership
+  const document = await Document.findOne({
+    where: { id, userId }
+  });
+
+  if (!document) {
+    throw new AppError(404, 'DOCUMENT_NOT_FOUND', 'Document not found');
+  }
+
+  try {
+    // Get file from storage
+    const downloadResult = await localStorageService.downloadFile(document.fileUrl);
+
+    // Set response headers
+    res.setHeader('Content-Type', downloadResult.mimetype);
+    res.setHeader('Content-Length', downloadResult.size.toString());
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${encodeURIComponent(document.metadata?.originalName || downloadResult.filename)}"`
+    );
+
+    // Stream file to response
+    downloadResult.stream.pipe(res);
+
+    logger.info(`Document downloaded: ${id} by user ${userId}`);
+  } catch (error: any) {
+    if (error.code === 'FILE_NOT_FOUND') {
+      throw new AppError(404, 'FILE_NOT_FOUND', 'Document file not found on server');
+    }
+    throw error;
+  }
+});
+
+/**
+ * Serve document file (for direct access via URL)
+ */
+export const serveDocumentFile = asyncHandler(async (req: Request, res: Response) => {
+  const relativePath = req.params[0]; // Catch-all route parameter
+
+  try {
+    // Get file path (with security checks)
+    const filePath = await localStorageService.getFilePath(relativePath);
+
+    // Determine MIME type
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.pdf': 'application/pdf',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+    };
+
+    const mimeType = mimeTypes[ext] || 'application/octet-stream';
+
+    // Send file
+    res.setHeader('Content-Type', mimeType);
+    res.sendFile(filePath);
+
+    logger.info(`File served: ${relativePath}`);
+  } catch (error: any) {
+    if (error.code === 'FILE_NOT_FOUND' || error.code === 'ENOENT') {
+      throw new AppError(404, 'FILE_NOT_FOUND', 'File not found');
+    }
+    if (error.code === 'FORBIDDEN') {
+      throw new AppError(403, 'FORBIDDEN', 'Access denied');
+    }
+    throw error;
+  }
 });

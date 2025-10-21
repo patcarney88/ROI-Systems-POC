@@ -1,4 +1,4 @@
-import { QueryInterface, DataTypes } from 'sequelize';
+import { QueryInterface, DataTypes, Sequelize } from 'sequelize';
 
 export async function up(queryInterface: QueryInterface): Promise<void> {
   // Create ENUM type for document status
@@ -102,11 +102,7 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
 
   await queryInterface.addIndex('documents', ['expiry_date'], {
     name: 'idx_documents_expiry_date',
-    where: {
-      expiry_date: {
-        $ne: null,
-      },
-    },
+    where: Sequelize.literal('expiry_date IS NOT NULL'),
   });
 
   await queryInterface.addIndex('documents', ['type'], {

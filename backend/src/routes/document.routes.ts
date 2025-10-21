@@ -64,6 +64,27 @@ router.get(
 router.get('/stats', documentController.getDocumentStats);
 
 /**
+ * @route   GET /api/v1/documents/download/*
+ * @desc    Serve document files directly (public URLs)
+ * @access  Public (files have unique names)
+ */
+router.get('/download/*', documentController.serveDocumentFile);
+
+/**
+ * @route   GET /api/v1/documents/:id/download
+ * @desc    Download a document (authenticated)
+ * @access  Private
+ */
+router.get(
+  '/:id/download',
+  [
+    param('id').isString().withMessage('Document ID is required'),
+    validate
+  ],
+  documentController.downloadDocument
+);
+
+/**
  * @route   GET /api/v1/documents/:id
  * @desc    Get a single document
  * @access  Private
