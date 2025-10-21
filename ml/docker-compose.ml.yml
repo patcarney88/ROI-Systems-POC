@@ -1,0 +1,208 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # PostgreSQL Database (Primary data store)
+  # ============================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: roi-ml-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ml_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ml_password}
+      POSTGRES_DB: ${POSTGRES_DB:-roi_systems}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ml_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ml-network
+
+  # ============================================================================
+  # Redis (Caching and Celery broker)
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: roi-ml-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ml-network
+
+  # ============================================================================
+  # MLflow Tracking Server
+  # ============================================================================
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: roi-ml-mlflow
+    command: >
+      mlflow server
+      --backend-store-uri postgresql://${POSTGRES_USER:-ml_user}:${POSTGRES_PASSWORD:-ml_password}@postgres:5432/mlflow
+      --default-artifact-root s3://${S3_MODEL_BUCKET:-roi-systems-ml-models}
+      --host 0.0.0.0
+      --port 5000
+    ports:
+      - "5000:5000"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ml-network
+    volumes:
+      - mlflow_data:/mlflow
+
+  # ============================================================================
+  # Model Serving API (FastAPI)
+  # ============================================================================
+  ml-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: roi-ml-api
+    command: >
+      uvicorn src.api.prediction_api:app
+      --host 0.0.0.0
+      --port 8000
+      --workers 4
+      --log-level info
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ml_user}:${POSTGRES_PASSWORD:-ml_password}@postgres:5432/${POSTGRES_DB:-roi_systems}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    networks:
+      - ml-network
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # Airflow Webserver
+  # ============================================================================
+  airflow-webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: roi-ml-airflow-webserver
+    command: airflow webserver
+    ports:
+      - "8080:8080"
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql://${POSTGRES_USER:-ml_user}:${POSTGRES_PASSWORD:-ml_password}@postgres:5432/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://${POSTGRES_USER:-ml_user}:${POSTGRES_PASSWORD:-ml_password}@postgres:5432/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW__WEBSERVER__SECRET_KEY:-change_this_secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ml-network
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./config:/opt/airflow/config
+
+  # ============================================================================
+  # Airflow Scheduler
+  # ============================================================================
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: roi-ml-airflow-scheduler
+    command: airflow scheduler
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql://${POSTGRES_USER:-ml_user}:${POSTGRES_PASSWORD:-ml_password}@postgres:5432/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://${POSTGRES_USER:-ml_user}:${POSTGRES_PASSWORD:-ml_password}@postgres:5432/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ml-network
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./config:/opt/airflow/config
+
+  # ============================================================================
+  # Airflow Worker (Celery)
+  # ============================================================================
+  airflow-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: roi-ml-airflow-worker
+    command: airflow celery worker
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql://${POSTGRES_USER:-ml_user}:${POSTGRES_PASSWORD:-ml_password}@postgres:5432/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://${POSTGRES_USER:-ml_user}:${POSTGRES_PASSWORD:-ml_password}@postgres:5432/airflow
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ml_user}:${POSTGRES_PASSWORD:-ml_password}@postgres:5432/${POSTGRES_DB:-roi_systems}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ml-network
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./config:/opt/airflow/config
+      - ./src:/app/src
+
+networks:
+  ml-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  mlflow_data:
