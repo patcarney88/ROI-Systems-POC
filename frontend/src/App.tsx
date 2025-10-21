@@ -364,13 +364,12 @@ function AppContent() {
           <div className="nav-actions">
             {/* Demo Journeys Button */}
             <div style={{ position: 'relative', marginRight: '1rem' }}>
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Demo Journeys clicked - navigating to Title Agent Dashboard');
-                  navigate('/dashboard/title-agent');
-                  setJourneysMenuOpen(false);
+                  console.log('Demo Journeys clicked, current state:', journeysMenuOpen);
+                  setJourneysMenuOpen(!journeysMenuOpen);
                 }}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
