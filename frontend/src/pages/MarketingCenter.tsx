@@ -10,6 +10,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { campaignApi } from '../services/api.services';
 
 // Mock data
 const campaigns = [
@@ -168,6 +169,7 @@ export default function MarketingCenter() {
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(false);
 
   const filteredCampaigns = campaigns.filter(campaign => {
     const matchesSearch = campaign.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -194,13 +196,75 @@ export default function MarketingCenter() {
     setShowNewCampaign(true);
   };
 
-  const handleDuplicateCampaign = (campaign: any) => {
-    alert(`Duplicating campaign: ${campaign.name}`);
+  const handleDuplicateCampaign = async (campaign: any) => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    try {
+      // In production, this would call the API:
+      // const response = await campaignApi.create({
+      //   ...campaign,
+      //   name: `${campaign.name} (Copy)`,
+      //   status: 'draft'
+      // });
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Create duplicate in local state
+      const newCampaign = {
+        ...campaign,
+        id: `${campaign.id}-copy-${Date.now()}`,
+        name: `${campaign.name} (Copy)`,
+        status: 'draft',
+        sent: 0,
+        opens: 0,
+        clicks: 0,
+        conversions: 0,
+        revenue: 0,
+        createdDate: new Date().toISOString().split('T')[0]
+      };
+
+      // In production, you would refresh the campaigns list from the API
+      console.log('Campaign duplicated:', newCampaign);
+      alert(`Campaign "${campaign.name}" duplicated successfully!`);
+
+      // TODO: Add to campaigns list and refresh
+      // setCampaigns(prev => [newCampaign, ...prev]);
+    } catch (error) {
+      console.error('Failed to duplicate campaign:', error);
+      alert('Failed to duplicate campaign. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteCampaign = (campaign: any) => {
-    if (confirm(`Delete campaign "${campaign.name}"?`)) {
-      alert('Campaign deleted');
+  const handleDeleteCampaign = async (campaign: any) => {
+    if (isLoading) return;
+
+    // Confirmation dialog
+    if (!window.confirm(`Are you sure you want to delete "${campaign.name}"?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // In production, this would call:
+      // await campaignApi.delete(campaign.id);
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      console.log('Campaign deleted:', campaign.id);
+      alert(`Campaign "${campaign.name}" deleted successfully!`);
+
+      // TODO: Remove from campaigns list and refresh
+      // setCampaigns(prev => prev.filter(c => c.id !== campaign.id));
+    } catch (error) {
+      console.error('Failed to delete campaign:', error);
+      alert('Failed to delete campaign. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 

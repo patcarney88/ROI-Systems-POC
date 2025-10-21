@@ -5,20 +5,36 @@ import CampaignModal from '../modals/CampaignModal';
 
 interface DashboardProps {
   documents: any[];
+  documentsLoading?: boolean;
+  documentsError?: string | null;
   clients: any[];
+  clientsLoading?: boolean;
+  clientsError?: string | null;
+  campaigns?: any[];
+  campaignsLoading?: boolean;
+  campaignsError?: string | null;
   stats: any;
   onDocumentUpload: (files: File[], metadata: any) => void;
   onClientSave: (client: any) => void;
   onCampaignLaunch: (campaign: any) => void;
+  refreshData?: () => void;
 }
 
 export default function Dashboard({
   documents,
+  documentsLoading = false,
+  documentsError = null,
   clients,
+  clientsLoading = false,
+  clientsError = null,
+  campaigns = [],
+  campaignsLoading = false,
+  campaignsError = null,
   stats,
   onDocumentUpload,
   onClientSave,
-  onCampaignLaunch
+  onCampaignLaunch,
+  refreshData
 }: DashboardProps) {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [clientModalOpen, setClientModalOpen] = useState(false);
@@ -169,8 +185,31 @@ export default function Dashboard({
             <h2 className="section-title">Recent Documents</h2>
             <a href="/documents" className="btn btn-secondary">View All</a>
           </div>
+          {documentsError && (
+            <div style={{ padding: '1rem', color: '#ef4444', fontSize: '0.875rem' }}>
+              {documentsError}
+            </div>
+          )}
           <div className="document-list">
-            {recentDocuments.map(doc => (
+            {documentsLoading ? (
+              // Loading skeleton for documents
+              <>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="document-item" style={{ opacity: 0.5 }}>
+                    <div className="document-icon" style={{ background: '#e5e7eb' }}></div>
+                    <div className="document-info">
+                      <div style={{ width: '200px', height: '20px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '0.5rem' }}></div>
+                      <div style={{ width: '150px', height: '16px', background: '#e5e7eb', borderRadius: '4px' }}></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : recentDocuments.length === 0 ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+                No documents yet. Upload your first document to get started.
+              </div>
+            ) : (
+              recentDocuments.map(doc => (
               <div key={doc.id} className="document-item">
                 <div className="document-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -192,7 +231,8 @@ export default function Dashboard({
                   {doc.status}
                 </span>
               </div>
-            ))}
+            ))
+            )}
           </div>
         </section>
 
@@ -201,8 +241,31 @@ export default function Dashboard({
             <h2 className="section-title">Recent Clients</h2>
             <a href="/clients" className="btn btn-secondary">View All</a>
           </div>
+          {clientsError && (
+            <div style={{ padding: '1rem', color: '#ef4444', fontSize: '0.875rem' }}>
+              {clientsError}
+            </div>
+          )}
           <div className="client-list">
-            {recentClients.map(client => (
+            {clientsLoading ? (
+              // Loading skeleton for clients
+              <>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="client-item" style={{ opacity: 0.5 }}>
+                    <div className="client-avatar" style={{ background: '#e5e7eb' }}></div>
+                    <div className="client-info">
+                      <div style={{ width: '150px', height: '20px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '0.5rem' }}></div>
+                      <div style={{ width: '200px', height: '16px', background: '#e5e7eb', borderRadius: '4px' }}></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : recentClients.length === 0 ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+                No clients yet. Add your first client to get started.
+              </div>
+            ) : (
+              recentClients.map(client => (
               <div key={client.id} className="client-item">
                 <div className="client-avatar">
                   {client.name.split(' ').map((n: string) => n[0]).join('')}
@@ -217,7 +280,8 @@ export default function Dashboard({
                   {client.status}
                 </span>
               </div>
-            ))}
+            ))
+            )}
           </div>
         </section>
       </div>

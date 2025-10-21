@@ -1,36 +1,43 @@
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { clientSchema, type ClientFormData } from '../schemas/validation';
+import { notify } from '../utils/notifications';
 import './Modal.css';
 
 interface ClientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (client: ClientFormData) => void;
+  onSave: (client: any) => void;
   client?: any;
 }
 
-interface ClientFormData {
-  name: string;
-  email: string;
-  phone: string;
-  properties: number;
-  status: 'active' | 'at-risk' | 'dormant';
-  notes: string;
-}
-
 export default function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProps) {
-  const [formData, setFormData] = useState<ClientFormData>({
-    name: '',
-    email: '',
-    phone: '',
-    properties: 0,
-    status: 'active',
-    notes: ''
-  });
   const [saving, setSaving] = useState(false);
 
+  // React Hook Form with Zod validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+    reset
+  } = useForm<ClientFormData>({
+    resolver: zodResolver(clientSchema),
+    mode: 'onChange',
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      properties: 0,
+      status: 'active',
+      notes: ''
+    }
+  });
+
+  // Reset form when modal opens/closes or client changes
   useEffect(() => {
     if (client) {
-      setFormData({
+      reset({
         name: client.name || '',
         email: client.email || '',
         phone: client.phone || '',
@@ -39,7 +46,7 @@ export default function ClientModal({ isOpen, onClose, onSave, client }: ClientM
         notes: client.notes || ''
       });
     } else {
-      setFormData({
+      reset({
         name: '',
         email: '',
         phone: '',
@@ -48,19 +55,16 @@ export default function ClientModal({ isOpen, onClose, onSave, client }: ClientM
         notes: ''
       });
     }
-  }, [client, isOpen]);
+  }, [client, isOpen, reset]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name || !formData.email) return;
-
+  const onSubmit = async (data: ClientFormData) => {
     setSaving(true);
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    onSave(formData);
+    onSave({ ...data, id: client?.id });
+    notify.success(client ? 'Client updated successfully' : 'Client added successfully');
     setSaving(false);
     onClose();
   };
@@ -77,7 +81,7 @@ export default function ClientModal({ isOpen, onClose, onSave, client }: ClientM
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="modal-body">
             <div className="upload-form">
               <div className="form-group">
@@ -86,10 +90,14 @@ export default function ClientModal({ isOpen, onClose, onSave, client }: ClientM
                   id="name"
                   type="text"
                   placeholder="John Doe"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
+                  {...register('name')}
+                  className={errors.name ? 'error' : ''}
                 />
+                {errors.name && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.name.message}
+                  </span>
+                )}
               </div>
 
               <div className="form-group">
@@ -98,21 +106,30 @@ export default function ClientModal({ isOpen, onClose, onSave, client }: ClientM
                   id="email"
                   type="email"
                   placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
+                  {...register('email')}
+                  className={errors.email ? 'error' : ''}
                 />
+                {errors.email && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.email.message}
+                  </span>
+                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="phone">Phone Number</label>
+                <label htmlFor="phone">Phone Number (Optional)</label>
                 <input
                   id="phone"
                   type="tel"
                   placeholder="(555) 123-4567"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  {...register('phone')}
+                  className={errors.phone ? 'error' : ''}
                 />
+                {errors.phone && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.phone.message}
+                  </span>
+                )}
               </div>
 
               <div className="form-group">
@@ -121,17 +138,21 @@ export default function ClientModal({ isOpen, onClose, onSave, client }: ClientM
                   id="properties"
                   type="number"
                   min="0"
-                  value={formData.properties}
-                  onChange={(e) => setFormData({ ...formData, properties: parseInt(e.target.value) || 0 })}
+                  {...register('properties', { valueAsNumber: true })}
+                  className={errors.properties ? 'error' : ''}
                 />
+                {errors.properties && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.properties.message}
+                  </span>
+                )}
               </div>
 
               <div className="form-group">
                 <label htmlFor="status">Client Status</label>
                 <select
                   id="status"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                  {...register('status')}
                 >
                   <option value="active">Active</option>
                   <option value="at-risk">At Risk</option>
@@ -144,10 +165,15 @@ export default function ClientModal({ isOpen, onClose, onSave, client }: ClientM
                 <textarea
                   id="notes"
                   placeholder="Additional notes about this client..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  {...register('notes')}
                   rows={4}
+                  className={errors.notes ? 'error' : ''}
                 />
+                {errors.notes && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.notes.message}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -159,7 +185,7 @@ export default function ClientModal({ isOpen, onClose, onSave, client }: ClientM
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={!formData.name || !formData.email || saving}
+              disabled={!isValid || saving}
             >
               {saving ? (
                 <>
