@@ -246,6 +246,13 @@ export default function RealtorDashboard() {
     ));
   };
 
+  const handleNotifications = () => {
+    console.log('Notifications clicked - showing unread alerts');
+    // Switch to alerts tab and scroll to top
+    setActiveTab('alerts');
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const formatTimeAgo = (timestamp: string) => {
     const minutes = Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000);
     if (minutes < 60) return `${minutes}m ago`;
@@ -270,7 +277,7 @@ export default function RealtorDashboard() {
           <button className="icon-btn" onClick={handleRefresh}>
             <RefreshCw size={20} className={isRefreshing ? 'spinning' : ''} />
           </button>
-          <button className="icon-btn notification-btn">
+          <button className="icon-btn notification-btn" onClick={handleNotifications}>
             <Bell size={20} />
             {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
           </button>

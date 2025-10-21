@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { 
   Home, FileText, Users, Mail, Bell, BarChart3, Settings, HelpCircle,
-  Search, ChevronDown, Menu, X, TrendingUp, TrendingDown, AlertCircle,
-  Phone, Send, Eye, Upload, Calendar, Activity, Target, Zap
+  TrendingUp, AlertCircle, Phone, Send, Eye, Upload, Calendar, Activity, Target, Zap
 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 // Mock data
 const transactionData = {
@@ -96,6 +95,7 @@ export default function TitleAgentDashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState(7);
   const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -113,6 +113,48 @@ export default function TitleAgentDashboard() {
     setDragActive(false);
     // Handle file upload logic here
     console.log('Files dropped:', e.dataTransfer.files);
+  };
+
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // Handle file upload logic here
+      console.log('Files selected:', e.target.files);
+    }
+  };
+
+  const handleViewAllAlerts = () => {
+    console.log('View All Alerts clicked');
+    // Navigate to full alerts page or open modal
+  };
+
+  const handleCall = (client: string, property: string) => {
+    console.log(`Initiating call to ${client} for ${property}`);
+    // Implement call functionality (e.g., Twilio integration)
+  };
+
+  const handleEmail = (client: string, property: string) => {
+    console.log(`Composing email to ${client} for ${property}`);
+    // Open email composer or navigate to email page
+  };
+
+  const handleViewDetails = (alertId: number) => {
+    console.log(`Viewing details for alert ${alertId}`);
+    // Navigate to alert details page or open modal
+  };
+
+  const handleBulkUpload = () => {
+    console.log('Bulk Upload clicked');
+    // Open bulk upload interface
+    fileInputRef.current?.click();
+  };
+
+  const handleCreateCampaign = () => {
+    console.log('Create New Campaign clicked');
+    // Navigate to campaign creation page
   };
 
   return (
@@ -225,7 +267,7 @@ export default function TitleAgentDashboard() {
           <section className="widget-section" id="alerts">
             <div className="widget-header">
               <h2 className="widget-title">Instant Business Alerts</h2>
-              <button className="btn-secondary-sm">View All</button>
+              <button className="btn-secondary-sm" onClick={handleViewAllAlerts}>View All</button>
             </div>
             <div className="alerts-list">
               {alertsData.map(alert => (
@@ -248,13 +290,13 @@ export default function TitleAgentDashboard() {
                     </div>
                   </div>
                   <div className="alert-actions">
-                    <button className="action-btn" title="Call">
+                    <button className="action-btn" title="Call" onClick={() => handleCall(alert.client, alert.property)}>
                       <Phone size={16} />
                     </button>
-                    <button className="action-btn" title="Email">
+                    <button className="action-btn" title="Email" onClick={() => handleEmail(alert.client, alert.property)}>
                       <Send size={16} />
                     </button>
-                    <button className="action-btn" title="View Details">
+                    <button className="action-btn" title="View Details" onClick={() => handleViewDetails(alert.id)}>
                       <Eye size={16} />
                     </button>
                   </div>
@@ -277,7 +319,15 @@ export default function TitleAgentDashboard() {
               >
                 <Upload size={32} />
                 <p>Drag & drop files here or</p>
-                <button className="btn-primary-sm">Browse Files</button>
+                <button className="btn-primary-sm" onClick={handleBrowseClick}>Browse Files</button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                />
               </div>
 
               <div className="documents-list">
@@ -304,7 +354,7 @@ export default function TitleAgentDashboard() {
                 ))}
               </div>
 
-              <button className="btn-secondary-full">Bulk Upload</button>
+              <button className="btn-secondary-full" onClick={handleBulkUpload}>Bulk Upload</button>
             </section>
 
             {/* Forever Marketing Performance */}
@@ -354,7 +404,7 @@ export default function TitleAgentDashboard() {
                 ))}
               </div>
 
-              <button className="btn-primary-full">Create New Campaign</button>
+              <button className="btn-primary-full" onClick={handleCreateCampaign}>Create New Campaign</button>
             </section>
           </div>
 
