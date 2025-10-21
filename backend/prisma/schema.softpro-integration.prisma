@@ -1,0 +1,288 @@
+// SoftPro 360 Integration Schema
+// Manages OAuth authentication, data synchronization, and webhook processing
+// Database: PostgreSQL
+// Integration: Title production software for real estate closings
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// INTEGRATION CONFIGURATION
+// ============================================================================
+
+// Integration Configuration Model
+model SoftProIntegration {
+  id                String          @id @default(uuid())
+  organizationId    String
+
+  // OAuth Configuration
+  clientId          String
+  clientSecret      String          // Encrypted using AES-256
+  environment       IntegrationEnvironment @default(SANDBOX)
+
+  // Authentication Tokens
+  accessToken       String?         @db.Text // Encrypted
+  refreshToken      String?         @db.Text // Encrypted
+  tokenExpiresAt    DateTime?
+
+  // Connection Status
+  status            IntegrationStatus @default(DISCONNECTED)
+  lastSyncAt        DateTime?
+  lastErrorAt       DateTime?
+  lastErrorMessage  String?         @db.Text
+
+  // Sync Configuration
+  syncEnabled       Boolean         @default(true)
+  syncFrequency     Int             @default(300) // seconds (5 minutes)
+
+  // Feature Flags
+  syncTransactions  Boolean         @default(true)
+  syncDocuments     Boolean         @default(true)
+  syncContacts      Boolean         @default(true)
+  webhooksEnabled   Boolean         @default(true)
+
+  // Metadata
+  metadata          Json?           // Custom configuration and settings
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?       // Soft delete
+
+  // Relations
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  mappings          IntegrationMapping[]
+  syncLogs          SyncLog[]
+  webhookEvents     WebhookEvent[]
+
+  @@unique([organizationId])
+  @@index([status])
+  @@index([lastSyncAt])
+  @@index([environment])
+  @@map("softpro_integrations")
+}
+
+// ============================================================================
+// FIELD MAPPING CONFIGURATION
+// ============================================================================
+
+// Field Mapping Configuration
+model IntegrationMapping {
+  id                String          @id @default(uuid())
+  integrationId     String
+
+  // Mapping Details
+  entityType        EntityType      // TRANSACTION, CONTACT, DOCUMENT
+  softproField      String          // SoftPro field name/path
+  roiSystemsField   String          // ROI Systems field name/path
+  direction         SyncDirection   @default(BIDIRECTIONAL)
+
+  // Transformation
+  transformationRule Json?          // JSONata or custom transformation rules
+  required          Boolean         @default(false)
+  defaultValue      String?
+
+  // Validation
+  validationRules   Json?           // Field validation rules
+
+  // Status
+  enabled           Boolean         @default(true)
+
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  integration       SoftProIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, entityType, softproField])
+  @@index([entityType])
+  @@index([enabled])
+  @@map("integration_mappings")
+}
+
+// ============================================================================
+// SYNCHRONIZATION TRACKING
+// ============================================================================
+
+// Synchronization Log
+model SyncLog {
+  id                String          @id @default(uuid())
+  integrationId     String
+
+  // Sync Details
+  syncType          SyncType        // MANUAL, SCHEDULED, WEBHOOK
+  entityType        EntityType
+  entityId          String?         // External ID from SoftPro
+  roiEntityId       String?         // Internal ROI Systems ID
+  operation         SyncOperation   // CREATE, UPDATE, DELETE
+  direction         SyncDirection
+
+  // Status
+  status            SyncStatus      @default(PENDING)
+  recordsProcessed  Int             @default(0)
+  recordsFailed     Int             @default(0)
+
+  // Data Payloads
+  requestPayload    Json?           @db.JsonB
+  responsePayload   Json?           @db.JsonB
+  errorMessage      String?         @db.Text
+  stackTrace        String?         @db.Text
+
+  // Timing Metrics
+  startedAt         DateTime        @default(now())
+  completedAt       DateTime?
+  duration          Int?            // milliseconds
+
+  // Retry Information
+  attempts          Int             @default(0)
+  maxAttempts       Int             @default(3)
+  nextRetryAt       DateTime?
+  lastRetryAt       DateTime?
+
+  // Conflict Resolution
+  conflictDetected  Boolean         @default(false)
+  conflictStrategy  String?         // Resolution strategy used
+
+  // Relations
+  integration       SoftProIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId])
+  @@index([status])
+  @@index([entityType])
+  @@index([startedAt])
+  @@index([nextRetryAt])
+  @@index([syncType])
+  @@map("sync_logs")
+}
+
+// ============================================================================
+// WEBHOOK EVENT TRACKING
+// ============================================================================
+
+// Webhook Event Tracking
+model WebhookEvent {
+  id                String          @id @default(uuid())
+  integrationId     String
+
+  // Event Details
+  eventType         WebhookEventType
+  eventId           String          // SoftPro event ID
+  entityType        EntityType
+  entityId          String          // SoftPro entity ID
+
+  // Payload Data
+  payload           Json            @db.JsonB
+  headers           Json?           @db.JsonB
+  signature         String?         // Webhook signature for verification
+  signatureVerified Boolean         @default(false)
+
+  // Processing Status
+  processed         Boolean         @default(false)
+  processedAt       DateTime?
+  processingError   String?         @db.Text
+
+  // Retry Information
+  attempts          Int             @default(0)
+  maxAttempts       Int             @default(5)
+  nextRetryAt       DateTime?
+
+  // Timestamps
+  receivedAt        DateTime        @default(now())
+  createdAt         DateTime        @default(now())
+
+  // Relations
+  integration       SoftProIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId])
+  @@index([integrationId])
+  @@index([processed])
+  @@index([nextRetryAt])
+  @@index([receivedAt])
+  @@index([eventType])
+  @@map("webhook_events")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum IntegrationEnvironment {
+  SANDBOX
+  PRODUCTION
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  AUTHENTICATING
+  EXPIRED
+}
+
+enum EntityType {
+  TRANSACTION
+  CONTACT
+  DOCUMENT
+  PROPERTY
+  PARTY
+  STATUS
+}
+
+enum SyncDirection {
+  SOFTPRO_TO_ROI
+  ROI_TO_SOFTPRO
+  BIDIRECTIONAL
+}
+
+enum SyncType {
+  MANUAL
+  SCHEDULED
+  WEBHOOK
+  INITIAL
+  INCREMENTAL
+}
+
+enum SyncOperation {
+  CREATE
+  UPDATE
+  DELETE
+  SYNC
+  ARCHIVE
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+  RETRYING
+  PARTIAL_SUCCESS
+}
+
+enum WebhookEventType {
+  TRANSACTION_CREATED
+  TRANSACTION_UPDATED
+  TRANSACTION_DELETED
+  TRANSACTION_STATUS_CHANGED
+  DOCUMENT_UPLOADED
+  DOCUMENT_UPDATED
+  DOCUMENT_DELETED
+  STATUS_CHANGED
+  CONTACT_CREATED
+  CONTACT_UPDATED
+  CONTACT_DELETED
+  PARTY_ADDED
+  PARTY_UPDATED
+  PARTY_REMOVED
+  PROPERTY_UPDATED
+  ORDER_CLOSED
+  ORDER_REOPENED
+}
