@@ -121,29 +121,39 @@ export default function TitleAgentDashboard() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      // Handle file upload logic here
-      console.log('Files selected:', e.target.files);
+      const files = Array.from(e.target.files);
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      const validFiles = files.filter(f => f.size <= maxSize);
+
+      if (validFiles.length !== files.length) {
+        console.error('Some files exceed maximum size of 10MB');
+      }
+
+      if (validFiles.length > 0) {
+        console.log('Files selected:', validFiles);
+        // TODO: Replace with actual file upload API call
+      }
     }
   };
 
   const handleViewAllAlerts = () => {
     console.log('View All Alerts clicked');
-    // Navigate to full alerts page or open modal
+    // TODO: Navigate to full alerts page or open modal
   };
 
-  const handleCall = (client: string, property: string) => {
-    console.log(`Initiating call to ${client} for ${property}`);
-    // Implement call functionality (e.g., Twilio integration)
+  const handleCall = (alert: typeof alertsData[number]) => {
+    console.log(`Initiating call to ${alert.client} for ${alert.property}`);
+    // TODO: Implement call functionality (e.g., Twilio integration)
   };
 
-  const handleEmail = (client: string, property: string) => {
-    console.log(`Composing email to ${client} for ${property}`);
-    // Open email composer or navigate to email page
+  const handleEmail = (alert: typeof alertsData[number]) => {
+    console.log(`Composing email to ${alert.client} for ${alert.property}`);
+    // TODO: Open email composer or navigate to email page
   };
 
-  const handleViewDetails = (alertId: number) => {
-    console.log(`Viewing details for alert ${alertId}`);
-    // Navigate to alert details page or open modal
+  const handleViewDetails = (alert: typeof alertsData[number]) => {
+    console.log(`Viewing details for alert ${alert.id}: ${alert.type}`);
+    // TODO: Navigate to alert details page or open modal
   };
 
   const handleBulkUpload = () => {
@@ -290,13 +300,13 @@ export default function TitleAgentDashboard() {
                     </div>
                   </div>
                   <div className="alert-actions">
-                    <button className="action-btn" title="Call" onClick={() => handleCall(alert.client, alert.property)}>
+                    <button className="action-btn" title="Call" onClick={() => handleCall(alert)}>
                       <Phone size={16} />
                     </button>
-                    <button className="action-btn" title="Email" onClick={() => handleEmail(alert.client, alert.property)}>
+                    <button className="action-btn" title="Email" onClick={() => handleEmail(alert)}>
                       <Send size={16} />
                     </button>
-                    <button className="action-btn" title="View Details" onClick={() => handleViewDetails(alert.id)}>
+                    <button className="action-btn" title="View Details" onClick={() => handleViewDetails(alert)}>
                       <Eye size={16} />
                     </button>
                   </div>
@@ -319,14 +329,22 @@ export default function TitleAgentDashboard() {
               >
                 <Upload size={32} />
                 <p>Drag & drop files here or</p>
-                <button className="btn-primary-sm" onClick={handleBrowseClick}>Browse Files</button>
+                <button
+                  className="btn-primary-sm"
+                  onClick={handleBrowseClick}
+                  aria-controls="document-upload"
+                >
+                  Browse Files
+                </button>
                 <input
+                  id="document-upload"
                   ref={fileInputRef}
                   type="file"
                   multiple
                   onChange={handleFileChange}
                   style={{ display: 'none' }}
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  aria-label="Upload documents (PDF, DOC, DOCX, JPG, JPEG, PNG)"
                 />
               </div>
 

@@ -8,7 +8,8 @@
 ## Dashboards Fixed
 1. **Title Agent Dashboard** - 17 buttons fixed
 2. **Realtor Dashboard** - 1 button fixed
-3. **Analytics Dashboard** - All buttons already functional ✅
+3. **Main Navigation** - 1 button behavior updated (Demo Journeys)
+4. **Analytics Dashboard** - All buttons already functional ✅
 
 ---
 
@@ -80,6 +81,17 @@
   - Scrolls to top
   - Shows all unread notifications
 - **Test:** Click bell icon → Console logs "Notifications clicked" → View switches to alerts tab
+
+---
+
+## Main Navigation - Updated Buttons
+
+### 1. **Demo Journeys Button** ✅
+- **Location:** Main navigation header
+- **Previous Behavior:** Toggle dropdown menu
+- **New Behavior:** Direct navigation to Title Agent Dashboard
+- **Implementation:** Navigate to `/dashboard/title-agent` on click
+- **Test:** Click "Demo Journeys" → Navigates to Title Agent Dashboard
 
 ---
 
