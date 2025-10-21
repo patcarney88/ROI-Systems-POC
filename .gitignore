@@ -125,3 +125,9 @@ secrets/
 yarn.lock
 pnpm-lock.yaml
 .vercel
+
+# Superforge - Local development tool only
+.superforge/
+.superforge
+*superforge*
+cascade-superforge.sh
