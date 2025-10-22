@@ -1,5 +1,5 @@
-import { Model, DataTypes, Optional } from 'sequelize';
-import sequelize from '../config/database';
+import { Model, DataTypes, Optional} from 'sequelize';
+import sequelize from '../config/sequelize';
 
 export enum DocumentType {
   PURCHASE_AGREEMENT = 'Purchase Agreement',
@@ -95,14 +95,16 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   }
 }
 
-Document.init(
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-      allowNull: false
-    },
+// Export initialization function instead of calling .init() immediately
+export const initDocumentModel = () => {
+  Document.init(
+    {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+        allowNull: false
+      },
     title: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -201,41 +203,42 @@ Document.init(
       allowNull: false,
       defaultValue: {}
     }
-  },
-  {
-    sequelize,
-    tableName: 'documents',
-    timestamps: true,
-    underscored: true,
-    indexes: [
-      {
-        fields: ['client_id']
-      },
-      {
-        fields: ['user_id']
-      },
-      {
-        fields: ['type']
-      },
-      {
-        fields: ['status']
-      },
-      {
-        fields: ['upload_date']
-      },
-      {
-        fields: ['expiry_date']
-      },
-      {
-        fields: ['created_at']
-      }
-    ],
-    hooks: {
-      beforeSave: (document: Document) => {
-        document.status = document.updateStatus();
+    },
+    {
+      sequelize,
+      tableName: 'documents',
+      timestamps: true,
+      underscored: true,
+      indexes: [
+        {
+          fields: ['client_id']
+        },
+        {
+          fields: ['user_id']
+        },
+        {
+          fields: ['type']
+        },
+        {
+          fields: ['status']
+        },
+        {
+          fields: ['upload_date']
+        },
+        {
+          fields: ['expiry_date']
+        },
+        {
+          fields: ['created_at']
+        }
+      ],
+      hooks: {
+        beforeSave: (document: Document) => {
+          document.status = document.updateStatus();
+        }
       }
     }
-  }
-);
+  );
+};
 
 export default Document;

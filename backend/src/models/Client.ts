@@ -1,5 +1,5 @@
 import { Model, DataTypes, Optional } from 'sequelize';
-import sequelize from '../config/database';
+import sequelize from '../config/sequelize';
 
 export enum ClientStatus {
   ACTIVE = 'active',
@@ -55,14 +55,16 @@ export class Client extends Model<ClientAttributes, ClientCreationAttributes> im
   }
 }
 
-Client.init(
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-      allowNull: false
-    },
+// Export initialization function instead of calling .init() immediately
+export const initClientModel = () => {
+  Client.init(
+    {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+        allowNull: false
+      },
     name: {
       type: DataTypes.STRING(200),
       allowNull: false,
@@ -152,39 +154,40 @@ Client.init(
       allowNull: true,
       defaultValue: null
     }
-  },
-  {
-    sequelize,
-    tableName: 'clients',
-    timestamps: true,
-    underscored: true,
-    indexes: [
-      {
-        unique: true,
-        fields: ['email']
-      },
-      {
-        fields: ['user_id']
-      },
-      {
-        fields: ['status']
-      },
-      {
-        fields: ['engagement_score']
-      },
-      {
-        fields: ['last_contact']
-      },
-      {
-        fields: ['created_at']
-      }
-    ],
-    hooks: {
-      beforeSave: (client: Client) => {
-        client.status = client.calculateEngagementScore();
+    },
+    {
+      sequelize,
+      tableName: 'clients',
+      timestamps: true,
+      underscored: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ['email']
+        },
+        {
+          fields: ['user_id']
+        },
+        {
+          fields: ['status']
+        },
+        {
+          fields: ['engagement_score']
+        },
+        {
+          fields: ['last_contact']
+        },
+        {
+          fields: ['created_at']
+        }
+      ],
+      hooks: {
+        beforeSave: (client: Client) => {
+          client.status = client.calculateEngagementScore();
+        }
       }
     }
-  }
-);
+  );
+};
 
 export default Client;
