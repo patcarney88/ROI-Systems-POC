@@ -40,8 +40,25 @@ export default function VerifyEmail() {
   };
 
   const handleResend = async () => {
-    // Implement resend logic
-    alert('Verification email resent!');
+    try {
+      setIsLoading(true);
+      setError('');
+
+      // In production, this would call:
+      // await authApi.resendVerification({ email: email || userId });
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      alert(`Verification email sent successfully!\n\nPlease check ${email || 'your inbox'} for the new verification link.`);
+
+      console.log('Verification email resent to:', email || userId);
+    } catch (err) {
+      console.error('Failed to resend verification email:', err);
+      setError('Failed to resend verification email. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {

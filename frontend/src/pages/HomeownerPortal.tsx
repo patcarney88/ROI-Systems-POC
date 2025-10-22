@@ -9,6 +9,8 @@ import {
   LineChart, Line, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import { documentApi } from '../services/api.services';
+import { notify } from '../utils/notifications';
 
 // Mock data
 const propertyData = {
@@ -204,12 +206,45 @@ export default function HomeownerPortal() {
     setShowDocumentViewer(true);
   };
 
-  const handleDocumentDownload = (doc: any) => {
-    alert(`Downloading ${doc.name}...`);
+  const handleDocumentDownload = async (doc: any) => {
+    try {
+      // Show downloading notification
+      notify.info(`Downloading ${doc.name}...`);
+
+      // Call API to download document
+      await documentApi.download(doc.id);
+
+      // Show success notification
+      notify.success(`Successfully downloaded ${doc.name}`);
+    } catch (error: any) {
+      console.error('Failed to download document:', error);
+      notify.error(error.message || 'Failed to download document. Please try again.');
+    }
   };
 
-  const handleDocumentShare = (doc: any) => {
-    alert(`Sharing ${doc.name}...`);
+  const handleDocumentShare = async (doc: any) => {
+    try {
+      // Check if Web Share API is available
+      if (navigator.share) {
+        await navigator.share({
+          title: doc.name,
+          text: `Check out this document: ${doc.name}`,
+          // In production, this would be the actual document URL
+          url: window.location.href
+        });
+      } else {
+        // Fallback: Copy link to clipboard
+        const shareUrl = `${window.location.origin}/documents/${doc.id}`;
+        await navigator.clipboard.writeText(shareUrl);
+        alert(`Share link copied to clipboard!\n${shareUrl}`);
+      }
+    } catch (error) {
+      // User cancelled share or clipboard access denied
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('Failed to share document:', error);
+        alert('Failed to share document. Please try again.');
+      }
+    }
   };
 
   return (

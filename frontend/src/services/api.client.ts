@@ -5,11 +5,13 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import { getErrorCodeFromStatus } from '../utils/api-errors';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const API_VERSION = 'v1';
-const API_TIMEOUT = 30000; // 30 seconds
+const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
+const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10);
+const ENABLE_API_LOGGING = import.meta.env.VITE_ENABLE_API_LOGGING === 'true';
 
 // API Response Types
 export interface ApiResponse<T = any> {
@@ -19,6 +21,7 @@ export interface ApiResponse<T = any> {
     code: string;
     message: string;
     details?: any;
+    statusCode?: number;
   };
 }
 
@@ -88,21 +91,51 @@ class ApiClient {
     // Request Interceptor
     this.client.interceptors.request.use(
       (config) => {
+        // Add auth token
         const token = TokenManager.getToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Log request in development
+        if (ENABLE_API_LOGGING && import.meta.env.DEV) {
+          console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, {
+            params: config.params,
+            data: config.data,
+          });
+        }
+
         return config;
       },
       (error) => {
+        if (ENABLE_API_LOGGING && import.meta.env.DEV) {
+          console.error('[API Request Error]', error);
+        }
         return Promise.reject(error);
       }
     );
 
     // Response Interceptor
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        // Log response in development
+        if (ENABLE_API_LOGGING && import.meta.env.DEV) {
+          console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+            status: response.status,
+            data: response.data,
+          });
+        }
+        return response;
+      },
       async (error: AxiosError) => {
+        // Log error in development
+        if (ENABLE_API_LOGGING && import.meta.env.DEV) {
+          console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message,
+          });
+        }
         const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
         // Handle 401 Unauthorized
@@ -218,6 +251,43 @@ class ApiClient {
     }
   }
 
+  // File Upload with Progress
+  async uploadFileWithProgress<T = any>(
+    url: string,
+    file: File,
+    additionalData?: Record<string, any>,
+    onProgress?: (progress: number) => void
+  ): Promise<ApiResponse<T>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    if (additionalData) {
+      Object.keys(additionalData).forEach((key) => {
+        const value = additionalData[key];
+        if (value !== undefined && value !== null) {
+          formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+        }
+      });
+    }
+
+    try {
+      const response: AxiosResponse<ApiResponse<T>> = await this.client.post(url, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total && onProgress) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            onProgress(percentCompleted);
+          }
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
   // Error Handler
   private handleError(error: any): ApiResponse {
     if (axios.isAxiosError(error)) {
@@ -225,12 +295,16 @@ class ApiClient {
 
       if (axiosError.response) {
         // Server responded with error
+        const statusCode = axiosError.response.status;
+        const errorCode = axiosError.response.data.error?.code || getErrorCodeFromStatus(statusCode);
+
         return {
           success: false,
           error: {
-            code: axiosError.response.data.error?.code || 'SERVER_ERROR',
+            code: errorCode,
             message: axiosError.response.data.error?.message || 'An error occurred',
             details: axiosError.response.data.error?.details,
+            statusCode,
           },
         };
       } else if (axiosError.request) {
@@ -240,6 +314,15 @@ class ApiClient {
           error: {
             code: 'NETWORK_ERROR',
             message: 'Network error. Please check your connection.',
+          },
+        };
+      } else if (axiosError.code === 'ECONNABORTED') {
+        // Timeout error
+        return {
+          success: false,
+          error: {
+            code: 'TIMEOUT_ERROR',
+            message: 'Request timed out. Please try again.',
           },
         };
       }

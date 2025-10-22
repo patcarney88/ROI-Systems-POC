@@ -220,7 +220,109 @@ export default function AnalyticsDashboard() {
   };
 
   const handleExport = () => {
-    alert('Exporting analytics data...');
+    try {
+      // Convert analytics data to CSV format
+      const csvData = generateCSV();
+
+      // Create blob and download
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `analytics-report-${timestamp}.csv`);
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      console.log('Analytics data exported successfully');
+    } catch (error) {
+      console.error('Failed to export analytics:', error);
+      alert('Failed to export data. Please try again.');
+    }
+  };
+
+  const generateCSV = (): string => {
+    const sections: string[] = [];
+
+    // Header
+    sections.push('ROI Systems - Analytics Report');
+    sections.push(`Generated: ${new Date().toLocaleString()}`);
+    sections.push(`Time Period: ${timeRange}`);
+    sections.push('');
+
+    // Key Metrics
+    sections.push('KEY METRICS');
+    sections.push('Metric,Value,Change');
+    sections.push(`Alert Accuracy,${alertPerformanceData.accuracy}%,+2.3%`);
+    sections.push(`Conversion Rate,${alertPerformanceData.conversionRate}%,+4.1%`);
+    sections.push(`Alert-Sourced Revenue,$${(revenueData.alertSourcedRevenue / 1000).toFixed(0)}K,+12.4%`);
+    sections.push(`Avg Response Time,${alertPerformanceData.averageResponseTime}h,-0.6h`);
+    sections.push('');
+
+    // Alert Performance by Type
+    sections.push('ALERT PERFORMANCE BY TYPE');
+    sections.push('Type,Count,Conversions,Conversion Rate');
+    alertPerformanceData.alertsByType.forEach(alert => {
+      sections.push(`${alert.type},${alert.count},${alert.conversions},${alert.conversionRate}%`);
+    });
+    sections.push('');
+
+    // Revenue Data
+    sections.push('REVENUE METRICS');
+    sections.push('Metric,Value');
+    sections.push(`Total Revenue,$${revenueData.totalRevenue.toLocaleString()}`);
+    sections.push(`Alert-Sourced Revenue,$${revenueData.alertSourcedRevenue.toLocaleString()}`);
+    sections.push(`Alert-Sourced Percentage,${revenueData.alertSourcedPercentage}%`);
+    sections.push(`Average Deal Size,$${revenueData.averageDealSize.toLocaleString()}`);
+    sections.push(`Total Deals,${revenueData.totalDeals}`);
+    sections.push(`Alert-Sourced Deals,${revenueData.alertSourcedDeals}`);
+    sections.push('');
+
+    // Revenue Trend
+    sections.push('REVENUE TREND');
+    sections.push('Month,Total Revenue,Alert-Sourced Revenue');
+    revenueData.revenueTrend.forEach(data => {
+      sections.push(`${data.month},$${data.revenue.toLocaleString()},$${data.alertSourced.toLocaleString()}`);
+    });
+    sections.push('');
+
+    // Client Lifecycle
+    sections.push('CLIENT LIFECYCLE');
+    sections.push('Stage,Count,Percentage,Avg Time (days)');
+    clientLifecycleData.stageDistribution.forEach(stage => {
+      sections.push(`${stage.stage},${stage.count},${stage.percentage}%,${stage.avgTime}`);
+    });
+    sections.push('');
+
+    // Competitive Metrics
+    sections.push('COMPETITIVE INSIGHTS');
+    sections.push('Metric,Your Value,Market Average,Difference');
+    sections.push(`Response Time,${competitiveData.averageResponseTime}h,${competitiveData.marketAverageResponseTime}h,${((competitiveData.marketAverageResponseTime - competitiveData.averageResponseTime) / competitiveData.marketAverageResponseTime * 100).toFixed(0)}% faster`);
+    sections.push(`Conversion Rate,${competitiveData.conversionRate}%,${competitiveData.marketAverageConversionRate}%,+${(competitiveData.conversionRate - competitiveData.marketAverageConversionRate).toFixed(1)}%`);
+    sections.push(`Client Satisfaction,${competitiveData.clientSatisfaction}/5.0,${competitiveData.marketAverageClientSatisfaction}/5.0,+${(competitiveData.clientSatisfaction - competitiveData.marketAverageClientSatisfaction).toFixed(1)}`);
+    sections.push('');
+
+    // Leaderboard
+    sections.push('TEAM LEADERBOARD');
+    sections.push('Rank,Agent,Deals,Revenue,Response Time');
+    competitiveData.leaderboard.forEach(agent => {
+      sections.push(`${agent.rank},${agent.agentName},${agent.deals},$${agent.revenue.toLocaleString()},${agent.responseTime}h`);
+    });
+    sections.push('');
+
+    // Predictive Analytics
+    sections.push('PREDICTIVE ANALYTICS - NEXT BEST ACTIONS');
+    sections.push('Client,Action,Confidence,Expected Outcome');
+    predictiveData.nextBestActions.forEach(action => {
+      sections.push(`${action.clientName},"${action.action}",${action.confidence}%,"${action.expectedOutcome}"`);
+    });
+
+    return sections.join('\n');
   };
 
   return (

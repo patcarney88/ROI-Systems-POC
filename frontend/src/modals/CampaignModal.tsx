@@ -1,20 +1,14 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { campaignSchema, type CampaignFormData } from '../schemas/validation';
+import { notify } from '../utils/notifications';
 import './Modal.css';
 
 interface CampaignModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLaunch: (campaign: CampaignData) => void;
-}
-
-interface CampaignData {
-  name: string;
-  subject: string;
-  template: string;
-  recipients: string;
-  schedule: 'now' | 'scheduled';
-  scheduleDate?: string;
-  message: string;
+  onLaunch: (campaign: any) => void;
 }
 
 const TEMPLATES = [
@@ -28,31 +22,19 @@ const TEMPLATES = [
 ];
 
 export default function CampaignModal({ isOpen, onClose, onLaunch }: CampaignModalProps) {
-  const [formData, setFormData] = useState<CampaignData>({
-    name: '',
-    subject: '',
-    template: TEMPLATES[0],
-    recipients: 'all',
-    schedule: 'now',
-    scheduleDate: '',
-    message: ''
-  });
   const [launching, setLaunching] = useState(false);
 
-  if (!isOpen) return null;
-
-  const handleLaunch = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name || !formData.subject || !formData.message) return;
-
-    setLaunching(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    onLaunch(formData);
-
-    // Reset form
-    setFormData({
+  // React Hook Form with Zod validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+    watch,
+    reset
+  } = useForm<CampaignFormData>({
+    resolver: zodResolver(campaignSchema),
+    mode: 'onChange',
+    defaultValues: {
       name: '',
       subject: '',
       template: TEMPLATES[0],
@@ -60,7 +42,22 @@ export default function CampaignModal({ isOpen, onClose, onLaunch }: CampaignMod
       schedule: 'now',
       scheduleDate: '',
       message: ''
-    });
+    }
+  });
+
+  const schedule = watch('schedule');
+
+  if (!isOpen) return null;
+
+  const onSubmit = async (data: CampaignFormData) => {
+    setLaunching(true);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    onLaunch(data);
+    notify.success(data.schedule === 'now' ? 'Campaign sent successfully!' : 'Campaign scheduled successfully!');
+
+    // Reset form
+    reset();
     setLaunching(false);
     onClose();
   };
@@ -77,7 +74,7 @@ export default function CampaignModal({ isOpen, onClose, onLaunch }: CampaignMod
           </button>
         </div>
 
-        <form onSubmit={handleLaunch}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="modal-body">
             <div className="upload-form">
               <div className="form-group">
@@ -86,18 +83,21 @@ export default function CampaignModal({ isOpen, onClose, onLaunch }: CampaignMod
                   id="name"
                   type="text"
                   placeholder="Q1 2025 Market Update"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
+                  {...register('name')}
+                  className={errors.name ? 'error' : ''}
                 />
+                {errors.name && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.name.message}
+                  </span>
+                )}
               </div>
 
               <div className="form-group">
                 <label htmlFor="template">Email Template</label>
                 <select
                   id="template"
-                  value={formData.template}
-                  onChange={(e) => setFormData({ ...formData, template: e.target.value })}
+                  {...register('template')}
                 >
                   {TEMPLATES.map(template => (
                     <option key={template} value={template}>{template}</option>
@@ -111,18 +111,22 @@ export default function CampaignModal({ isOpen, onClose, onLaunch }: CampaignMod
                   id="subject"
                   type="text"
                   placeholder="Your Market Update for January 2025"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  required
+                  {...register('subject')}
+                  className={errors.subject ? 'error' : ''}
                 />
+                {errors.subject && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.subject.message}
+                  </span>
+                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="recipients">Recipients</label>
+                <label htmlFor="recipients">Recipients *</label>
                 <select
                   id="recipients"
-                  value={formData.recipients}
-                  onChange={(e) => setFormData({ ...formData, recipients: e.target.value })}
+                  {...register('recipients')}
+                  className={errors.recipients ? 'error' : ''}
                 >
                   <option value="all">All Clients</option>
                   <option value="active">Active Clients Only</option>
@@ -130,6 +134,11 @@ export default function CampaignModal({ isOpen, onClose, onLaunch }: CampaignMod
                   <option value="dormant">Dormant Clients</option>
                   <option value="recent">Recent Transactions (90 days)</option>
                 </select>
+                {errors.recipients && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.recipients.message}
+                  </span>
+                )}
               </div>
 
               <div className="form-group">
@@ -137,11 +146,15 @@ export default function CampaignModal({ isOpen, onClose, onLaunch }: CampaignMod
                 <textarea
                   id="message"
                   placeholder="Write your email message here..."
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  {...register('message')}
                   rows={6}
-                  required
+                  className={errors.message ? 'error' : ''}
                 />
+                {errors.message && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.message.message}
+                  </span>
+                )}
                 <small style={{ fontSize: '0.75rem', color: 'rgb(100, 116, 139)', marginTop: '0.25rem' }}>
                   Tip: Personalize with [CLIENT_NAME], [PROPERTY_ADDRESS], [AGENT_NAME]
                 </small>
@@ -153,36 +166,37 @@ export default function CampaignModal({ isOpen, onClose, onLaunch }: CampaignMod
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                     <input
                       type="radio"
-                      name="schedule"
                       value="now"
-                      checked={formData.schedule === 'now'}
-                      onChange={() => setFormData({ ...formData, schedule: 'now', scheduleDate: '' })}
+                      {...register('schedule')}
                     />
                     <span style={{ fontSize: '0.875rem' }}>Send Now</span>
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                     <input
                       type="radio"
-                      name="schedule"
                       value="scheduled"
-                      checked={formData.schedule === 'scheduled'}
-                      onChange={() => setFormData({ ...formData, schedule: 'scheduled' })}
+                      {...register('schedule')}
                     />
                     <span style={{ fontSize: '0.875rem' }}>Schedule for Later</span>
                   </label>
                 </div>
               </div>
 
-              {formData.schedule === 'scheduled' && (
+              {schedule === 'scheduled' && (
                 <div className="form-group">
-                  <label htmlFor="scheduleDate">Send Date & Time</label>
+                  <label htmlFor="scheduleDate">Send Date & Time *</label>
                   <input
                     id="scheduleDate"
                     type="datetime-local"
-                    value={formData.scheduleDate}
-                    onChange={(e) => setFormData({ ...formData, scheduleDate: e.target.value })}
+                    {...register('scheduleDate')}
                     min={new Date().toISOString().slice(0, 16)}
+                    className={errors.scheduleDate ? 'error' : ''}
                   />
+                  {errors.scheduleDate && (
+                    <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                      {errors.scheduleDate.message}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -195,7 +209,7 @@ export default function CampaignModal({ isOpen, onClose, onLaunch }: CampaignMod
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={!formData.name || !formData.subject || !formData.message || launching}
+              disabled={!isValid || launching}
             >
               {launching ? (
                 <>
@@ -204,7 +218,7 @@ export default function CampaignModal({ isOpen, onClose, onLaunch }: CampaignMod
                 </>
               ) : (
                 <>
-                  <span>{formData.schedule === 'now' ? 'Send Campaign' : 'Schedule Campaign'}</span>
+                  <span>{schedule === 'now' ? 'Send Campaign' : 'Schedule Campaign'}</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M5 12h14M12 5l7 7-7 7"></path>
                   </svg>
