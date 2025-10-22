@@ -1,8 +1,9 @@
 name: CD - Deploy to Development
 
 on:
-  push:
-    branches: [ develop ]
+  # Disabled until AWS infrastructure is provisioned
+  # push:
+  #   branches: [ develop ]
   workflow_dispatch:
     inputs:
       deploy_target:
@@ -165,7 +166,7 @@ jobs:
             Commit: ${{ github.sha }}
             Author: ${{ github.actor }}
             Target: ${{ github.event.inputs.deploy_target || 'all' }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
           
       - name: Update deployment tracking
         run: |

@@ -12,6 +12,14 @@ const logger = createLogger('rate-limiter');
  * PRODUCTION-READY: Persistent rate limit counts
  */
 const createRedisStore = (prefix: string) => {
+  // Only use Redis if it's enabled, otherwise fall back to in-memory store
+  const useRedis = process.env.REDIS_ENABLED === 'true';
+
+  if (!useRedis) {
+    logger.info('Redis disabled - using in-memory rate limiting');
+    return undefined; // express-rate-limit will use default in-memory store
+  }
+
   return new RedisStore({
     // @ts-expect-error - RedisStore expects redis client, ioredis is compatible
     sendCommand: (...args: string[]) => redisClient.call(...args),
@@ -70,10 +78,7 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createRedisStore('auth'),
-  keyGenerator: (req: Request) => {
-    // Rate limit by IP address
-    return req.ip || 'unknown';
-  },
+  // Removed custom keyGenerator to use default standardIpKeyGenerator for IPv6 support
   handler: (req: Request, res: Response) => {
     logger.warn('Authentication rate limit exceeded - Possible brute force attack', {
       ip: req.ip,
@@ -108,10 +113,8 @@ export const uploadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createRedisStore('upload'),
-  keyGenerator: (req: Request) => {
-    // Rate limit by user ID if authenticated, otherwise by IP
-    return req.user?.userId || req.ip || 'unknown';
-  },
+  // Use default IP-based limiting for IPv6 support
+  // TODO: Implement user-based limiting with standardIpKeyGenerator
   handler: (req: Request, res: Response) => {
     logger.warn('Upload rate limit exceeded', {
       ip: req.ip,
@@ -143,10 +146,8 @@ export const sensitiveOperationsLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createRedisStore('sensitive'),
-  keyGenerator: (req: Request) => {
-    // Must be authenticated for sensitive operations
-    return req.user?.userId || req.ip || 'unknown';
-  },
+  // Use default IP-based limiting for IPv6 support
+  // TODO: Implement user-based limiting with standardIpKeyGenerator
   handler: (req: Request, res: Response) => {
     logger.warn('Sensitive operations rate limit exceeded', {
       ip: req.ip,
@@ -179,9 +180,8 @@ export const aiOperationsLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createRedisStore('ai'),
-  keyGenerator: (req: Request) => {
-    return req.user?.userId || req.ip || 'unknown';
-  },
+  // Use default IP-based limiting for IPv6 support
+  // TODO: Implement user-based limiting with standardIpKeyGenerator
   handler: (req: Request, res: Response) => {
     logger.warn('AI operations rate limit exceeded', {
       ip: req.ip,

@@ -1,4 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { documentUploadSchema, type DocumentUploadFormData, validateFiles } from '../schemas/validation';
+import { notify } from '../utils/notifications';
+import { apiClient } from '../services/api.client';
+import { documentApi } from '../services/api.services';
 import './Modal.css';
 
 interface DocumentUploadModalProps {
@@ -10,7 +16,7 @@ interface DocumentUploadModalProps {
 interface DocumentMetadata {
   client: string;
   type: string;
-  description: string;
+  description?: string;
 }
 
 const DOCUMENT_TYPES = [
@@ -27,13 +33,35 @@ const DOCUMENT_TYPES = [
 export default function DocumentUploadModal({ isOpen, onClose, onUpload }: DocumentUploadModalProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [metadata, setMetadata] = useState<DocumentMetadata>({
-    client: '',
-    type: DOCUMENT_TYPES[0],
-    description: ''
-  });
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [fileErrors, setFileErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // React Hook Form with Zod validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+    reset
+  } = useForm<DocumentUploadFormData>({
+    resolver: zodResolver(documentUploadSchema),
+    mode: 'onChange',
+    defaultValues: {
+      client: '',
+      type: DOCUMENT_TYPES[0],
+      description: ''
+    }
+  });
+
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      reset();
+      setFiles([]);
+      setFileErrors([]);
+    }
+  }, [isOpen, reset]);
 
   if (!isOpen) return null;
 
@@ -52,39 +80,111 @@ export default function DocumentUploadModal({ isOpen, onClose, onUpload }: Docum
     setIsDragging(false);
 
     const droppedFiles = Array.from(e.dataTransfer.files);
-    setFiles(prev => [...prev, ...droppedFiles]);
+    addFiles(droppedFiles);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      setFiles(prev => [...prev, ...selectedFiles]);
+      addFiles(selectedFiles);
     }
+  };
+
+  const addFiles = (newFiles: File[]) => {
+    // Validate files
+    const validation = validateFiles(newFiles);
+
+    if (!validation.valid) {
+      setFileErrors(validation.errors);
+      notify.error(validation.errors[0]);
+      return;
+    }
+
+    setFileErrors([]);
+    setFiles(prev => [...prev, ...newFiles]);
+    notify.success(`${newFiles.length} file(s) added`);
   };
 
   const removeFile = (index: number) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
+    notify.info('File removed');
   };
 
-  const handleUpload = async () => {
-    if (files.length === 0 || !metadata.client) return;
+  const onSubmit = async (data: DocumentUploadFormData) => {
+    // Validate files exist
+    if (files.length === 0) {
+      notify.error('Please select at least one file to upload');
+      return;
+    }
+
+    // Validate files again before upload
+    const validation = validateFiles(files);
+    if (!validation.valid) {
+      setFileErrors(validation.errors);
+      notify.error(validation.errors[0]);
+      return;
+    }
 
     setUploading(true);
+    setUploadProgress(0);
 
-    // Simulate upload delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      // Upload files one by one with progress tracking
+      let uploadedCount = 0;
+      const totalFiles = files.length;
 
-    onUpload(files, metadata);
+      for (const file of files) {
+        // Calculate progress for this file
+        const fileProgress = (uploadedCount / totalFiles) * 100;
+        setUploadProgress(Math.round(fileProgress));
 
-    // Reset form
-    setFiles([]);
-    setMetadata({
-      client: '',
-      type: DOCUMENT_TYPES[0],
-      description: ''
-    });
-    setUploading(false);
-    onClose();
+        // Upload file with progress tracking
+        const response = await apiClient.uploadFileWithProgress(
+          '/documents',
+          file,
+          {
+            client: data.client,
+            title: file.name,
+            type: data.type,
+            metadata: {
+              description: data.description || '',
+              uploadedFrom: 'DocumentUploadModal'
+            }
+          },
+          (progress) => {
+            // Calculate total progress including this file's progress
+            const totalProgress = fileProgress + (progress / totalFiles);
+            setUploadProgress(Math.round(totalProgress));
+          }
+        );
+
+        if (!response.success) {
+          throw new Error(response.error?.message || 'Upload failed');
+        }
+
+        uploadedCount++;
+      }
+
+      // Call original callback if provided
+      if (onUpload) {
+        onUpload(files, data);
+      }
+
+      notify.success(`${files.length} document(s) uploaded successfully`);
+
+      // Reset form
+      setFiles([]);
+      setFileErrors([]);
+      setUploadProgress(0);
+      reset();
+      setUploading(false);
+      onClose();
+    } catch (error: any) {
+      console.error('Upload failed:', error);
+      notify.error(error.message || 'Failed to upload documents');
+      setUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -105,125 +205,174 @@ export default function DocumentUploadModal({ isOpen, onClose, onUpload }: Docum
           </button>
         </div>
 
-        <div className="modal-body">
-          {/* Drag and Drop Zone */}
-          <div
-            className={`upload-zone ${isDragging ? 'dragging' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <div className="upload-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="modal-body">
+            {/* Drag and Drop Zone */}
+            <div
+              className={`upload-zone ${isDragging ? 'dragging' : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div className="upload-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <h3>Drag & Drop files here</h3>
+              <p>or click to browse</p>
+              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>
+                Supported: PDF, DOC, DOCX, JPG, PNG (max 10MB)
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
             </div>
-            <h3>Drag & Drop files here</h3>
-            <p>or click to browse</p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              onChange={handleFileSelect}
-              style={{ display: 'none' }}
-            />
-          </div>
 
-          {/* Selected Files */}
-          {files.length > 0 && (
-            <div className="selected-files">
-              <h4>Selected Files ({files.length})</h4>
-              <div className="file-list">
-                {files.map((file, index) => (
-                  <div key={index} className="file-item">
-                    <div className="file-icon">📄</div>
-                    <div className="file-info">
-                      <div className="file-name">{file.name}</div>
-                      <div className="file-size">{formatFileSize(file.size)}</div>
-                    </div>
-                    <button
-                      className="file-remove"
-                      onClick={() => removeFile(index)}
-                      aria-label="Remove file"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M18 6L6 18M6 6l12 12"></path>
-                      </svg>
-                    </button>
-                  </div>
+            {/* File Errors */}
+            {fileErrors.length > 0 && (
+              <div style={{
+                marginTop: '1rem',
+                padding: '0.75rem',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '8px'
+              }}>
+                {fileErrors.map((error, index) => (
+                  <p key={index} style={{
+                    margin: '0.25rem 0',
+                    fontSize: '0.875rem',
+                    color: '#ef4444'
+                  }}>
+                    {error}
+                  </p>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Metadata Form */}
-          <div className="upload-form">
-            <div className="form-group">
-              <label htmlFor="client">Client Name *</label>
-              <input
-                id="client"
-                type="text"
-                placeholder="Enter client name"
-                value={metadata.client}
-                onChange={(e) => setMetadata({ ...metadata, client: e.target.value })}
-                required
-              />
-            </div>
+            {/* Selected Files */}
+            {files.length > 0 && (
+              <div className="selected-files">
+                <h4>Selected Files ({files.length})</h4>
+                <div className="file-list">
+                  {files.map((file, index) => (
+                    <div key={index} className="file-item">
+                      <div className="file-icon">📄</div>
+                      <div className="file-info">
+                        <div className="file-name">{file.name}</div>
+                        <div className="file-size">{formatFileSize(file.size)}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="file-remove"
+                        onClick={() => removeFile(index)}
+                        aria-label="Remove file"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 6L6 18M6 6l12 12"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            <div className="form-group">
-              <label htmlFor="type">Document Type *</label>
-              <select
-                id="type"
-                value={metadata.type}
-                onChange={(e) => setMetadata({ ...metadata, type: e.target.value })}
-              >
-                {DOCUMENT_TYPES.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
+            {/* Metadata Form */}
+            <div className="upload-form">
+              <div className="form-group">
+                <label htmlFor="client">Client Name *</label>
+                <input
+                  id="client"
+                  type="text"
+                  placeholder="Enter client name"
+                  {...register('client')}
+                  className={errors.client ? 'error' : ''}
+                />
+                {errors.client && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.client.message}
+                  </span>
+                )}
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="description">Description (Optional)</label>
-              <textarea
-                id="description"
-                placeholder="Add notes or description"
-                value={metadata.description}
-                onChange={(e) => setMetadata({ ...metadata, description: e.target.value })}
-                rows={3}
-              />
+              <div className="form-group">
+                <label htmlFor="type">Document Type *</label>
+                <select
+                  id="type"
+                  {...register('type')}
+                >
+                  {DOCUMENT_TYPES.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="description">Description (Optional)</label>
+                <textarea
+                  id="description"
+                  placeholder="Add notes or description"
+                  {...register('description')}
+                  rows={3}
+                  className={errors.description ? 'error' : ''}
+                />
+                {errors.description && (
+                  <span style={{ display: 'block', color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {errors.description.message}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose} disabled={uploading}>
-            Cancel
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={handleUpload}
-            disabled={files.length === 0 || !metadata.client || uploading}
-          >
-            {uploading ? (
-              <>
-                <div className="spinner-small"></div>
-                <span>Uploading...</span>
-              </>
-            ) : (
-              <>
-                <span>Upload {files.length > 0 ? `${files.length} File${files.length > 1 ? 's' : ''}` : ''}</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7"></path>
-                </svg>
-              </>
-            )}
-          </button>
-        </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={uploading}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={files.length === 0 || !isValid || uploading}
+              style={{ position: 'relative', overflow: 'hidden' }}
+            >
+              {uploading && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    height: '4px',
+                    width: `${uploadProgress}%`,
+                    background: 'rgba(255, 255, 255, 0.3)',
+                    transition: 'width 0.3s ease'
+                  }}
+                />
+              )}
+              {uploading ? (
+                <>
+                  <div className="spinner-small"></div>
+                  <span>Uploading... {uploadProgress}%</span>
+                </>
+              ) : (
+                <>
+                  <span>Upload {files.length > 0 ? `${files.length} File${files.length > 1 ? 's' : ''}` : ''}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"></path>
+                  </svg>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

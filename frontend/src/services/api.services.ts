@@ -89,6 +89,10 @@ export const authApi = {
   getProfile: async (): Promise<ApiResponse<{ user: User }>> => {
     return apiClient.get('/auth/profile');
   },
+
+  resendVerification: async (data: { email: string }): Promise<ApiResponse<{ message: string }>> => {
+    return apiClient.post('/auth/resend-verification', data);
+  },
 };
 
 // Document API
@@ -124,6 +128,65 @@ export const documentApi = {
 
   delete: async (id: string): Promise<ApiResponse> => {
     return apiClient.delete(`/documents/${id}`);
+  },
+
+  download: async (id: string): Promise<void> => {
+    try {
+      // Get auth token for authenticated download
+      const token = localStorage.getItem('auth_token');
+
+      // Create download URL
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const downloadUrl = `${baseUrl}/api/v1/documents/${id}/download`;
+
+      // Fetch file with authentication
+      const response = await fetch(downloadUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Download failed: ${response.statusText}`);
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `document_${id}.pdf`; // Default filename
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1].replace(/['"]/g, '');
+          // Decode if URL encoded
+          try {
+            filename = decodeURIComponent(filename);
+          } catch (e) {
+            // Use as-is if decoding fails
+          }
+        }
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      throw error;
+    }
   },
 
   getStats: async (): Promise<ApiResponse<{ stats: any }>> => {
@@ -207,6 +270,10 @@ export const campaignApi = {
 
   delete: async (id: string): Promise<ApiResponse> => {
     return apiClient.delete(`/campaigns/${id}`);
+  },
+
+  duplicate: async (id: string): Promise<ApiResponse<{ campaign: Campaign }>> => {
+    return apiClient.post(`/campaigns/${id}/duplicate`);
   },
 
   send: async (id: string): Promise<ApiResponse<{ campaign: Campaign; message: string }>> => {

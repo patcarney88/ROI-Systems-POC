@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { createLogger } from './utils/logger';
+import { validateEnv } from './config/validate-env';
+import { Server } from 'http';
 
 // Load environment variables
 dotenv.config();
@@ -11,10 +13,21 @@ dotenv.config();
 // Initialize logger
 const logger = createLogger('server');
 
+// Validate environment variables before proceeding
+try {
+  validateEnv();
+} catch (error) {
+  logger.error('Environment validation failed:', error);
+  process.exit(1);
+}
+
 // Create Express app
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 const API_VERSION = process.env.API_VERSION || 'v1';
+
+// Server instance for graceful shutdown
+let server: Server;
 
 // SECURITY: Enhanced Helmet configuration for production
 app.use(helmet({
@@ -93,18 +106,11 @@ import { globalLimiter } from './middleware/rateLimiter';
 // Apply global rate limiting to all API routes
 app.use('/api/', globalLimiter);
 
-// Health check endpoint
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development'
-    }
-  });
-});
+// Import health routes
+import healthRoutes from './routes/health.routes';
+
+// Mount health check routes
+app.use('/health', healthRoutes);
 
 // API version endpoint
 app.get(`/api/${API_VERSION}`, (_req: Request, res: Response) => {
@@ -156,24 +162,134 @@ app.use((req: Request, res: Response) => {
 // Global error handling middleware
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  logger.info(`🚀 ROI Systems API Server started`);
-  logger.info(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info(`🌐 Server listening on port ${PORT}`);
-  logger.info(`📡 API endpoint: http://localhost:${PORT}/api/${API_VERSION}`);
-  logger.info(`❤️  Health check: http://localhost:${PORT}/health`);
+// Initialize database and start server
+async function startServer() {
+  try {
+    // Connect to database with retry logic
+    logger.info('Initializing database connection...');
+    const { connectDB } = await import('./config/db-connection');
+    await connectDB(5, 5000);
+    logger.info('Database connection established successfully');
+
+    // Initialize models AFTER database connection
+    logger.info('Initializing database models...');
+    const { initializeModels, initializeAssociations } = await import('./models');
+    initializeModels();
+    logger.info('Database models initialized successfully');
+
+    // Initialize model associations
+    logger.info('Setting up model associations...');
+    initializeAssociations();
+    logger.info('Model associations configured successfully');
+
+    // Sync database models if in development
+    if (process.env.NODE_ENV === 'development' && process.env.DB_SYNC === 'true') {
+      logger.info('Syncing database models...');
+      const { default: sequelize } = await import('./config/sequelize');
+      await sequelize.sync({ alter: false });
+      logger.info('Database models synced successfully');
+    }
+
+    // Start HTTP server
+    server = app.listen(PORT, () => {
+      logger.info('============================================');
+      logger.info('🚀 ROI Systems API Server started');
+      logger.info(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`🌐 Server listening on port ${PORT}`);
+      logger.info(`📡 API endpoint: http://localhost:${PORT}/api/${API_VERSION}`);
+      logger.info(`❤️  Health check: http://localhost:${PORT}/health`);
+      logger.info(`📊 Detailed health: http://localhost:${PORT}/health/detailed`);
+      logger.info('============================================');
+    });
+
+    // Handle server errors
+    server.on('error', (error: any) => {
+      if (error.syscall !== 'listen') {
+        throw error;
+      }
+
+      const bind = typeof PORT === 'string' ? `Pipe ${PORT}` : `Port ${PORT}`;
+
+      switch (error.code) {
+        case 'EACCES':
+          logger.error(`${bind} requires elevated privileges`);
+          process.exit(1);
+          break;
+        case 'EADDRINUSE':
+          logger.error(`${bind} is already in use`);
+          process.exit(1);
+          break;
+        default:
+          throw error;
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Graceful shutdown handler
+async function gracefulShutdown(signal: string) {
+  logger.info(`${signal} signal received: starting graceful shutdown`);
+
+  // Stop accepting new connections
+  if (server) {
+    server.close(async () => {
+      logger.info('HTTP server closed');
+
+      try {
+        // Close database connection
+        const { disconnectDB } = await import('./config/db-connection');
+        await disconnectDB();
+        logger.info('Database connection closed');
+
+        // Close any other connections (Redis, etc.)
+        // Add additional cleanup here if needed
+
+        logger.info('Graceful shutdown completed');
+        process.exit(0);
+      } catch (error) {
+        logger.error('Error during graceful shutdown:', error);
+        process.exit(1);
+      }
+    });
+
+    // Force shutdown after 30 seconds
+    setTimeout(() => {
+      logger.error('Could not close connections in time, forcefully shutting down');
+      process.exit(1);
+    }, 30000);
+  } else {
+    process.exit(0);
+  }
+}
+
+// Register shutdown handlers
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  process.exit(0);
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  // Ignore Redis connection errors since Redis is optional
+  const errorMessage = reason instanceof Error ? reason.message : String(reason);
+  if (errorMessage.includes('ECONNREFUSED') && errorMessage.includes('6379')) {
+    logger.warn('Redis connection failed (optional service, continuing without Redis)', { reason: errorMessage });
+    return;
+  }
+
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  gracefulShutdown('UNHANDLED_REJECTION');
 });
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  process.exit(0);
-});
+// Start the server
+startServer();
 
 export default app;

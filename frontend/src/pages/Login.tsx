@@ -1,25 +1,46 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, Loader } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../hooks/useAuth';
 import type { UserRole, AuthProvider } from '../types/auth';
 import { ROLE_NAMES, ROLE_DESCRIPTIONS, ROLE_ICONS } from '../types/auth';
+import { loginSchema, type LoginFormData } from '../schemas/validation';
+import { handleApiError } from '../utils/error-handler';
+import { notify } from '../utils/notifications';
 
 export default function Login() {
   const navigate = useNavigate();
   const { login, loginWithSSO } = useAuth();
-  
+
   const [step, setStep] = useState<'role' | 'credentials' | 'mfa'>('role');
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [mfaCode, setMfaCode] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const roles: UserRole[] = ['title_agent', 'realtor', 'loan_officer', 'homeowner'];
+
+  // React Hook Form with Zod validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+    watch
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onChange',
+    defaultValues: {
+      email: '',
+      password: '',
+      rememberMe: false
+    }
+  });
+
+  const email = watch('email');
+  const password = watch('password');
 
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
@@ -28,29 +49,32 @@ export default function Login() {
     localStorage.setItem('selectedRole', role);
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: LoginFormData) => {
     setError('');
     setIsLoading(true);
 
     try {
       const response = await login({
-        email,
-        password,
-        rememberMe
+        email: data.email,
+        password: data.password,
+        rememberMe: data.rememberMe
       });
 
       if (response.success) {
         if (response.requiresMFA) {
           setStep('mfa');
         } else {
+          notify.success('Login successful!');
           // Redirect based on role
           redirectToRoleDashboard(response.user?.role || selectedRole);
         }
       } else {
-        setError(response.error?.message || 'Login failed');
+        const errorMessage = response.error?.message || 'Login failed';
+        setError(errorMessage);
+        notify.error(errorMessage);
       }
     } catch (err) {
+      handleApiError(err, 'Login failed. Please try again.');
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -168,18 +192,27 @@ export default function Login() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="auth-form">
+            <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
               <div className="form-group">
                 <label htmlFor="email">Email</label>
                 <input
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  {...register('email')}
                   placeholder="you@example.com"
-                  required
                   autoFocus
+                  className={errors.email ? 'error' : ''}
                 />
+                {errors.email && (
+                  <span className="field-error" style={{
+                    display: 'block',
+                    color: '#ef4444',
+                    fontSize: '0.875rem',
+                    marginTop: '0.25rem'
+                  }}>
+                    {errors.email.message}
+                  </span>
+                )}
               </div>
 
               <div className="form-group">
@@ -188,10 +221,9 @@ export default function Login() {
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    {...register('password')}
                     placeholder="Enter your password"
-                    required
+                    className={errors.password ? 'error' : ''}
                   />
                   <button
                     type="button"
@@ -202,14 +234,23 @@ export default function Login() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+                {errors.password && (
+                  <span className="field-error" style={{
+                    display: 'block',
+                    color: '#ef4444',
+                    fontSize: '0.875rem',
+                    marginTop: '0.25rem'
+                  }}>
+                    {errors.password.message}
+                  </span>
+                )}
               </div>
 
               <div className="form-options">
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
+                    {...register('rememberMe')}
                   />
                   <span>Remember me</span>
                 </label>
@@ -222,7 +263,7 @@ export default function Login() {
               <button
                 type="submit"
                 className="btn-primary btn-full"
-                disabled={isLoading}
+                disabled={isLoading || !isValid || !email || !password}
               >
                 {isLoading ? (
                   <>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
 import './styles/TitleAgentDashboard.css'
@@ -31,7 +31,9 @@ import MarketingCenter from './pages/MarketingCenter'
 import MyProfile from './pages/MyProfile'
 import Settings from './pages/Settings'
 import HelpSupport from './pages/HelpSupport'
+import NotFound from './pages/NotFound'
 import GlobalSearch from './components/GlobalSearch'
+import { documentApi, clientApi, campaignApi } from './services/api.services'
 
 interface Document {
   id: string;
@@ -89,115 +91,146 @@ function AppContent() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [journeysMenuOpen, setJourneysMenuOpen] = useState(false);
 
-  // Data states
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: '1',
-      title: 'Purchase Agreement - 123 Oak Street',
-      type: 'Purchase Agreement',
-      status: 'active',
-      client: 'Sarah Johnson',
-      uploadDate: '2025-10-05',
-      expiryDate: '2026-10-05',
-      size: '2.4 MB'
-    },
-    {
-      id: '2',
-      title: 'Title Deed - 456 Maple Avenue',
-      type: 'Title Deed',
-      status: 'expiring',
-      client: 'Michael Chen',
-      uploadDate: '2024-11-20',
-      expiryDate: '2025-11-20',
-      size: '1.8 MB'
-    },
-    {
-      id: '3',
-      title: 'Inspection Report - 789 Pine Road',
-      type: 'Inspection',
-      status: 'pending',
-      client: 'Emma Wilson',
-      uploadDate: '2025-10-01',
-      size: '4.2 MB'
-    }
-  ]);
+  // Data states with loading and error handling
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(true);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
 
-  const [clients, setClients] = useState<Client[]>([
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      email: 'sarah.j@email.com',
-      phone: '(555) 123-4567',
-      properties: 3,
-      lastContact: '2 days ago',
-      engagementScore: 92,
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: 'Michael Chen',
-      email: 'mchen@email.com',
-      phone: '(555) 234-5678',
-      properties: 5,
-      lastContact: '1 week ago',
-      engagementScore: 78,
-      status: 'active'
-    },
-    {
-      id: '3',
-      name: 'Emma Wilson',
-      email: 'emma.w@email.com',
-      phone: '(555) 345-6789',
-      properties: 2,
-      lastContact: '3 weeks ago',
-      engagementScore: 45,
-      status: 'at-risk'
-    }
-  ]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
+  const [clientsError, setClientsError] = useState<string | null>(null);
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>([
-    {
-      id: '1',
-      name: 'Q1 Property Update',
-      description: 'Quarterly property market update for all clients',
-      status: 'active',
-      targetAudience: 'All Clients',
-      scheduledDate: '2025-10-15',
-      metrics: {
-        sent: 45,
-        opens: 32,
-        clicks: 18
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(true);
+  const [campaignsError, setCampaignsError] = useState<string | null>(null);
+
+  const [notifications, setNotifications] = useState<string[]>([]);
+
+  // Data fetching functions
+  const fetchDocuments = useCallback(async () => {
+    try {
+      setDocumentsLoading(true);
+      setDocumentsError(null);
+      const response = await documentApi.getAll({ limit: 100 });
+      if (response.success && response.data?.documents) {
+        // Map API response to local Document interface
+        const mappedDocs = response.data.documents.map(doc => ({
+          id: doc.id,
+          title: doc.title,
+          type: doc.type,
+          status: doc.status as 'pending' | 'active' | 'expiring' | 'expired',
+          client: doc.metadata?.clientName || 'Unknown Client',
+          uploadDate: doc.uploadDate,
+          expiryDate: doc.expiryDate,
+          size: `${(doc.size / (1024 * 1024)).toFixed(1)} MB`
+        }));
+        setDocuments(mappedDocs);
+      } else {
+        throw new Error(response.error?.message || 'Failed to fetch documents');
       }
-    },
-    {
-      id: '2',
-      name: 'New Listing Alert',
-      description: 'Alert active clients about new property listings',
-      status: 'scheduled',
-      targetAudience: 'Active Clients',
-      scheduledDate: '2025-10-20'
+    } catch (err) {
+      console.error('Error fetching documents:', err);
+      setDocumentsError('Failed to load documents. Please try again.');
+      // Set some fallback data for demo purposes
+      setDocuments([]);
+    } finally {
+      setDocumentsLoading(false);
     }
-  ]);
+  }, []);
 
-  const [notifications, setNotifications] = useState<string[]>([
-    'Title Deed expiring in 30 days',
-    'New client engagement detected',
-    'Campaign sent to 45 clients'
-  ]);
+  const fetchClients = useCallback(async () => {
+    try {
+      setClientsLoading(true);
+      setClientsError(null);
+      const response = await clientApi.getAll({ limit: 100 });
+      if (response.success && response.data?.clients) {
+        // Map API response to local Client interface
+        const mappedClients = response.data.clients.map(client => ({
+          id: client.id,
+          name: client.name,
+          email: client.email,
+          phone: client.phone || '',
+          properties: client.propertyCount || 0,
+          lastContact: client.lastContact,
+          engagementScore: client.engagementScore,
+          status: client.status as 'active' | 'at-risk' | 'dormant',
+          notes: client.notes
+        }));
+        setClients(mappedClients);
+      } else {
+        throw new Error(response.error?.message || 'Failed to fetch clients');
+      }
+    } catch (err) {
+      console.error('Error fetching clients:', err);
+      setClientsError('Failed to load clients. Please try again.');
+      // Set some fallback data for demo purposes
+      setClients([]);
+    } finally {
+      setClientsLoading(false);
+    }
+  }, []);
 
+  const fetchCampaigns = useCallback(async () => {
+    try {
+      setCampaignsLoading(true);
+      setCampaignsError(null);
+      const response = await campaignApi.getAll({ limit: 100 });
+      if (response.success && response.data?.campaigns) {
+        // Map API response to local Campaign interface
+        const mappedCampaigns = response.data.campaigns.map(campaign => ({
+          id: campaign.id,
+          name: campaign.name,
+          description: campaign.subject,
+          status: campaign.status as 'active' | 'scheduled' | 'paused' | 'completed',
+          targetAudience: campaign.recipients.join(', '),
+          scheduledDate: campaign.scheduleDate || campaign.sentAt || '',
+          metrics: campaign.stats ? {
+            sent: campaign.stats.sent,
+            opens: campaign.stats.opened,
+            clicks: campaign.stats.clicked
+          } : undefined
+        }));
+        setCampaigns(mappedCampaigns);
+      } else {
+        throw new Error(response.error?.message || 'Failed to fetch campaigns');
+      }
+    } catch (err) {
+      console.error('Error fetching campaigns:', err);
+      setCampaignsError('Failed to load campaigns. Please try again.');
+      // Set some fallback data for demo purposes
+      setCampaigns([]);
+    } finally {
+      setCampaignsLoading(false);
+    }
+  }, []);
+
+  // Calculate stats based on actual data
   const stats: Stats = {
     totalDocuments: documents.length,
     activeClients: clients.filter(c => c.status === 'active').length,
-    emailEngagement: 52.4,
-    emailOpenRate: 68.0,
+    emailEngagement: campaigns.length > 0 ?
+      campaigns.reduce((acc, c) => acc + (c.metrics ? (c.metrics.opens / c.metrics.sent * 100) : 0), 0) / campaigns.length : 0,
+    emailOpenRate: campaigns.length > 0 ?
+      campaigns.reduce((acc, c) => acc + (c.metrics ? (c.metrics.clicks / c.metrics.opens * 100) : 0), 0) / campaigns.length : 0,
     timeSaved: 2.4,
     retentionRate: 18.3
   };
 
+  // Initial data fetch
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchAllData = async () => {
+      setLoading(true);
+      // Fetch data in parallel
+      await Promise.all([
+        fetchDocuments(),
+        fetchClients(),
+        fetchCampaigns()
+      ]);
+      setLoading(false);
+    };
+
+    fetchAllData();
+  }, [fetchDocuments, fetchClients, fetchCampaigns]);
 
   // Close notifications dropdown when clicking outside
   useEffect(() => {
@@ -250,42 +283,105 @@ function AppContent() {
     };
   }, [journeysMenuOpen]);
 
-  // Document upload handler
-  const handleDocumentUpload = (files: File[], metadata: any) => {
-    const newDocs = files.map((file, index) => ({
-      id: `${Date.now()}-${index}`,
-      title: `${metadata.type} - ${file.name}`,
-      type: metadata.type,
-      status: 'pending' as const,
-      client: metadata.client,
-      uploadDate: new Date().toISOString().split('T')[0],
-      size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-    }));
+  // Document upload handler with API integration
+  const handleDocumentUpload = async (files: File[], metadata: any) => {
+    try {
+      const uploadPromises = files.map(file =>
+        documentApi.upload(file, {
+          title: `${metadata.type} - ${file.name}`,
+          type: metadata.type,
+          clientId: metadata.clientId,
+          expiryDate: metadata.expiryDate,
+          metadata: { clientName: metadata.client }
+        })
+      );
 
-    setDocuments(prev => [...newDocs, ...prev]);
-    setNotifications(prev => [`Uploaded ${files.length} document(s)`, ...prev]);
+      const results = await Promise.allSettled(uploadPromises);
+      const successCount = results.filter(r => r.status === 'fulfilled').length;
+
+      if (successCount > 0) {
+        setNotifications(prev => [`Successfully uploaded ${successCount} document(s)`, ...prev]);
+        // Refresh documents list
+        await fetchDocuments();
+      } else {
+        throw new Error('All uploads failed');
+      }
+    } catch (err) {
+      console.error('Error uploading documents:', err);
+      setNotifications(prev => [`Failed to upload documents. Please try again.`, ...prev]);
+      // Still add to local state for demo purposes
+      const newDocs = files.map((file, index) => ({
+        id: `temp-${Date.now()}-${index}`,
+        title: `${metadata.type} - ${file.name}`,
+        type: metadata.type,
+        status: 'pending' as const,
+        client: metadata.client,
+        uploadDate: new Date().toISOString().split('T')[0],
+        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+      }));
+      setDocuments(prev => [...newDocs, ...prev]);
+    }
   };
 
-  // Client handlers
-  const handleClientSave = (clientData: any) => {
-    const existingClient = clients.find(c => c.id === clientData.id);
+  // Client handlers with API integration
+  const handleClientSave = async (clientData: any) => {
+    try {
+      const existingClient = clients.find(c => c.id === clientData.id);
 
-    if (existingClient) {
-      // Update existing
-      setClients(prev => prev.map(c =>
-        c.id === clientData.id ? { ...c, ...clientData, lastContact: 'Just now' } : c
-      ));
-      setNotifications(prev => [`Updated client: ${clientData.name}`, ...prev]);
-    } else {
-      // Add new
-      const newClient: Client = {
-        id: `${Date.now()}`,
-        ...clientData,
-        lastContact: 'Just now',
-        engagementScore: 50
-      };
-      setClients(prev => [newClient, ...prev]);
-      setNotifications(prev => [`Added new client: ${clientData.name}`, ...prev]);
+      if (existingClient) {
+        // Update existing client
+        const response = await clientApi.update(clientData.id, {
+          name: clientData.name,
+          email: clientData.email,
+          phone: clientData.phone,
+          propertyCount: clientData.properties,
+          status: clientData.status,
+          notes: clientData.notes
+        });
+
+        if (response.success) {
+          setNotifications(prev => [`Updated client: ${clientData.name}`, ...prev]);
+          // Refresh clients list
+          await fetchClients();
+        } else {
+          throw new Error(response.error?.message || 'Failed to update client');
+        }
+      } else {
+        // Create new client
+        const response = await clientApi.create({
+          name: clientData.name,
+          email: clientData.email,
+          phone: clientData.phone,
+          propertyCount: clientData.properties || 0,
+          status: clientData.status || 'active',
+          notes: clientData.notes
+        });
+
+        if (response.success) {
+          setNotifications(prev => [`Added new client: ${clientData.name}`, ...prev]);
+          // Refresh clients list
+          await fetchClients();
+        } else {
+          throw new Error(response.error?.message || 'Failed to create client');
+        }
+      }
+    } catch (err) {
+      console.error('Error saving client:', err);
+      setNotifications(prev => [`Failed to save client. Please try again.`, ...prev]);
+      // Still update local state for demo purposes
+      if (clients.find(c => c.id === clientData.id)) {
+        setClients(prev => prev.map(c =>
+          c.id === clientData.id ? { ...c, ...clientData, lastContact: 'Just now' } : c
+        ));
+      } else {
+        const newClient: Client = {
+          id: `temp-${Date.now()}`,
+          ...clientData,
+          lastContact: 'Just now',
+          engagementScore: 50
+        };
+        setClients(prev => [newClient, ...prev]);
+      }
     }
   };
 
@@ -294,22 +390,50 @@ function AppContent() {
     console.log('Edit client:', client);
   };
 
-  // Campaign handler
-  const handleCampaignLaunch = (campaign: any) => {
-    const newCampaign: Campaign = {
-      id: `${Date.now()}`,
-      ...campaign,
-      status: campaign.schedule === 'now' ? 'active' : 'scheduled'
-    };
+  // Campaign handler with API integration
+  const handleCampaignLaunch = async (campaign: any) => {
+    try {
+      const response = await campaignApi.create({
+        name: campaign.name,
+        subject: campaign.description || campaign.name,
+        template: campaign.template || 'default',
+        recipients: campaign.recipients === 'all' ?
+          clients.map(c => c.id) :
+          clients.filter(c => c.status === campaign.recipients).map(c => c.id),
+        schedule: campaign.schedule,
+        scheduleDate: campaign.scheduledDate,
+        message: campaign.message
+      });
 
-    setCampaigns(prev => [newCampaign, ...prev]);
+      if (response.success && response.data?.campaign) {
+        const recipientCount = campaign.recipients === 'all' ? clients.length :
+                             clients.filter(c => c.status === campaign.recipients).length;
+        setNotifications(prev => [
+          `Campaign "${campaign.name}" ${campaign.schedule === 'now' ? 'sent' : 'scheduled'} to ${recipientCount} clients`,
+          ...prev
+        ]);
 
-    const recipientCount = campaign.recipients === 'all' ? clients.length :
-                           clients.filter(c => c.status === campaign.recipients).length;
-    setNotifications(prev => [
-      `Campaign "${campaign.name}" ${campaign.schedule === 'now' ? 'sent' : 'scheduled'} to ${recipientCount} clients`,
-      ...prev
-    ]);
+        // If campaign should be sent immediately, send it
+        if (campaign.schedule === 'now' && response.data.campaign.id) {
+          await campaignApi.send(response.data.campaign.id);
+        }
+
+        // Refresh campaigns list
+        await fetchCampaigns();
+      } else {
+        throw new Error(response.error?.message || 'Failed to create campaign');
+      }
+    } catch (err) {
+      console.error('Error launching campaign:', err);
+      setNotifications(prev => [`Failed to launch campaign. Please try again.`, ...prev]);
+      // Still add to local state for demo purposes
+      const newCampaign: Campaign = {
+        id: `temp-${Date.now()}`,
+        ...campaign,
+        status: campaign.schedule === 'now' ? 'active' : 'scheduled'
+      };
+      setCampaigns(prev => [newCampaign, ...prev]);
+    }
   };
 
   if (loading) {
@@ -948,11 +1072,23 @@ function AppContent() {
             element={
               <Dashboard
                 documents={documents}
+                documentsLoading={documentsLoading}
+                documentsError={documentsError}
                 clients={clients}
+                clientsLoading={clientsLoading}
+                clientsError={clientsError}
+                campaigns={campaigns}
+                campaignsLoading={campaignsLoading}
+                campaignsError={campaignsError}
                 stats={stats}
                 onDocumentUpload={handleDocumentUpload}
                 onClientSave={handleClientSave}
                 onCampaignLaunch={handleCampaignLaunch}
+                refreshData={() => {
+                  fetchDocuments();
+                  fetchClients();
+                  fetchCampaigns();
+                }}
               />
             }
           />
@@ -1024,6 +1160,8 @@ function AppContent() {
           <Route path="/profile" element={<MyProfile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/help" element={<HelpSupport />} />
+          {/* 404 Catch-all Route - Must be last */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 

@@ -4,6 +4,7 @@ import * as authController from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
 import { authLimiter, sensitiveOperationsLimiter } from '../middleware/rateLimiter';
+import { getCsrfToken, conditionalCsrf, csrfErrorHandler } from '../middleware/csrf.middleware';
 
 const router = Router();
 
@@ -134,5 +135,16 @@ router.put(
  * @access  Private
  */
 router.post('/logout', authenticate, authController.logout);
+
+/**
+ * @route   GET /api/v1/auth/csrf-token
+ * @desc    Get CSRF token for form submissions
+ * @access  Public
+ * @security Returns a CSRF token that must be included in subsequent requests
+ */
+router.get('/csrf-token', getCsrfToken);
+
+// Apply CSRF error handler to auth routes
+router.use(csrfErrorHandler);
 
 export default router;

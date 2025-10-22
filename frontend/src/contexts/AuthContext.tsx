@@ -38,29 +38,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Auto refresh token before expiration
+  useEffect(() => {
+    const checkTokenExpiry = () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      try {
+        // Decode JWT to check expiration (base64 decode)
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const expiresAt = payload.exp * 1000; // Convert to milliseconds
+        const now = Date.now();
+        const timeUntilExpiry = expiresAt - now;
+
+        // Refresh if token expires in less than 5 minutes
+        if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
+          refreshToken().catch(error => {
+            console.error('Token refresh failed:', error);
+            logout();
+          });
+        } else if (timeUntilExpiry <= 0) {
+          // Token expired, logout
+          logout();
+        }
+      } catch (error) {
+        console.error('Token decode error:', error);
+      }
+    };
+
+    // Check token expiry every minute
+    const interval = setInterval(checkTokenExpiry, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Initialize auth state from localStorage
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('accessToken');
       if (token) {
         try {
-          // Verify token and get user data
-          const response = await fetch('/api/auth/session', {
+          // Get backend URL from env or use default
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+          // Verify token and get user profile
+          const response = await fetch(`${API_URL}/api/v1/auth/profile`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
-          
+
           if (response.ok) {
             const data = await response.json();
-            setUser(data.user);
-          } else {
-            // Token invalid, clear storage
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
+            if (data.success && data.user) {
+              setUser(data.user);
+            }
+          } else if (response.status === 401) {
+            // Token invalid or expired, try to refresh
+            const refreshTokenValue = localStorage.getItem('refreshToken');
+            if (refreshTokenValue) {
+              try {
+                await refreshToken();
+              } catch {
+                // Refresh failed, clear storage
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+              }
+            } else {
+              // No refresh token, clear storage
+              localStorage.removeItem('accessToken');
+            }
           }
         } catch (error) {
           console.error('Auth initialization error:', error);
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
         }
       }
       setIsLoading(false);
@@ -71,15 +122,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: AuthCredentials): Promise<AuthResponse> => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+      const response = await fetch(`${API_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include', // Include cookies for CSRF
         body: JSON.stringify(credentials)
       });
 
       const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: {
+            code: data.error?.code || 'LOGIN_ERROR',
+            message: data.error?.message || 'Login failed'
+          }
+        };
+      }
 
       if (data.success) {
         if (data.requiresMFA) {
@@ -91,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.tokens) {
           localStorage.setItem('accessToken', data.tokens.accessToken);
           localStorage.setItem('refreshToken', data.tokens.refreshToken);
-          
+
           if (credentials.rememberMe) {
             localStorage.setItem('rememberMe', 'true');
           }
@@ -101,15 +165,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.user) {
           setUser(data.user);
         }
+
+        // Fetch user profile to ensure we have complete user data
+        if (data.tokens?.accessToken) {
+          try {
+            const profileResponse = await fetch(`${API_URL}/api/v1/auth/profile`, {
+              headers: {
+                'Authorization': `Bearer ${data.tokens.accessToken}`
+              }
+            });
+
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              if (profileData.success && profileData.user) {
+                setUser(profileData.user);
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch user profile:', error);
+          }
+        }
       }
 
       return data;
     } catch (error) {
+      console.error('Login error:', error);
       return {
         success: false,
         error: {
           code: 'NETWORK_ERROR',
-          message: 'Failed to connect to server'
+          message: 'Failed to connect to server. Please check your connection and try again.'
         }
       };
     }
@@ -183,37 +268,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       const token = localStorage.getItem('accessToken');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
       if (token) {
-        await fetch('/api/auth/logout', {
+        await fetch(`${API_URL}/api/v1/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
-          }
+          },
+          credentials: 'include'
         });
       }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear local state regardless of API call success
+      // Clear all auth-related data from localStorage
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('rememberMe');
       localStorage.removeItem('trustedDevice');
+      localStorage.removeItem('selectedRole');
+
+      // Clear user state
       setUser(null);
+
+      // Redirect to landing page
+      window.location.href = '/';
     }
   };
 
   const register = async (data: RegistrationData): Promise<AuthResponse> => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+      const response = await fetch(`${API_URL}/api/v1/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
 
       const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: {
+            code: result.error?.code || 'REGISTRATION_ERROR',
+            message: result.error?.message || 'Registration failed'
+          }
+        };
+      }
 
       if (result.success && result.tokens) {
         localStorage.setItem('accessToken', result.tokens.accessToken);
@@ -223,11 +330,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return result;
     } catch (error) {
+      console.error('Registration error:', error);
       return {
         success: false,
         error: {
-          code: 'REGISTRATION_ERROR',
-          message: 'Registration failed'
+          code: 'NETWORK_ERROR',
+          message: 'Failed to connect to server. Please check your connection and try again.'
         }
       };
     }
@@ -281,18 +389,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshToken = async (): Promise<AuthTokens> => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    
-    if (!refreshToken) {
+    const refreshTokenValue = localStorage.getItem('refreshToken');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+    if (!refreshTokenValue) {
       throw new Error('No refresh token available');
     }
 
-    const response = await fetch('/api/auth/refresh', {
+    const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ refreshToken })
+      credentials: 'include',
+      body: JSON.stringify({ refreshToken: refreshTokenValue })
     });
 
     if (!response.ok) {
@@ -302,10 +412,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const data = await response.json();
-    
-    if (data.tokens) {
+
+    if (data.success && data.tokens) {
       localStorage.setItem('accessToken', data.tokens.accessToken);
       localStorage.setItem('refreshToken', data.tokens.refreshToken);
+
+      // Update user data if provided
+      if (data.user) {
+        setUser(data.user);
+      }
+
       return data.tokens;
     }
 

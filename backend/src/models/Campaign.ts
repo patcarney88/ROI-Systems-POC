@@ -1,5 +1,5 @@
 import { Model, DataTypes, Optional } from 'sequelize';
-import sequelize from '../config/database';
+import sequelize from '../config/sequelize';
 
 export enum CampaignStatus {
   ACTIVE = 'active',
@@ -92,14 +92,16 @@ export class Campaign extends Model<CampaignAttributes, CampaignCreationAttribut
   }
 }
 
-Campaign.init(
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-      allowNull: false
-    },
+// Export initialization function instead of calling .init() immediately
+export const initCampaignModel = () => {
+  Campaign.init(
+    {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+        allowNull: false
+      },
     name: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -201,30 +203,31 @@ Campaign.init(
         }
       }
     }
-  },
-  {
-    sequelize,
-    tableName: 'campaigns',
-    timestamps: true,
-    underscored: true,
-    indexes: [
-      {
-        fields: ['user_id']
-      },
-      {
-        fields: ['status']
-      },
-      {
-        fields: ['scheduled_date']
-      },
-      {
-        fields: ['completed_date']
-      },
-      {
-        fields: ['created_at']
-      }
-    ]
-  }
-);
+    },
+    {
+      sequelize,
+      tableName: 'campaigns',
+      timestamps: true,
+      underscored: true,
+      indexes: [
+        {
+          fields: ['user_id']
+        },
+        {
+          fields: ['status']
+        },
+        {
+          fields: ['scheduled_date']
+        },
+        {
+          fields: ['completed_date']
+        },
+        {
+          fields: ['created_at']
+        }
+      ]
+    }
+  );
+};
 
 export default Campaign;
