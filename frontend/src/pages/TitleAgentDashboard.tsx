@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { documentApi, clientApi, campaignApi } from '../services/api.services';
+import HelpTooltip from '../components/HelpTooltip';
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444'];
 
@@ -15,26 +16,104 @@ export default function TitleAgentDashboard() {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Data states with loading and error handling
+  // Data states with loading and error handling - Initialize with demo data
   const [transactionData, setTransactionData] = useState({
-    newThisWeek: 0,
-    completedThisMonth: 0,
-    totalYTD: 0,
-    revenueGenerated: 0,
-    trend: 0
+    newThisWeek: 18,
+    completedThisMonth: 47,
+    totalYTD: 528,
+    revenueGenerated: 2878200,
+    trend: 15.3
   });
-  const [alertsData, setAlertsData] = useState<any[]>([]);
-  const [documentsData, setDocumentsData] = useState<any[]>([]);
+  const [alertsData, setAlertsData] = useState<any[]>([
+    {
+      id: 1,
+      client: 'Sarah Johnson',
+      property: '123 Oak Street',
+      type: 'Document Expiring',
+      priority: 'high',
+      confidence: 95,
+      time: '2 hours ago'
+    },
+    {
+      id: 2,
+      client: 'Michael Chen',
+      property: '456 Maple Avenue',
+      type: 'Email Opened',
+      priority: 'medium',
+      confidence: 78,
+      time: '4 hours ago'
+    },
+    {
+      id: 3,
+      client: 'Emily Rodriguez',
+      property: '789 Pine Boulevard',
+      type: 'New Inquiry',
+      priority: 'high',
+      confidence: 88,
+      time: '6 hours ago'
+    },
+    {
+      id: 4,
+      client: 'David Thompson',
+      property: '321 Elm Drive',
+      type: 'Document Viewed',
+      priority: 'low',
+      confidence: 62,
+      time: '1 day ago'
+    }
+  ]);
+  const [documentsData, setDocumentsData] = useState<any[]>([
+    {
+      id: 1,
+      name: 'Purchase_Agreement_Johnson.pdf',
+      status: 'complete',
+      progress: 100
+    },
+    {
+      id: 2,
+      name: 'Title_Deed_Chen_Property.pdf',
+      status: 'processing',
+      progress: 65
+    },
+    {
+      id: 3,
+      name: 'Inspection_Report_Rodriguez.pdf',
+      status: 'processing',
+      progress: 45
+    },
+    {
+      id: 4,
+      name: 'Closing_Documents_Thompson.pdf',
+      status: 'complete',
+      progress: 100
+    }
+  ]);
   const [marketingData, setMarketingData] = useState({
-    emailsSent: 0,
-    emailsOpened: 0,
-    emailsClicked: 0,
-    openRate: 0,
-    clickRate: 0,
-    nextCampaigns: []
+    emailsSent: 2847,
+    emailsOpened: 1423,
+    emailsClicked: 456,
+    openRate: 50.0,
+    clickRate: 32.0,
+    nextCampaigns: [
+      { name: 'Monthly Market Update', date: 'Dec 15', recipients: 892 },
+      { name: 'Holiday Greetings', date: 'Dec 20', recipients: 1245 },
+      { name: 'Year-End Review', date: 'Dec 28', recipients: 956 }
+    ]
   });
-  const [engagementChartData, setEngagementChartData] = useState<any[]>([]);
-  const [documentAccessData, setDocumentAccessData] = useState<any[]>([]);
+  const [engagementChartData, setEngagementChartData] = useState<any[]>([
+    { month: 'Jul', active: 245 },
+    { month: 'Aug', active: 289 },
+    { month: 'Sep', active: 312 },
+    { month: 'Oct', active: 356 },
+    { month: 'Nov', active: 398 },
+    { month: 'Dec', active: 445 }
+  ]);
+  const [documentAccessData, setDocumentAccessData] = useState<any[]>([
+    { name: 'Purchase Agreements', value: 340 },
+    { name: 'Title Deeds', value: 280 },
+    { name: 'Inspections', value: 190 },
+    { name: 'Closing Docs', value: 150 }
+  ]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -426,6 +505,26 @@ Actions:
             <p>Welcome back! Here's what's happening with your business today.</p>
           </div>
 
+          {/* Demo Data Indicator */}
+          <div style={{
+            padding: '0.75rem 1rem',
+            marginBottom: '1rem',
+            backgroundColor: '#eff6ff',
+            border: '1px solid #3b82f6',
+            borderRadius: '0.5rem',
+            color: '#1e40af',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span><strong>Demo Mode:</strong> This dashboard is displaying sample data to demonstrate functionality. Connect your data sources to see real-time information.</span>
+          </div>
+
           {/* Show error message if data failed to load */}
           {error && (
             <div style={{
@@ -514,7 +613,13 @@ Actions:
           {/* Instant Business Alerts Widget */}
           <section className="widget-section" id="alerts">
             <div className="widget-header">
-              <h2 className="widget-title">Instant Business Alerts</h2>
+              <h2 className="widget-title">
+                Instant Business Alerts
+                <HelpTooltip
+                  title="AI-Powered Business Alerts"
+                  content="Our AI analyzes client behavior patterns to predict important moments in their journey. These alerts help you engage clients at the right time with personalized outreach."
+                />
+              </h2>
               <button className="btn-secondary-sm" onClick={handleViewAllAlerts}>View All</button>
             </div>
             <div className="alerts-list">
@@ -634,7 +739,13 @@ Actions:
 
             {/* Forever Marketing Performance */}
             <section className="widget-section widget-half" id="marketing-performance">
-              <h2 className="widget-title">Forever Marketing Performance</h2>
+              <h2 className="widget-title">
+                Forever Marketing Performance
+                <HelpTooltip
+                  title="Forever Marketing"
+                  content="Automated campaigns that keep you top-of-mind with past clients. Our system sends personalized messages at optimal times to maintain relationships and generate referrals."
+                />
+              </h2>
               
               <div className="marketing-metrics">
                 <div className="metric-card">
@@ -654,7 +765,13 @@ Actions:
               </div>
 
               <div className="open-rate-indicator">
-                <div className="rate-label">Open Rate Target: 40-60%</div>
+                <div className="rate-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>Open Rate Target: 40-60%</span>
+                  <HelpTooltip
+                    title="Email Open Rate"
+                    content="Industry benchmarks suggest 40-60% is excellent for real estate marketing. Rates above 60% indicate highly engaged audiences, while rates below 40% may need list cleaning or subject line improvements."
+                  />
+                </div>
                 <div className="rate-bar">
                   <div className="rate-range"></div>
                   <div 
@@ -668,15 +785,21 @@ Actions:
 
               <div className="upcoming-campaigns">
                 <h3>Next Scheduled Campaigns</h3>
-                {marketingData.nextCampaigns.map((campaign, idx) => (
-                  <div key={idx} className="campaign-item">
-                    <Calendar size={16} />
-                    <div className="campaign-details">
-                      <span className="campaign-name">{campaign.name}</span>
-                      <span className="campaign-meta">{campaign.date} • {campaign.recipients} recipients</span>
-                    </div>
+                {marketingData.nextCampaigns.length === 0 ? (
+                  <div style={{ padding: '1rem', textAlign: 'center', color: '#6b7280', fontSize: '0.875rem' }}>
+                    No scheduled campaigns. Create your first campaign below!
                   </div>
-                ))}
+                ) : (
+                  marketingData.nextCampaigns.map((campaign: any, idx: number) => (
+                    <div key={idx} className="campaign-item">
+                      <Calendar size={16} />
+                      <div className="campaign-details">
+                        <span className="campaign-name">{campaign.name}</span>
+                        <span className="campaign-meta">{campaign.date} • {campaign.recipients} recipients</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
               <button className="btn-primary-full" onClick={handleCreateCampaign}>Create New Campaign</button>
@@ -685,7 +808,13 @@ Actions:
 
           {/* Client Engagement Metrics */}
           <section className="widget-section" id="engagement-metrics">
-            <h2 className="widget-title">Client Engagement Metrics</h2>
+            <h2 className="widget-title">
+              Client Engagement Metrics
+              <HelpTooltip
+                title="Engagement Metrics"
+                content="Track how homeowners interact with your communications and property documents. Higher engagement indicates stronger relationships and increased likelihood of referrals."
+              />
+            </h2>
             
             <div className="charts-grid">
               <div className="chart-container">

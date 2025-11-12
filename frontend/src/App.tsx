@@ -509,7 +509,7 @@ function AppContent() {
                   position: 'absolute',
                   top: 'calc(100% + 10px)',
                   right: 0,
-                  width: '280px',
+                  width: '360px',
                   background: 'white',
                   borderRadius: '12px',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
@@ -523,9 +523,9 @@ function AppContent() {
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     color: 'white'
                   }}>
-                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Role Journeys</h3>
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Demo Journeys</h3>
                     <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', opacity: 0.9 }}>
-                      Navigate to different user experiences
+                      Experience different personas in the real estate ecosystem
                     </p>
                   </div>
                   
@@ -561,9 +561,11 @@ function AppContent() {
                           <polyline points="14 2 14 8 20 8"></polyline>
                         </svg>
                       </div>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: '600' }}>Title Agent</div>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Document management</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.125rem' }}>
+                          Smart document processing, transaction tracking & client engagement
+                        </div>
                       </div>
                     </Link>
                     
@@ -597,9 +599,11 @@ function AppContent() {
                           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
                       </div>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: '600' }}>Realtor - Communications</div>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Client messaging</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.125rem' }}>
+                          Unified inbox, messaging, client conversations & quick replies
+                        </div>
                       </div>
                     </Link>
                     
@@ -633,9 +637,11 @@ function AppContent() {
                           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                         </svg>
                       </div>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: '600' }}>Realtor - Analytics</div>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Performance insights</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.125rem' }}>
+                          Business intelligence, predictive analytics & performance tracking
+                        </div>
                       </div>
                     </Link>
                     
@@ -670,9 +676,11 @@ function AppContent() {
                           <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
                         </svg>
                       </div>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: '600' }}>Marketing Center</div>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Campaign management</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.125rem' }}>
+                          Forever marketing campaigns, automation & audience segmentation
+                        </div>
                       </div>
                     </Link>
                     
@@ -707,9 +715,11 @@ function AppContent() {
                           <polyline points="9 22 9 12 15 12 15 22"></polyline>
                         </svg>
                       </div>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: '600' }}>Homeowner Portal</div>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Consumer experience</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.125rem' }}>
+                          Property insights, document vault, neighborhood data & support team
+                        </div>
                       </div>
                     </Link>
                   </div>
