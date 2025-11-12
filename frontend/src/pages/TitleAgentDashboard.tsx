@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Home, FileText, Users, Mail, Bell, BarChart3, Settings, HelpCircle,
   TrendingUp, AlertCircle, Phone, Send, Eye, Upload, Calendar, Activity, Target, Zap
@@ -10,6 +11,7 @@ import HelpTooltip from '../components/HelpTooltip';
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444'];
 
 export default function TitleAgentDashboard() {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState(7);
@@ -444,13 +446,11 @@ Actions:
       fileInputRef.current.setAttribute('multiple', 'true');
       fileInputRef.current.click();
     }
-
-    console.log('Bulk upload dialog opened');
   };
 
   const handleCreateCampaign = () => {
-    console.log('Create New Campaign clicked');
-    // Navigate to campaign creation page
+    // Navigate to Marketing Center to create a new campaign
+    navigate('/dashboard/marketing');
   };
 
   return (

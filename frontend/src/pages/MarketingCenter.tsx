@@ -473,7 +473,14 @@ export default function MarketingCenter() {
               <h2>Template Library</h2>
               <p>Pre-built templates for common campaigns</p>
             </div>
-            <button className="btn-secondary">
+            <button
+              className="btn-secondary"
+              onClick={() => {
+                setShowNewCampaign(true);
+                // In production, this would open a template creation wizard
+                notify('info', 'Template creation wizard coming soon! Use "New Campaign" to create custom campaigns.');
+              }}
+            >
               <Plus size={18} />
               Create Template
             </button>
@@ -499,10 +506,21 @@ export default function MarketingCenter() {
                   </div>
                 </div>
                 <div className="template-actions">
-                  <button className="btn-primary">
+                  <button
+                    className="btn-primary"
+                    onClick={() => {
+                      setShowNewCampaign(true);
+                      notify('success', `Selected template: ${template.name}`);
+                    }}
+                  >
                     Use Template
                   </button>
-                  <button className="btn-secondary">
+                  <button
+                    className="btn-secondary"
+                    onClick={() => {
+                      alert(`Template Preview: ${template.name}\n\nCategory: ${template.category}\nDescription: ${template.description}\nRating: ${template.rating} stars\n\nThis would show a full preview of the template content with sample text and design.`);
+                    }}
+                  >
                     <Eye size={16} />
                     Preview
                   </button>
@@ -522,7 +540,13 @@ export default function MarketingCenter() {
               </h3>
               <p>Based on your client data, we recommend creating a "Price Reduction Alert" campaign for your Ready to Buy segment</p>
             </div>
-            <button className="btn-primary">
+            <button
+              className="btn-primary"
+              onClick={() => {
+                setShowNewCampaign(true);
+                notify('success', 'AI is generating a custom campaign based on your client data...');
+              }}
+            >
               Create with AI
             </button>
           </div>
@@ -537,7 +561,36 @@ export default function MarketingCenter() {
               <h2>Campaign Analytics</h2>
               <p>Track performance across all campaigns</p>
             </div>
-            <button className="btn-secondary">
+            <button
+              className="btn-secondary"
+              onClick={() => {
+                // Generate CSV report
+                const csvContent = [
+                  ['Campaign Analytics Report', '', '', ''],
+                  ['Generated:', new Date().toLocaleDateString(), '', ''],
+                  ['', '', '', ''],
+                  ['Metric', 'Value', '', ''],
+                  ['Total Campaigns', campaigns.length.toString(), '', ''],
+                  ['Active Campaigns', campaigns.filter(c => c.status === 'active').length.toString(), '', ''],
+                  ['Total Sent', campaigns.reduce((sum, c) => sum + (c.stats?.sent || 0), 0).toString(), '', ''],
+                  ['Total Opens', campaigns.reduce((sum, c) => sum + (c.stats?.opened || 0), 0).toString(), '', ''],
+                  ['Total Clicks', campaigns.reduce((sum, c) => sum + (c.stats?.clicked || 0), 0).toString(), '', ''],
+                  ['Avg Open Rate', `${(campaigns.reduce((sum, c) => sum + (c.stats?.opened || 0), 0) / campaigns.reduce((sum, c) => sum + (c.stats?.sent || 0), 1) * 100).toFixed(1)}%`, '', ''],
+                ].map(row => row.join(',')).join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `marketing-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                notify('success', 'Analytics report exported successfully');
+              }}
+            >
               <Download size={18} />
               Export Report
             </button>

@@ -14,8 +14,14 @@ export default function HelpTooltip({ title, content, learnMoreUrl }: HelpToolti
     <div style={{ position: 'relative', display: 'inline-block' }}>
       <button
         type="button"
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = '#3b82f6';
+          setShowTooltip(true);
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = '#6b7280';
+          setShowTooltip(false);
+        }}
         onClick={() => setShowTooltip(!showTooltip)}
         style={{
           background: 'none',
@@ -27,14 +33,6 @@ export default function HelpTooltip({ title, content, learnMoreUrl }: HelpToolti
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = '#3b82f6';
-          setShowTooltip(true);
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = '#6b7280';
-          setShowTooltip(false);
         }}
         aria-label={`Help: ${title}`}
       >

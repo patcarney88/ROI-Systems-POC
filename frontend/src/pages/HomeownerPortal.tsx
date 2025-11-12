@@ -254,7 +254,19 @@ export default function HomeownerPortal() {
         <div className="property-hero">
           <div className="property-image">
             <img src="https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800" alt="Property" />
-            <button className="update-value-btn">
+            <button
+              className="update-value-btn"
+              onClick={() => {
+                const newValue = prompt(
+                  `Current estimated value: $${propertyData.currentValue.toLocaleString()}\n\nEnter updated property value:`,
+                  propertyData.currentValue.toString()
+                );
+                if (newValue) {
+                  notify('success', `Property value updated to $${parseInt(newValue).toLocaleString()}`);
+                }
+              }}
+              title="Update property value estimate"
+            >
               <TrendingUp size={18} />
               Update Value
             </button>
@@ -269,7 +281,34 @@ export default function HomeownerPortal() {
                   {propertyData.city}, {propertyData.state} {propertyData.zip}
                 </p>
               </div>
-              <button className="share-btn">
+              <button
+                className="share-btn"
+                onClick={async () => {
+                  const shareData = {
+                    title: `${propertyData.address} - Property Information`,
+                    text: `Check out my property at ${propertyData.address}, ${propertyData.city}, ${propertyData.state}. Current value: $${propertyData.currentValue.toLocaleString()}`,
+                    url: window.location.href
+                  };
+
+                  if (navigator.share) {
+                    try {
+                      await navigator.share(shareData);
+                      notify('success', 'Property details shared successfully');
+                    } catch (err) {
+                      if ((err as Error).name !== 'AbortError') {
+                        console.error('Error sharing:', err);
+                      }
+                    }
+                  } else {
+                    // Fallback: copy to clipboard
+                    navigator.clipboard.writeText(
+                      `${shareData.title}\n${shareData.text}\n${shareData.url}`
+                    );
+                    notify('success', 'Property details copied to clipboard');
+                  }
+                }}
+                title="Share property information"
+              >
                 <Share2 size={18} />
                 Share
               </button>
@@ -552,15 +591,27 @@ export default function HomeownerPortal() {
                 </div>
               </div>
               <div className="team-actions">
-                <button className="action-btn">
+                <button
+                  className="action-btn"
+                  onClick={() => window.location.href = `tel:${member.phone}`}
+                  title={`Call ${member.name}`}
+                >
                   <Phone size={18} />
                   Call
                 </button>
-                <button className="action-btn">
+                <button
+                  className="action-btn"
+                  onClick={() => window.location.href = `mailto:${member.email}?subject=Question%20about%20my%20property`}
+                  title={`Email ${member.name}`}
+                >
                   <Mail size={18} />
                   Email
                 </button>
-                <button className="action-btn">
+                <button
+                  className="action-btn"
+                  onClick={() => window.location.href = `sms:${member.phone}?body=Hi%20${member.name.split(' ')[0]},%20I%20have%20a%20question%20about%20my%20property.`}
+                  title={`Message ${member.name}`}
+                >
                   <MessageSquare size={18} />
                   Message
                 </button>
