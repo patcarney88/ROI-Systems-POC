@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Congratulations - ROI Systems</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f7fafc;
+            color: #2d3748;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .header {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            padding: 50px 30px;
+            text-align: center;
+            color: white;
+        }
+        .celebration-emoji {
+            font-size: 64px;
+            margin: 0 0 20px 0;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 0;
+            font-size: 18px;
+            opacity: 0.95;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a202c;
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+        .celebration {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 16px;
+            padding: 40px 30px;
+            text-align: center;
+            margin: 0 0 30px 0;
+        }
+        .celebration h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #92400e;
+            margin: 0 0 15px 0;
+        }
+        .celebration p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #78350f;
+            margin: 0;
+        }
+        .achievement-card {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 0 0 30px 0;
+            text-align: center;
+        }
+        .achievement-icon {
+            font-size: 48px;
+            margin: 0 0 15px 0;
+        }
+        .achievement-stat {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 0 0 10px 0;
+        }
+        .achievement-label {
+            font-size: 16px;
+            color: #4a5568;
+            margin: 0;
+        }
+        .timeline {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 0 0 30px 0;
+        }
+        .timeline h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a202c;
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+        .timeline-item {
+            display: flex;
+            gap: 20px;
+            padding: 15px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+        .timeline-date {
+            flex-shrink: 0;
+            width: 100px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        .timeline-event {
+            flex: 1;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        .next-steps {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 0 0 30px 0;
+        }
+        .next-steps h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+        }
+        .next-steps p {
+            margin: 0 0 20px 0;
+            font-size: 15px;
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+        .next-steps ul {
+            margin: 0;
+            padding: 0 0 0 20px;
+            line-height: 1.8;
+        }
+        .cta {
+            display: inline-block;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+        .cta:hover {
+            transform: translateY(-2px);
+        }
+        .cta-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .gift-section {
+            background: #fef3c7;
+            border: 2px dashed #fbbf24;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 0 0 30px 0;
+            text-align: center;
+        }
+        .gift-section h4 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #92400e;
+            margin: 0 0 10px 0;
+        }
+        .gift-section p {
+            font-size: 15px;
+            color: #78350f;
+            margin: 0;
+        }
+        .footer {
+            background: #f7fafc;
+            padding: 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #718096;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .unsubscribe {
+            margin: 20px 0 0 0;
+            font-size: 12px;
+            color: #a0aec0;
+        }
+        @media only screen and (max-width: 600px) {
+            .header h1 {
+                font-size: 26px;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            .celebration h2 {
+                font-size: 24px;
+            }
+            .achievement-stat {
+                font-size: 36px;
+            }
+            .timeline-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="celebration-emoji">🎉</div>
+            <h1>Congratulations!</h1>
+            <p>You've Reached a Major Milestone</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <p class="greeting">{{firstName}}, This is Amazing!</p>
+
+            <!-- Celebration Message -->
+            <div class="celebration">
+                <h2>{{milestoneTitle}}</h2>
+                <p>{{celebrationMessage}}</p>
+            </div>
+
+            <!-- Achievement Card -->
+            <div class="achievement-card">
+                <div class="achievement-icon">{{achievementIcon}}</div>
+                <div class="achievement-stat">{{achievementNumber}}</div>
+                <p class="achievement-label">{{achievementLabel}}</p>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline">
+                <h3>📅 Your Journey</h3>
+
+                <div class="timeline-item">
+                    <div class="timeline-date">{{date1}}</div>
+                    <div class="timeline-event">{{event1}}</div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-date">{{date2}}</div>
+                    <div class="timeline-event">{{event2}}</div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-date">{{date3}}</div>
+                    <div class="timeline-event">{{event3}}</div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-date">Today</div>
+                    <div class="timeline-event"><strong>{{currentMilestone}}</strong></div>
+                </div>
+            </div>
+
+            <!-- Gift/Reward -->
+            <div class="gift-section">
+                <h4>🎁 Special Recognition</h4>
+                <p>{{giftMessage}}</p>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h3>What's Next?</h3>
+                <p>{{nextStepsIntro}}</p>
+                <ul>
+                    <li>{{nextStep1}}</li>
+                    <li>{{nextStep2}}</li>
+                    <li>{{nextStep3}}</li>
+                </ul>
+            </div>
+
+            <!-- Social Sharing -->
+            <div style="background: #f7fafc; border-radius: 12px; padding: 25px; margin: 0 0 30px 0; text-align: center;">
+                <h4 style="font-size: 18px; font-weight: 600; color: #1a202c; margin: 0 0 15px 0;">
+                    📱 Share Your Success
+                </h4>
+                <p style="font-size: 14px; color: #4a5568; margin: 0 0 20px 0;">
+                    We'd love to celebrate with you! Share your milestone on social media.
+                </p>
+                <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                    <a href="{{linkedinShareUrl}}" style="display: inline-block; padding: 10px 20px; background: #0077b5; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;">
+                        Share on LinkedIn
+                    </a>
+                    <a href="{{twitterShareUrl}}" style="display: inline-block; padding: 10px 20px; background: #1da1f2; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;">
+                        Share on Twitter
+                    </a>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-container">
+                <a href="{{ctaLink}}" class="cta">{{ctaText}}</a>
+            </div>
+
+            <p style="margin: 30px 0 0 0; font-size: 14px; color: #718096; text-align: center;">
+                Have questions? We're here to help! <a href="{{contactLink}}" style="color: #667eea; text-decoration: none;">Contact us</a>
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p style="margin: 0 0 15px 0; font-weight: 600; color: #2d3748;">ROI Systems</p>
+            <p style="margin: 0 0 10px 0;">Celebrating your success every step of the way</p>
+
+            <p style="margin: 0 0 5px 0;">
+                <a href="{{privacyUrl}}">Privacy Policy</a> |
+                <a href="{{termsUrl}}">Terms of Service</a>
+            </p>
+
+            <p class="unsubscribe">
+                <a href="{{unsubscribeUrl}}">Unsubscribe</a> |
+                <a href="{{preferencesUrl}}">Update Preferences</a>
+            </p>
+
+            <p style="margin: 15px 0 0 0; font-size: 12px; color: #a0aec0;">
+                © 2025 ROI Systems. All rights reserved.<br>
+                123 Main Street, San Francisco, CA 94102
+            </p>
+        </div>
+    </div>
+
+    <!-- Tracking Pixel -->
+    <img src="{{trackingPixelUrl}}" width="1" height="1" alt="" style="display:block;border:0;" />
+</body>
+</html>

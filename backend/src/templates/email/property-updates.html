@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Updates - ROI Systems</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f7fafc;
+            color: #2d3748;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 0;
+            font-size: 16px;
+            opacity: 0.95;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a202c;
+            margin: 0 0 20px 0;
+        }
+        .intro {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #4a5568;
+            margin: 0 0 30px 0;
+        }
+        .data-section {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 0 0 30px 0;
+        }
+        .data-section h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a202c;
+            margin: 0 0 15px 0;
+        }
+        .data-section ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .data-section li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 15px;
+        }
+        .data-section li:last-child {
+            border-bottom: none;
+        }
+        .data-section strong {
+            color: #2d3748;
+            font-weight: 600;
+        }
+        .insights {
+            background: #fff5f5;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 0 0 30px 0;
+            border-radius: 8px;
+        }
+        .insights p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #2d3748;
+        }
+        .properties {
+            margin: 0 0 30px 0;
+        }
+        .property-card {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 0 0 15px 0;
+            transition: box-shadow 0.3s ease;
+        }
+        .property-card:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .property-card h4 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .property-meta {
+            display: flex;
+            gap: 15px;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #718096;
+        }
+        .property-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .property-price {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        .cta {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+        .cta:hover {
+            transform: translateY(-2px);
+        }
+        .cta-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .footer {
+            background: #f7fafc;
+            padding: 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #718096;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .social {
+            margin: 20px 0;
+        }
+        .social a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        .unsubscribe {
+            margin: 20px 0 0 0;
+            font-size: 12px;
+            color: #a0aec0;
+        }
+        @media only screen and (max-width: 600px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            .property-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏠 Your Property Updates</h1>
+            <p>{{currentDate}}</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <p class="greeting">Hi {{firstName}},</p>
+
+            <p class="intro">
+                We've identified <strong>{{opportunityCount}} new opportunities</strong> that match your investment criteria.
+                Here's your personalized market update for this week.
+            </p>
+
+            <!-- Market Data Section -->
+            <div class="data-section">
+                <h3>📊 Your Market at a Glance</h3>
+                <ul>
+                    <li><strong>Avg. Home Price:</strong> {{localMedianPrice}}</li>
+                    <li><strong>Market Trend:</strong> {{localMarketTrend}}</li>
+                    <li><strong>Days on Market:</strong> {{localInventory}} days</li>
+                    <li><strong>Active Listings:</strong> {{activeListings}} properties</li>
+                </ul>
+            </div>
+
+            <!-- AI Insights -->
+            <div class="insights">
+                <p>
+                    💡 <strong>AI Insight:</strong> {{aiInsight}}
+                </p>
+            </div>
+
+            <!-- Property Listings -->
+            <div class="properties">
+                <h3 style="font-size: 20px; font-weight: 600; color: #1a202c; margin: 0 0 20px 0;">
+                    Top Opportunities for You
+                </h3>
+
+                <div class="property-card">
+                    <h4>{{property1Address}}</h4>
+                    <div class="property-meta">
+                        <span>🛏️ {{property1Beds}} beds</span>
+                        <span>🛁 {{property1Baths}} baths</span>
+                        <span>📐 {{property1SqFt}} sq ft</span>
+                    </div>
+                    <div class="property-price">{{property1Price}}</div>
+                    <p style="margin: 0; font-size: 14px; color: #4a5568;">
+                        {{property1Description}}
+                    </p>
+                </div>
+
+                <div class="property-card">
+                    <h4>{{property2Address}}</h4>
+                    <div class="property-meta">
+                        <span>🛏️ {{property2Beds}} beds</span>
+                        <span>🛁 {{property2Baths}} baths</span>
+                        <span>📐 {{property2SqFt}} sq ft</span>
+                    </div>
+                    <div class="property-price">{{property2Price}}</div>
+                    <p style="margin: 0; font-size: 14px; color: #4a5568;">
+                        {{property2Description}}
+                    </p>
+                </div>
+
+                <div class="property-card">
+                    <h4>{{property3Address}}</h4>
+                    <div class="property-meta">
+                        <span>🛏️ {{property3Beds}} beds</span>
+                        <span>🛁 {{property3Baths}} baths</span>
+                        <span>📐 {{property3SqFt}} sq ft</span>
+                    </div>
+                    <div class="property-price">{{property3Price}}</div>
+                    <p style="margin: 0; font-size: 14px; color: #4a5568;">
+                        {{property3Description}}
+                    </p>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-container">
+                <a href="{{ctaLink}}" class="cta">{{ctaText}}</a>
+            </div>
+
+            <p style="margin: 30px 0 0 0; font-size: 14px; color: #718096; text-align: center;">
+                Questions? Reply to this email or call us at {{supportPhone}}
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p style="margin: 0 0 15px 0; font-weight: 600; color: #2d3748;">ROI Systems</p>
+            <p style="margin: 0 0 10px 0;">Powered by AI-driven real estate intelligence</p>
+
+            <div class="social">
+                <a href="{{linkedinUrl}}">LinkedIn</a> |
+                <a href="{{twitterUrl}}">Twitter</a> |
+                <a href="{{websiteUrl}}">Website</a>
+            </div>
+
+            <p style="margin: 0 0 5px 0;">
+                <a href="{{privacyUrl}}">Privacy Policy</a> |
+                <a href="{{termsUrl}}">Terms of Service</a>
+            </p>
+
+            <p class="unsubscribe">
+                <a href="{{unsubscribeUrl}}">Unsubscribe</a> |
+                <a href="{{preferencesUrl}}">Update Preferences</a>
+            </p>
+
+            <p style="margin: 15px 0 0 0; font-size: 12px; color: #a0aec0;">
+                © 2025 ROI Systems. All rights reserved.<br>
+                123 Main Street, San Francisco, CA 94102
+            </p>
+        </div>
+    </div>
+
+    <!-- Tracking Pixel -->
+    <img src="{{trackingPixelUrl}}" width="1" height="1" alt="" style="display:block;border:0;" />
+</body>
+</html>

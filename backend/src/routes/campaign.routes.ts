@@ -4,9 +4,21 @@ import * as campaignController from '../controllers/campaign.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
 
+// Import demo routes
+import demoRoutes from './campaigns.routes.demo';
+
 const router = Router();
 
-// All routes require authentication
+/**
+ * DEMO ROUTES - NO AUTHENTICATION REQUIRED
+ * These routes are for demonstration purposes and use mock services
+ */
+router.use('/demo', demoRoutes);
+
+/**
+ * PRODUCTION ROUTES - AUTHENTICATION REQUIRED
+ * All routes below require authentication
+ */
 router.use(authenticate);
 
 /**
