@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { createLogger } from './utils/logger';
 import { createServer } from 'http';
-import { initializeWebSocket } from './websocket/alert-websocket';
+// import { initializeWebSocket } from './websocket/alert-websocket';
 
 // Load environment variables
 dotenv.config();
@@ -20,13 +20,13 @@ const PORT = process.env.PORT || 3000;
 const API_VERSION = process.env.API_VERSION || 'v1';
 
 // Initialize WebSocket server
-const wsServer = initializeWebSocket(httpServer);
-logger.info('WebSocket server initialized');
+// const wsServer = initializeWebSocket(httpServer);
+// logger.info('WebSocket server initialized');
 
 // Initialize Push Notification Scheduler
-import pushNotificationScheduler from './services/push-notification-scheduler.service';
-pushNotificationScheduler.start();
-logger.info('Push notification scheduler initialized');
+// import pushNotificationScheduler from './services/push-notification-scheduler.service';
+// pushNotificationScheduler.start();
+// logger.info('Push notification scheduler initialized');
 
 // Security middleware
 app.use(helmet());
@@ -93,11 +93,11 @@ import authRoutes from './routes/auth.routes';
 import documentRoutes from './routes/document.routes';
 import clientRoutes from './routes/client.routes';
 import campaignRoutes from './routes/campaign.routes';
-import webhookRoutes from './routes/webhook.routes';
-import alertScoringRoutes from './routes/alert-scoring.routes';
-import alertRoutingRoutes from './routes/alert-routing.routes';
-import pushNotificationRoutes from './routes/push-notification.routes';
-import softproIntegrationRoutes from './routes/softpro-integration.routes';
+// import webhookRoutes from './routes/webhook.routes';
+// import alertScoringRoutes from './routes/alert-scoring.routes';
+// import alertRoutingRoutes from './routes/alert-routing.routes';
+// import pushNotificationRoutes from './routes/push-notification.routes';
+// import softproIntegrationRoutes from './routes/softpro-integration.routes';
 
 // Import error handler
 import { errorHandler } from './middleware/error.middleware';
@@ -107,14 +107,14 @@ app.use(`/api/${API_VERSION}/auth`, authRoutes);
 app.use(`/api/${API_VERSION}/documents`, documentRoutes);
 app.use(`/api/${API_VERSION}/clients`, clientRoutes);
 app.use(`/api/${API_VERSION}/campaigns`, campaignRoutes);
-app.use(`/api/${API_VERSION}/alerts`, alertScoringRoutes);
-app.use(`/api/${API_VERSION}/alerts`, alertRoutingRoutes);
-app.use(`/api/${API_VERSION}/notifications`, pushNotificationRoutes);
-app.use(`/api/${API_VERSION}/integrations/softpro`, softproIntegrationRoutes);
+// app.use(`/api/${API_VERSION}/alerts`, alertScoringRoutes);
+// app.use(`/api/${API_VERSION}/alerts`, alertRoutingRoutes);
+// app.use(`/api/${API_VERSION}/notifications`, pushNotificationRoutes);
+// app.use(`/api/${API_VERSION}/integrations/softpro`, softproIntegrationRoutes);
 
 // Webhook routes (no versioning for webhook compatibility)
-app.use('/api/webhooks', webhookRoutes);
-app.use('/api/track', webhookRoutes);
+// app.use('/api/webhooks', webhookRoutes);
+// app.use('/api/track', webhookRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -144,15 +144,15 @@ httpServer.listen(PORT, () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server');
-  pushNotificationScheduler.stop();
-  await wsServer.shutdown();
+  // pushNotificationScheduler.stop();
+  // await wsServer.shutdown();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT signal received: closing HTTP server');
-  pushNotificationScheduler.stop();
-  await wsServer.shutdown();
+  // pushNotificationScheduler.stop();
+  // await wsServer.shutdown();
   process.exit(0);
 });
 
