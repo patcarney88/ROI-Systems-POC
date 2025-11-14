@@ -19,6 +19,10 @@ const Clients = lazy(() => import('./pages/Clients'))
 const Campaigns = lazy(() => import('./pages/Campaigns'))
 const Analytics = lazy(() => import('./pages/Analytics'))
 const AlertDashboard = lazy(() => import('./pages/AlertDashboard'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const TermsOfService = lazy(() => import('./pages/TermsOfService'))
+const Contact = lazy(() => import('./pages/Contact'))
+const About = lazy(() => import('./pages/About'))
 
 interface Document {
   id: string;
@@ -440,6 +444,38 @@ function AppContent() {
                 </Suspense>
               }
             />
+            <Route
+              path="/privacy"
+              element={
+                <Suspense fallback={<DashboardSkeleton />}>
+                  <PrivacyPolicy />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/terms"
+              element={
+                <Suspense fallback={<DashboardSkeleton />}>
+                  <TermsOfService />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/contact"
+              element={
+                <Suspense fallback={<DashboardSkeleton />}>
+                  <Contact />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <Suspense fallback={<DashboardSkeleton />}>
+                  <About />
+                </Suspense>
+              }
+            />
           </Routes>
         </Suspense>
       </main>
@@ -504,25 +540,25 @@ function AppContent() {
             </div>
             <div className="footer-column">
               <h4>Resources</h4>
-              <a href="#">Documentation</a>
-              <a href="#">API Reference</a>
-              <a href="#">Support</a>
-              <a href="#">Status</a>
+              <Link to="/docs">Documentation</Link>
+              <Link to="/api">API Reference</Link>
+              <Link to="/support">Support</Link>
+              <Link to="/status">Status</Link>
             </div>
             <div className="footer-column">
               <h4>Company</h4>
-              <a href="#">About</a>
-              <a href="#">Blog</a>
-              <a href="#">Careers</a>
-              <a href="#">Contact</a>
+              <Link to="/about">About</Link>
+              <Link to="/blog">Blog</Link>
+              <Link to="/careers">Careers</Link>
+              <Link to="/contact">Contact</Link>
             </div>
           </div>
         </div>
         <div className="footer-bottom">
           <p>&copy; 2025 ROI Systems. All rights reserved.</p>
           <div className="footer-legal">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/terms">Terms of Service</Link>
           </div>
         </div>
       </footer>
