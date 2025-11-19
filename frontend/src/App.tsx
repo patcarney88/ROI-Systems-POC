@@ -32,6 +32,11 @@ import MyProfile from './pages/MyProfile'
 import Settings from './pages/Settings'
 import HelpSupport from './pages/HelpSupport'
 import NotFound from './pages/NotFound'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
+import About from './pages/About'
+import Contact from './pages/Contact'
+import Blog from './pages/Blog'
 import GlobalSearch from './components/GlobalSearch'
 import { documentApi, clientApi, campaignApi } from './services/api.services'
 
@@ -1176,6 +1181,11 @@ function AppContent() {
           <Route path="/profile" element={<MyProfile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/help" element={<HelpSupport />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/blog" element={<Blog />} />
           {/* 404 Catch-all Route - Must be last */}
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -1206,25 +1216,25 @@ function AppContent() {
             </div>
             <div className="footer-column">
               <h4>Resources</h4>
-              <a href="#">Documentation</a>
-              <a href="#">API Reference</a>
-              <a href="#">Support</a>
-              <a href="#">Status</a>
+              <Link to="/help">Documentation</Link>
+              <Link to="/help">API Reference</Link>
+              <Link to="/help">Support</Link>
+              <Link to="/help">Status</Link>
             </div>
             <div className="footer-column">
               <h4>Company</h4>
-              <a href="#">About</a>
-              <a href="#">Blog</a>
-              <a href="#">Careers</a>
-              <a href="#">Contact</a>
+              <Link to="/about">About</Link>
+              <Link to="/blog">Blog</Link>
+              <Link to="/contact">Careers</Link>
+              <Link to="/contact">Contact</Link>
             </div>
           </div>
         </div>
         <div className="footer-bottom">
           <p>&copy; 2025 ROI Systems. All rights reserved.</p>
           <div className="footer-legal">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/terms">Terms of Service</Link>
           </div>
         </div>
       </footer>
