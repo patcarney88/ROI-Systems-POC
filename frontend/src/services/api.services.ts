@@ -2,9 +2,22 @@
  * API Services
  * Resource-specific API methods
  * Team Echo: Frontend Integration
+ *
+ * Supports Demo Mode - when VITE_DEMO_MODE=true, uses mock data instead of real API calls
  */
 
 import { apiClient, ApiResponse, PaginatedResponse } from './api.client';
+import mockApi from './api.mock';
+
+// Check if demo mode is enabled
+const IS_DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
+const ENABLE_ERROR_LOGGING = import.meta.env.VITE_ENABLE_ERROR_LOGGING === 'true';
+
+// Helper function to log demo mode info
+if (IS_DEMO_MODE && ENABLE_ERROR_LOGGING) {
+  console.log('%c🎭 Demo Mode Enabled', 'color: #667eea; font-weight: bold; font-size: 14px');
+  console.log('%cUsing mock data instead of real API calls', 'color: #667eea; font-size: 12px');
+}
 
 // Type Definitions
 export interface User {
@@ -104,6 +117,9 @@ export const documentApi = {
     expiryDate?: string;
     metadata?: Record<string, any>;
   }): Promise<ApiResponse<{ document: Document }>> => {
+    if (IS_DEMO_MODE) {
+      return mockApi.documents.create({ title: file.name, ...data }) as any;
+    }
     return apiClient.uploadFile('/documents', file, data);
   },
 
@@ -115,6 +131,10 @@ export const documentApi = {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<{ documents: Document[]; pagination: any }>> => {
+    if (IS_DEMO_MODE) {
+      const result = await mockApi.documents.getAll();
+      return { ...result, pagination: { page: 1, limit: 10, total: result.data.length } } as any;
+    }
     return apiClient.get('/documents', { params });
   },
 
@@ -204,6 +224,9 @@ export const clientApi = {
     status?: string;
     notes?: string;
   }): Promise<ApiResponse<{ client: Client }>> => {
+    if (IS_DEMO_MODE) {
+      return mockApi.clients.create(data) as any;
+    }
     return apiClient.post('/clients', data);
   },
 
@@ -215,6 +238,10 @@ export const clientApi = {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }): Promise<ApiResponse<{ clients: Client[]; pagination: any }>> => {
+    if (IS_DEMO_MODE) {
+      const result = await mockApi.clients.getAll();
+      return { ...result, pagination: { page: 1, limit: 10, total: result.data.length } } as any;
+    }
     return apiClient.get('/clients', { params });
   },
 
@@ -246,6 +273,9 @@ export const campaignApi = {
     scheduleDate?: string;
     message?: string;
   }): Promise<ApiResponse<{ campaign: Campaign }>> => {
+    if (IS_DEMO_MODE) {
+      return mockApi.campaigns.create(data) as any;
+    }
     return apiClient.post('/campaigns', data);
   },
 
@@ -257,6 +287,10 @@ export const campaignApi = {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }): Promise<ApiResponse<{ campaigns: Campaign[]; pagination: any }>> => {
+    if (IS_DEMO_MODE) {
+      const result = await mockApi.campaigns.getAll();
+      return { ...result, pagination: { page: 1, limit: 10, total: result.data.length } } as any;
+    }
     return apiClient.get('/campaigns', { params });
   },
 
