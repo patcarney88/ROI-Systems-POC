@@ -12,6 +12,9 @@ import {
 } from 'recharts';
 import DemoHeader from '../components/DemoHeader';
 import Breadcrumb from '../components/Breadcrumb';
+import AnimatedCounter from '../components/AnimatedCounter';
+import InsightBadge from '../components/InsightBadge';
+import ContextualCTA from '../components/ContextualCTA';
 
 // Using inline types for now - can be moved to analytics.ts later
 type AlertPerformanceMetrics = any;
@@ -379,11 +382,18 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="metric-content">
             <div className="metric-label">Alert Accuracy</div>
-            <div className="metric-value">{alertPerformanceData.accuracy}%</div>
+            <div className="metric-value">
+              <AnimatedCounter end={alertPerformanceData.accuracy} decimals={1} suffix="%" />
+            </div>
             <div className="metric-change positive">
               <TrendingUp size={14} />
               <span>+2.3% vs last month</span>
             </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="AI predictions 92% accurate • Industry leading performance"
+            />
           </div>
         </div>
 
@@ -393,11 +403,18 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="metric-content">
             <div className="metric-label">Conversion Rate</div>
-            <div className="metric-value">{alertPerformanceData.conversionRate}%</div>
+            <div className="metric-value">
+              <AnimatedCounter end={alertPerformanceData.conversionRate} decimals={1} suffix="%" />
+            </div>
             <div className="metric-change positive">
               <TrendingUp size={14} />
               <span>+4.1% vs last month</span>
             </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="3.2x higher than cold outreach • Best month in 2024"
+            />
           </div>
         </div>
 
@@ -407,11 +424,18 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="metric-content">
             <div className="metric-label">Alert-Sourced Revenue</div>
-            <div className="metric-value">${(revenueData.alertSourcedRevenue / 1000).toFixed(0)}K</div>
+            <div className="metric-value">
+              $<AnimatedCounter end={revenueData.alertSourcedRevenue / 1000} decimals={0} suffix="K" />
+            </div>
             <div className="metric-change positive">
               <TrendingUp size={14} />
               <span>+12.4% vs last month</span>
             </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="42% of total revenue from AI alerts • ROI: 8.7x"
+            />
           </div>
         </div>
 
@@ -421,11 +445,18 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="metric-content">
             <div className="metric-label">Avg Response Time</div>
-            <div className="metric-value">{alertPerformanceData.averageResponseTime}h</div>
+            <div className="metric-value">
+              <AnimatedCounter end={alertPerformanceData.averageResponseTime} decimals={1} suffix="h" />
+            </div>
             <div className="metric-change positive">
               <TrendingDown size={14} />
               <span>-0.6h vs last month</span>
             </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="68% faster than industry avg (6.2h) • Excellent"
+            />
           </div>
         </div>
       </div>
@@ -741,6 +772,12 @@ export default function AnalyticsDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Contextual CTA - appears after 10 seconds for demo */}
+      <ContextualCTA
+        dashboardName="Analytics Dashboard"
+        delayMs={10000}
+      />
     </div>
   );
 }

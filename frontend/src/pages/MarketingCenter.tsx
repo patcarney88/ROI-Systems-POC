@@ -13,6 +13,9 @@ import {
 import { campaignApi } from '../services/api.services';
 import DemoHeader from '../components/DemoHeader';
 import Breadcrumb from '../components/Breadcrumb';
+import AnimatedCounter from '../components/AnimatedCounter';
+import InsightBadge from '../components/InsightBadge';
+import ContextualCTA from '../components/ContextualCTA';
 
 // Mock data
 const campaigns = [
@@ -313,8 +316,15 @@ export default function MarketingCenter() {
           </div>
           <div className="stat-content">
             <div className="stat-label">Total Sent</div>
-            <div className="stat-value">{totalSent.toLocaleString()}</div>
+            <div className="stat-value">
+              <AnimatedCounter end={totalSent} separator />
+            </div>
             <div className="stat-meta">Across all campaigns</div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="2.4x more than last quarter • Excellent reach"
+            />
           </div>
         </div>
 
@@ -324,8 +334,17 @@ export default function MarketingCenter() {
           </div>
           <div className="stat-content">
             <div className="stat-label">Open Rate</div>
-            <div className="stat-value">{openRate}%</div>
-            <div className="stat-meta">{totalOpens.toLocaleString()} opens</div>
+            <div className="stat-value">
+              <AnimatedCounter end={openRate} decimals={1} suffix="%" />
+            </div>
+            <div className="stat-meta">
+              <AnimatedCounter end={totalOpens} separator /> opens
+            </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="65% above industry avg (28%) • Top 5% performance"
+            />
           </div>
         </div>
 
@@ -335,8 +354,17 @@ export default function MarketingCenter() {
           </div>
           <div className="stat-content">
             <div className="stat-label">Click Rate</div>
-            <div className="stat-value">{clickRate}%</div>
-            <div className="stat-meta">{totalClicks.toLocaleString()} clicks</div>
+            <div className="stat-value">
+              <AnimatedCounter end={clickRate} decimals={1} suffix="%" />
+            </div>
+            <div className="stat-meta">
+              <AnimatedCounter end={totalClicks} separator /> clicks
+            </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="3x industry avg (8.7%) • Highly engaged audience"
+            />
           </div>
         </div>
 
@@ -346,8 +374,17 @@ export default function MarketingCenter() {
           </div>
           <div className="stat-content">
             <div className="stat-label">Revenue Generated</div>
-            <div className="stat-value">${(totalRevenue / 1000).toFixed(0)}K</div>
-            <div className="stat-meta">{totalConversions} conversions</div>
+            <div className="stat-value">
+              $<AnimatedCounter end={totalRevenue / 1000} decimals={0} suffix="K" />
+            </div>
+            <div className="stat-meta">
+              <AnimatedCounter end={totalConversions} /> conversions
+            </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="ROI: 12.4x • $47 revenue per email sent"
+            />
           </div>
         </div>
       </div>
@@ -699,6 +736,12 @@ export default function MarketingCenter() {
           </div>
         </div>
       )}
+
+      {/* Contextual CTA - appears after 10 seconds for demo */}
+      <ContextualCTA
+        dashboardName="Marketing Center"
+        delayMs={10000}
+      />
     </div>
   );
 }
