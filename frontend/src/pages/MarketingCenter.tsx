@@ -7,7 +7,7 @@ import {
   Sparkles, Brain, Home
 } from 'lucide-react';
 import {
-  LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell,
+  LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { campaignApi } from '../services/api.services';
@@ -16,6 +16,7 @@ import Breadcrumb from '../components/Breadcrumb';
 import AnimatedCounter from '../components/AnimatedCounter';
 import InsightBadge from '../components/InsightBadge';
 import ContextualCTA from '../components/ContextualCTA';
+import InteractivePieChart from '../components/InteractivePieChart';
 
 // Mock data
 const campaigns = [
@@ -177,6 +178,7 @@ const breadcrumbItems = [
 export default function MarketingCenter() {
   const [selectedTab, setSelectedTab] = useState<'campaigns' | 'templates' | 'analytics'>('campaigns');
   const [showNewCampaign, setShowNewCampaign] = useState(false);
+  const [selectedCampaignType, setSelectedCampaignType] = useState<string | null>(null);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -200,6 +202,12 @@ export default function MarketingCenter() {
 
   const handleCreateCampaign = () => {
     setShowNewCampaign(true);
+  };
+
+  const handleCampaignTypeClick = (data: any) => {
+    setSelectedCampaignType(data.name);
+    console.log(`Filtered view for: ${data.name} campaigns (${data.value}%)`);
+    // In production, this would filter the campaigns list
   };
 
   const handleEditCampaign = (campaign: any) => {
@@ -663,28 +671,45 @@ export default function MarketingCenter() {
 
             <div className="chart-card">
               <h3>Campaign Types</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <RechartsPieChart>
-                  <Pie
-                    data={[
-                      { name: 'Email', value: 65 },
-                      { name: 'SMS', value: 35 }
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={(entry) => `${entry.name}: ${entry.value}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
+              {selectedCampaignType && (
+                <div style={{
+                  padding: '0.5rem 0.75rem',
+                  marginBottom: '0.5rem',
+                  background: '#eff6ff',
+                  border: '1px solid #93c5fd',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                  color: '#1e40af',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <span>Filtered by: <strong>{selectedCampaignType}</strong></span>
+                  <button
+                    onClick={() => setSelectedCampaignType(null)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#2563eb',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      textDecoration: 'underline'
+                    }}
                   >
-                    {[0, 1].map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </RechartsPieChart>
-              </ResponsiveContainer>
+                    Clear
+                  </button>
+                </div>
+              )}
+              <InteractivePieChart
+                data={[
+                  { name: 'Email', value: 65 },
+                  { name: 'SMS', value: 35 }
+                ]}
+                colors={COLORS}
+                onSegmentClick={handleCampaignTypeClick}
+                width={500}
+                height={300}
+              />
             </div>
           </div>
 

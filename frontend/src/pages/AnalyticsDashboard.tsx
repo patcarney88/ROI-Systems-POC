@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, LineChart as RechartsLineChart, Line,
-  PieChart as RechartsPieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import DemoHeader from '../components/DemoHeader';
@@ -15,6 +14,7 @@ import Breadcrumb from '../components/Breadcrumb';
 import AnimatedCounter from '../components/AnimatedCounter';
 import InsightBadge from '../components/InsightBadge';
 import ContextualCTA from '../components/ContextualCTA';
+import InteractivePieChart from '../components/InteractivePieChart';
 
 // Using inline types for now - can be moved to analytics.ts later
 type AlertPerformanceMetrics = any;
@@ -226,10 +226,17 @@ const breadcrumbItems = [
 export default function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedAlertType, setSelectedAlertType] = useState<string | null>(null);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
+  const handleAlertTypeClick = (data: any) => {
+    setSelectedAlertType(data.type);
+    console.log(`Filtered view for: ${data.type} (${data.count} alerts, ${data.conversionRate}% conversion)`);
+    // In production, this would filter the alerts table below
   };
 
   const handleExport = () => {
@@ -498,25 +505,46 @@ export default function AnalyticsDashboard() {
 
           <div className="chart-card">
             <h3>Alerts by Type</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <RechartsPieChart>
-                <Pie
-                  data={alertPerformanceData.alertsByType}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry) => `${entry.type}: ${entry.count}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
+            {selectedAlertType && (
+              <div style={{
+                padding: '0.5rem 0.75rem',
+                marginBottom: '0.5rem',
+                background: '#eff6ff',
+                border: '1px solid #93c5fd',
+                borderRadius: '0.375rem',
+                fontSize: '0.875rem',
+                color: '#1e40af',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <span>Filtered by: <strong>{selectedAlertType}</strong></span>
+                <button
+                  onClick={() => setSelectedAlertType(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#2563eb',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    textDecoration: 'underline'
+                  }}
                 >
-                  {alertPerformanceData.alertsByType.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </RechartsPieChart>
-            </ResponsiveContainer>
+                  Clear
+                </button>
+              </div>
+            )}
+            <InteractivePieChart
+              data={alertPerformanceData.alertsByType.map((item: any) => ({
+                name: item.type,
+                value: item.count,
+                ...item
+              }))}
+              colors={COLORS}
+              onSegmentClick={handleAlertTypeClick}
+              width={500}
+              height={300}
+            />
           </div>
         </div>
 

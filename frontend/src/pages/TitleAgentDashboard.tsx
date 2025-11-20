@@ -4,7 +4,7 @@ import {
   Home, FileText, Users, Mail, Bell, BarChart3, Settings, HelpCircle,
   TrendingUp, AlertCircle, Phone, Send, Eye, Upload, Calendar, Activity, Target, Zap
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { documentApi, clientApi, campaignApi } from '../services/api.services';
 import HelpTooltip from '../components/HelpTooltip';
 import DemoHeader from '../components/DemoHeader';
@@ -12,6 +12,8 @@ import Breadcrumb from '../components/Breadcrumb';
 import AnimatedCounter from '../components/AnimatedCounter';
 import InsightBadge from '../components/InsightBadge';
 import ContextualCTA from '../components/ContextualCTA';
+import InteractivePieChart from '../components/InteractivePieChart';
+import AIExplainer from '../components/AIExplainer';
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444'];
 
@@ -45,7 +47,14 @@ export default function TitleAgentDashboard() {
       type: 'Document Expiring',
       priority: 'high',
       confidence: 95,
-      time: '2 hours ago'
+      time: '2 hours ago',
+      prediction: 'High likelihood of immediate action needed. Client has viewed documents 3 times in past 24 hours.',
+      signals: [
+        { type: 'behavior', description: 'Viewed document 3 times in last 24 hours', weight: 85 },
+        { type: 'timing', description: 'Document expires in 48 hours', weight: 95 },
+        { type: 'engagement', description: 'Responded to last 4 emails within 2 hours', weight: 78 },
+        { type: 'historical', description: 'Previous pattern: acts on expiring docs within 36 hours', weight: 82 }
+      ]
     },
     {
       id: 2,
@@ -54,7 +63,14 @@ export default function TitleAgentDashboard() {
       type: 'Email Opened',
       priority: 'medium',
       confidence: 78,
-      time: '4 hours ago'
+      time: '4 hours ago',
+      prediction: 'Moderate engagement signal. Client opened email 2 hours after delivery and clicked main CTA link.',
+      signals: [
+        { type: 'behavior', description: 'Opened email within 2 hours of delivery', weight: 65 },
+        { type: 'engagement', description: 'Clicked primary call-to-action link', weight: 80 },
+        { type: 'timing', description: 'Opened during typical active hours (2-4pm)', weight: 55 },
+        { type: 'historical', description: 'Average response time: 3.2 hours', weight: 70 }
+      ]
     },
     {
       id: 3,
@@ -63,7 +79,14 @@ export default function TitleAgentDashboard() {
       type: 'New Inquiry',
       priority: 'high',
       confidence: 88,
-      time: '6 hours ago'
+      time: '6 hours ago',
+      prediction: 'Strong interest signal. First-time inquiry with specific questions indicates serious intent.',
+      signals: [
+        { type: 'behavior', description: 'Submitted detailed inquiry form with 4 specific questions', weight: 90 },
+        { type: 'engagement', description: 'Spent 8 minutes on property listing page', weight: 75 },
+        { type: 'timing', description: 'Inquiry submitted during business hours', weight: 60 },
+        { type: 'source', description: 'Came from high-intent referral source', weight: 85 }
+      ]
     },
     {
       id: 4,
@@ -72,7 +95,14 @@ export default function TitleAgentDashboard() {
       type: 'Document Viewed',
       priority: 'low',
       confidence: 62,
-      time: '1 day ago'
+      time: '1 day ago',
+      prediction: 'Low urgency signal. Passive browsing behavior with minimal engagement depth.',
+      signals: [
+        { type: 'behavior', description: 'Quick 45-second document view', weight: 40 },
+        { type: 'engagement', description: 'No follow-up actions taken', weight: 35 },
+        { type: 'timing', description: 'Viewed outside typical active hours (11pm)', weight: 50 },
+        { type: 'historical', description: 'Typically takes 3-4 views before taking action', weight: 55 }
+      ]
     }
   ]);
   const [documentsData, setDocumentsData] = useState<any[]>([
@@ -127,6 +157,7 @@ export default function TitleAgentDashboard() {
     { name: 'Inspections', value: 190 },
     { name: 'Closing Docs', value: 150 }
   ]);
+  const [selectedDocType, setSelectedDocType] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -464,6 +495,12 @@ Actions:
     navigate('/dashboard/marketing');
   };
 
+  const handleDocumentTypeClick = (data: any) => {
+    setSelectedDocType(data.name);
+    console.log(`Filtered view for: ${data.name} (${data.value} documents)`);
+    // In production, this would filter the documents list below
+  };
+
   return (
     <div className="title-agent-dashboard">
       <DemoHeader dashboardName="Title Agent Dashboard" isDemoMode={true} />
@@ -704,6 +741,15 @@ Actions:
                       <span className="alert-confidence">Confidence: {alert.confidence}%</span>
                       <span className="alert-time">{alert.time}</span>
                     </div>
+                    {alert.signals && (
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <AIExplainer
+                          confidence={alert.confidence}
+                          signals={alert.signals}
+                          prediction={alert.prediction}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="alert-actions">
                     <button className="action-btn" title="Call" onClick={() => handleCall(alert)}>
@@ -893,25 +939,42 @@ Actions:
 
               <div className="chart-container">
                 <h3>Document Access Frequency</h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart margin={{ top: 0, right: 8, bottom: 0, left: 8 }}>
-                    <Pie
-                      data={documentAccessData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={false}
-                      outerRadius={70}
-                      fill="#8884d8"
-                      dataKey="value"
+                {selectedDocType && (
+                  <div style={{
+                    padding: '0.5rem 0.75rem',
+                    marginBottom: '0.5rem',
+                    background: '#eff6ff',
+                    border: '1px solid #93c5fd',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
+                    color: '#1e40af',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span>Filtered by: <strong>{selectedDocType}</strong></span>
+                    <button
+                      onClick={() => setSelectedDocType(null)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2563eb',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        textDecoration: 'underline'
+                      }}
                     >
-                      {documentAccessData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                      Clear
+                    </button>
+                  </div>
+                )}
+                <InteractivePieChart
+                  data={documentAccessData}
+                  colors={COLORS}
+                  onSegmentClick={handleDocumentTypeClick}
+                  width={400}
+                  height={250}
+                />
               </div>
             </div>
 
