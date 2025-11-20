@@ -118,6 +118,13 @@ function AppContent() {
 
   // Data fetching functions
   const fetchDocuments = useCallback(async () => {
+    // Skip API calls in demo mode
+    if (import.meta.env.VITE_DEMO_MODE === 'true') {
+      setDocumentsLoading(false);
+      setDocuments([]);
+      return;
+    }
+
     try {
       setDocumentsLoading(true);
       setDocumentsError(null);
@@ -149,6 +156,13 @@ function AppContent() {
   }, []);
 
   const fetchClients = useCallback(async () => {
+    // Skip API calls in demo mode
+    if (import.meta.env.VITE_DEMO_MODE === 'true') {
+      setClientsLoading(false);
+      setClients([]);
+      return;
+    }
+
     try {
       setClientsLoading(true);
       setClientsError(null);
@@ -181,6 +195,13 @@ function AppContent() {
   }, []);
 
   const fetchCampaigns = useCallback(async () => {
+    // Skip API calls in demo mode
+    if (import.meta.env.VITE_DEMO_MODE === 'true') {
+      setCampaignsLoading(false);
+      setCampaigns([]);
+      return;
+    }
+
     try {
       setCampaignsLoading(true);
       setCampaignsError(null);

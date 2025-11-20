@@ -354,16 +354,5 @@ select:focus {
    Page Load Optimization
    ============================================ */
 
-/* Initial state - prevent flash */
-.stat-card,
-.chart-container,
-.chart-card,
-.alert-item,
-.widget-section,
-.document-item,
-.campaign-card,
-.metric-card {
-  opacity: 0;
-}
-
-/* After page load, elements become visible via animations */
+/* Elements start visible and animate in via animation rules above */
+/* Initial opacity: 0 is handled within each @keyframes animation */
