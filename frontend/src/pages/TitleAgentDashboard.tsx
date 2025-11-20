@@ -9,6 +9,9 @@ import { documentApi, clientApi, campaignApi } from '../services/api.services';
 import HelpTooltip from '../components/HelpTooltip';
 import DemoHeader from '../components/DemoHeader';
 import Breadcrumb from '../components/Breadcrumb';
+import AnimatedCounter from '../components/AnimatedCounter';
+import InsightBadge from '../components/InsightBadge';
+import ContextualCTA from '../components/ContextualCTA';
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444'];
 
@@ -574,11 +577,18 @@ Actions:
                       <span className="stat-label">New This Week</span>
                       <Zap size={24} className="stat-icon" />
                     </div>
-                    <div className="stat-value">{transactionData.newThisWeek}</div>
+                    <div className="stat-value">
+                      <AnimatedCounter end={transactionData.newThisWeek} />
+                    </div>
                     <div className="stat-trend positive">
                       <TrendingUp size={16} />
                       <span>+{transactionData.trend}% from last week</span>
                     </div>
+                    <InsightBadge
+                      type="success"
+                      icon="trending-up"
+                      message={`${Math.round((transactionData.newThisWeek / 16) * 100 - 100)}% above last week (16) • On track for ${Math.round(transactionData.newThisWeek * 4.3)} this month`}
+                    />
                   </div>
 
                   <div className="stat-card gradient-green">
@@ -586,11 +596,18 @@ Actions:
                       <span className="stat-label">Completed This Month</span>
                       <Target size={24} className="stat-icon" />
                     </div>
-                    <div className="stat-value">{transactionData.completedThisMonth}</div>
+                    <div className="stat-value">
+                      <AnimatedCounter end={transactionData.completedThisMonth} />
+                    </div>
                     <div className="stat-trend positive">
                       <TrendingUp size={16} />
-                      <span>On track for monthly goal</span>
+                      <span>On track for monthly goal (60)</span>
                     </div>
+                    <InsightBadge
+                      type="info"
+                      icon="lightbulb"
+                      message="78% to goal • Complete 13 more to hit target and earn $15K bonus"
+                    />
                   </div>
 
                   <div className="stat-card gradient-purple">
@@ -598,11 +615,18 @@ Actions:
                       <span className="stat-label">Total YTD</span>
                       <Activity size={24} className="stat-icon" />
                     </div>
-                    <div className="stat-value">{transactionData.totalYTD}</div>
+                    <div className="stat-value">
+                      <AnimatedCounter end={transactionData.totalYTD} separator />
+                    </div>
                     <div className="stat-trend positive">
                       <TrendingUp size={16} />
-                      <span>Best year yet!</span>
+                      <span>Best year yet! Up from 412 last year</span>
                     </div>
+                    <InsightBadge
+                      type="success"
+                      icon="trending-up"
+                      message="28% YoY growth • Ranks you #8 out of 247 agents in your market"
+                    />
                   </div>
 
                   <div className="stat-card gradient-orange">
@@ -610,11 +634,21 @@ Actions:
                       <span className="stat-label">Revenue Generated</span>
                       <BarChart3 size={24} className="stat-icon" />
                     </div>
-                    <div className="stat-value">${(transactionData.revenueGenerated / 1000000).toFixed(2)}M</div>
+                    <div className="stat-value">
+                      $<AnimatedCounter
+                        end={transactionData.revenueGenerated / 1000000}
+                        decimals={2}
+                      />M
+                    </div>
                     <div className="stat-trend positive">
                       <TrendingUp size={16} />
-                      <span>+12.5% vs last year</span>
+                      <span>+12.5% vs last year ($2.56M)</span>
                     </div>
+                    <InsightBadge
+                      type="success"
+                      icon="trending-up"
+                      message="Avg $5,450 per transaction • $321K above your annual quota"
+                    />
                   </div>
                 </>
               )}
@@ -761,17 +795,27 @@ Actions:
               <div className="marketing-metrics">
                 <div className="metric-card">
                   <span className="metric-label">Emails Sent</span>
-                  <span className="metric-value">{marketingData.emailsSent.toLocaleString()}</span>
+                  <span className="metric-value">
+                    <AnimatedCounter end={marketingData.emailsSent} separator />
+                  </span>
                 </div>
                 <div className="metric-card">
                   <span className="metric-label">Opened</span>
-                  <span className="metric-value">{marketingData.emailsOpened.toLocaleString()}</span>
-                  <span className="metric-percentage">{marketingData.openRate}%</span>
+                  <span className="metric-value">
+                    <AnimatedCounter end={marketingData.emailsOpened} separator />
+                  </span>
+                  <span className="metric-percentage">
+                    <AnimatedCounter end={marketingData.openRate} decimals={1} suffix="%" />
+                  </span>
                 </div>
                 <div className="metric-card">
                   <span className="metric-label">Clicked</span>
-                  <span className="metric-value">{marketingData.emailsClicked.toLocaleString()}</span>
-                  <span className="metric-percentage">{marketingData.clickRate}%</span>
+                  <span className="metric-value">
+                    <AnimatedCounter end={marketingData.emailsClicked} separator />
+                  </span>
+                  <span className="metric-percentage">
+                    <AnimatedCounter end={marketingData.clickRate} decimals={1} suffix="%" />
+                  </span>
                 </div>
               </div>
 
@@ -785,11 +829,11 @@ Actions:
                 </div>
                 <div className="rate-bar">
                   <div className="rate-range"></div>
-                  <div 
-                    className="rate-current" 
+                  <div
+                    className="rate-current"
                     style={{ left: `${marketingData.openRate}%` }}
                   >
-                    {marketingData.openRate}%
+                    <AnimatedCounter end={marketingData.openRate} decimals={1} suffix="%" />
                   </div>
                 </div>
               </div>
@@ -878,7 +922,9 @@ Actions:
                   <div className="stat-bar">
                     <div className="stat-bar-fill" style={{ width: '78%' }}></div>
                   </div>
-                  <span className="stat-percentage">78%</span>
+                  <span className="stat-percentage">
+                    <AnimatedCounter end={78} suffix="%" />
+                  </span>
                 </div>
               </div>
               <div className="engagement-stat">
@@ -887,13 +933,21 @@ Actions:
                   <div className="stat-bar">
                     <div className="stat-bar-fill" style={{ width: '85%' }}></div>
                   </div>
-                  <span className="stat-percentage">85%</span>
+                  <span className="stat-percentage">
+                    <AnimatedCounter end={85} suffix="%" />
+                  </span>
                 </div>
               </div>
             </div>
           </section>
         </main>
       </div>
+
+      {/* Contextual CTA - appears after 10 seconds for demo */}
+      <ContextualCTA
+        dashboardName="Title Agent Dashboard"
+        delayMs={10000}
+      />
     </div>
   );
 }
