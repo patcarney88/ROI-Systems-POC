@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
 import './styles/TitleAgentDashboard.css'
@@ -10,36 +10,39 @@ import './styles/AnalyticsDashboard.css'
 import './styles/HomeownerPortal.css'
 import './styles/MarketingCenter.css'
 import { AuthProvider } from './contexts/AuthContext'
-import LandingPage from './pages/LandingPage'
-import Dashboard from './pages/Dashboard'
-import Documents from './pages/Documents'
-import Clients from './pages/Clients'
-import Campaigns from './pages/Campaigns'
-import Analytics from './pages/Analytics'
-import TitleAgentDashboard from './pages/TitleAgentDashboard'
-import DocumentManagement from './pages/DocumentManagement'
-import RealtorDashboard from './pages/RealtorDashboard'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import VerifyEmail from './pages/VerifyEmail'
-import CommunicationCenter from './pages/CommunicationCenter'
-import AnalyticsDashboard from './pages/AnalyticsDashboard'
-import HomeownerPortal from './pages/HomeownerPortal'
-import MarketingCenter from './pages/MarketingCenter'
-import MyProfile from './pages/MyProfile'
-import Settings from './pages/Settings'
-import HelpSupport from './pages/HelpSupport'
-import NotFound from './pages/NotFound'
-import Privacy from './pages/Privacy'
-import Terms from './pages/Terms'
-import About from './pages/About'
-import Contact from './pages/Contact'
-import Blog from './pages/Blog'
 import GlobalSearch from './components/GlobalSearch'
 import Footer from './components/Footer'
+import { PerformanceMonitor } from './components/PerformanceMonitor'
 import { documentApi, clientApi, campaignApi } from './services/api.services'
+
+// Lazy load all pages for code splitting and performance optimization
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Documents = lazy(() => import('./pages/Documents'))
+const Clients = lazy(() => import('./pages/Clients'))
+const Campaigns = lazy(() => import('./pages/Campaigns'))
+const Analytics = lazy(() => import('./pages/Analytics'))
+const TitleAgentDashboard = lazy(() => import('./pages/TitleAgentDashboard'))
+const DocumentManagement = lazy(() => import('./pages/DocumentManagement'))
+const RealtorDashboard = lazy(() => import('./pages/RealtorDashboard'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'))
+const CommunicationCenter = lazy(() => import('./pages/CommunicationCenter'))
+const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'))
+const HomeownerPortal = lazy(() => import('./pages/HomeownerPortal'))
+const MarketingCenter = lazy(() => import('./pages/MarketingCenter'))
+const MyProfile = lazy(() => import('./pages/MyProfile'))
+const Settings = lazy(() => import('./pages/Settings'))
+const HelpSupport = lazy(() => import('./pages/HelpSupport'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+const Privacy = lazy(() => import('./pages/Privacy'))
+const Terms = lazy(() => import('./pages/Terms'))
+const About = lazy(() => import('./pages/About'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Blog = lazy(() => import('./pages/Blog'))
 
 interface Document {
   id: string;
@@ -1102,116 +1105,128 @@ function AppContent() {
 
       {/* Main Content with Routes */}
       <main>
-        <Routes>
-          <Route
-            path="/"
-            element={<LandingPage />}
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <Dashboard
-                documents={documents}
-                documentsLoading={documentsLoading}
-                documentsError={documentsError}
-                clients={clients}
-                clientsLoading={clientsLoading}
-                clientsError={clientsError}
-                campaigns={campaigns}
-                campaignsLoading={campaignsLoading}
-                campaignsError={campaignsError}
-                stats={stats}
-                onDocumentUpload={handleDocumentUpload}
-                onClientSave={handleClientSave}
-                onCampaignLaunch={handleCampaignLaunch}
-                refreshData={() => {
-                  fetchDocuments();
-                  fetchClients();
-                  fetchCampaigns();
-                }}
-              />
-            }
-          />
-          <Route
-            path="/documents"
-            element={
-              <Documents
-                documents={documents}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onDocumentUpload={handleDocumentUpload}
-              />
-            }
-          />
-          <Route
-            path="/clients"
-            element={
-              <Clients
-                clients={clients}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onClientSave={handleClientSave}
-                onEditClient={handleEditClient}
-              />
-            }
-          />
-          <Route
-            path="/campaigns"
-            element={
-              <Campaigns
-                campaigns={campaigns}
-                onCampaignLaunch={handleCampaignLaunch}
-              />
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <Analytics stats={stats} />
-            }
-          />
-          <Route
-            path="/dashboard/title-agent"
-            element={
-              <TitleAgentDashboard />
-            }
-          />
-          <Route
-            path="/dashboard/title-agent/documents"
-            element={
-              <DocumentManagement />
-            }
-          />
-          <Route
-            path="/dashboard/realtor"
-            element={
-              <RealtorDashboard />
-            }
-          />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/dashboard/realtor/communications" element={<CommunicationCenter />} />
-          <Route path="/dashboard/realtor/analytics" element={<AnalyticsDashboard />} />
-          <Route path="/dashboard/homeowner" element={<HomeownerPortal />} />
-          <Route path="/dashboard/marketing" element={<MarketingCenter />} />
-          <Route path="/profile" element={<MyProfile />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/help" element={<HelpSupport />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/blog" element={<Blog />} />
-          {/* 404 Catch-all Route - Must be last */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={
+          <div className="loading-screen">
+            <div className="loading-content">
+              <div className="loading-spinner"></div>
+              <h2 className="loading-title">Loading...</h2>
+            </div>
+          </div>
+        }>
+          <Routes>
+            <Route
+              path="/"
+              element={<LandingPage />}
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <Dashboard
+                  documents={documents}
+                  documentsLoading={documentsLoading}
+                  documentsError={documentsError}
+                  clients={clients}
+                  clientsLoading={clientsLoading}
+                  clientsError={clientsError}
+                  campaigns={campaigns}
+                  campaignsLoading={campaignsLoading}
+                  campaignsError={campaignsError}
+                  stats={stats}
+                  onDocumentUpload={handleDocumentUpload}
+                  onClientSave={handleClientSave}
+                  onCampaignLaunch={handleCampaignLaunch}
+                  refreshData={() => {
+                    fetchDocuments();
+                    fetchClients();
+                    fetchCampaigns();
+                  }}
+                />
+              }
+            />
+            <Route
+              path="/documents"
+              element={
+                <Documents
+                  documents={documents}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  onDocumentUpload={handleDocumentUpload}
+                />
+              }
+            />
+            <Route
+              path="/clients"
+              element={
+                <Clients
+                  clients={clients}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  onClientSave={handleClientSave}
+                  onEditClient={handleEditClient}
+                />
+              }
+            />
+            <Route
+              path="/campaigns"
+              element={
+                <Campaigns
+                  campaigns={campaigns}
+                  onCampaignLaunch={handleCampaignLaunch}
+                />
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <Analytics stats={stats} />
+              }
+            />
+            <Route
+              path="/dashboard/title-agent"
+              element={
+                <TitleAgentDashboard />
+              }
+            />
+            <Route
+              path="/dashboard/title-agent/documents"
+              element={
+                <DocumentManagement />
+              }
+            />
+            <Route
+              path="/dashboard/realtor"
+              element={
+                <RealtorDashboard />
+              }
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/dashboard/realtor/communications" element={<CommunicationCenter />} />
+            <Route path="/dashboard/realtor/analytics" element={<AnalyticsDashboard />} />
+            <Route path="/dashboard/homeowner" element={<HomeownerPortal />} />
+            <Route path="/dashboard/marketing" element={<MarketingCenter />} />
+            <Route path="/profile" element={<MyProfile />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/help" element={<HelpSupport />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/blog" element={<Blog />} />
+            {/* 404 Catch-all Route - Must be last */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
 
       {/* Footer */}
       <Footer isDemoMode={import.meta.env.VITE_DEMO_MODE === 'true'} />
+
+      {/* Performance Monitor (Development Only) */}
+      {import.meta.env.DEV && <PerformanceMonitor />}
     </div>
   );
 }
