@@ -11,6 +11,8 @@ import {
 } from 'recharts';
 import { documentApi } from '../services/api.services';
 import { notify } from '../utils/notifications';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
 
 // Mock data
 const propertyData = {
@@ -183,6 +185,12 @@ const notifications = [
   }
 ];
 
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Homeowner Portal' }
+];
+
 export default function HomeownerPortal() {
   const [selectedTimeRange, setSelectedTimeRange] = useState<'1M' | '6M' | '1Y' | 'ALL'>('1Y');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -249,6 +257,9 @@ export default function HomeownerPortal() {
 
   return (
     <div className="homeowner-portal">
+      <DemoHeader dashboardName="Homeowner Portal" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Hero Section */}
       <div className="hero-section">
         <div className="property-hero">

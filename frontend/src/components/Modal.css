@@ -46,22 +46,22 @@
 /* Modal Sizes */
 .modal-sm {
   width: 100%;
-  max-width: 400px;
+  max-width: min(400px, calc(100vw - 2rem));
 }
 
 .modal-md {
   width: 100%;
-  max-width: 600px;
+  max-width: min(600px, calc(100vw - 2rem));
 }
 
 .modal-lg {
   width: 100%;
-  max-width: 800px;
+  max-width: min(800px, calc(100vw - 2rem));
 }
 
 .modal-xl {
   width: 100%;
-  max-width: 1200px;
+  max-width: min(1200px, calc(100vw - 2rem));
 }
 
 .modal-full {

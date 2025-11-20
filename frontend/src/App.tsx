@@ -38,6 +38,7 @@ import About from './pages/About'
 import Contact from './pages/Contact'
 import Blog from './pages/Blog'
 import GlobalSearch from './components/GlobalSearch'
+import Footer from './components/Footer'
 import { documentApi, clientApi, campaignApi } from './services/api.services'
 
 interface Document {
@@ -473,7 +474,14 @@ function AppContent() {
           </Link>
 
           <nav className="nav-menu">
-            <Link to="/" className={location.pathname === '/' ? 'nav-link active' : 'nav-link'}>
+            <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              <span>Home</span>
+            </Link>
+            <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'nav-link active' : 'nav-link'}>
               Dashboard
             </Link>
             <Link to="/documents" className={location.pathname === '/documents' ? 'nav-link active' : 'nav-link'}>
@@ -1042,36 +1050,47 @@ function AppContent() {
       {!isLandingPage && (
       <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
         <div className="mobile-nav-links">
-          <Link 
-            to="/" 
-            className={location.pathname === '/' ? 'mobile-nav-link active' : 'mobile-nav-link'}
+          <Link
+            to="/"
+            className={`mobile-nav-link ${location.pathname === '/' ? 'active' : ''}`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Home</span>
+          </Link>
+          <Link
+            to="/dashboard"
+            className={location.pathname === '/dashboard' ? 'mobile-nav-link active' : 'mobile-nav-link'}
             onClick={() => setMobileMenuOpen(false)}
           >
             Dashboard
           </Link>
-          <Link 
-            to="/documents" 
+          <Link
+            to="/documents"
             className={location.pathname === '/documents' ? 'mobile-nav-link active' : 'mobile-nav-link'}
             onClick={() => setMobileMenuOpen(false)}
           >
             Documents
           </Link>
-          <Link 
-            to="/clients" 
+          <Link
+            to="/clients"
             className={location.pathname === '/clients' ? 'mobile-nav-link active' : 'mobile-nav-link'}
             onClick={() => setMobileMenuOpen(false)}
           >
             Clients
           </Link>
-          <Link 
-            to="/campaigns" 
+          <Link
+            to="/campaigns"
             className={location.pathname === '/campaigns' ? 'mobile-nav-link active' : 'mobile-nav-link'}
             onClick={() => setMobileMenuOpen(false)}
           >
             Campaigns
           </Link>
-          <Link 
-            to="/analytics" 
+          <Link
+            to="/analytics"
             className={location.pathname === '/analytics' ? 'mobile-nav-link active' : 'mobile-nav-link'}
             onClick={() => setMobileMenuOpen(false)}
           >
@@ -1192,52 +1211,7 @@ function AppContent() {
       </main>
 
       {/* Footer */}
-      <footer className="main-footer">
-        <div className="footer-container">
-          <div className="footer-brand">
-            <div className="footer-logo">
-              <div className="logo-icon">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9 22V12H15V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <span>ROI Systems</span>
-            </div>
-            <p className="footer-tagline">Real Estate Document Management & Client Retention Platform</p>
-          </div>
-          <div className="footer-links">
-            <div className="footer-column">
-              <h4>Platform</h4>
-              <Link to="/">Dashboard</Link>
-              <Link to="/documents">Documents</Link>
-              <Link to="/clients">Clients</Link>
-              <Link to="/analytics">Analytics</Link>
-            </div>
-            <div className="footer-column">
-              <h4>Resources</h4>
-              <Link to="/help">Documentation</Link>
-              <Link to="/help">API Reference</Link>
-              <Link to="/help">Support</Link>
-              <Link to="/help">Status</Link>
-            </div>
-            <div className="footer-column">
-              <h4>Company</h4>
-              <Link to="/about">About</Link>
-              <Link to="/blog">Blog</Link>
-              <Link to="/contact">Careers</Link>
-              <Link to="/contact">Contact</Link>
-            </div>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>&copy; 2025 ROI Systems. All rights reserved.</p>
-          <div className="footer-legal">
-            <Link to="/privacy">Privacy Policy</Link>
-            <Link to="/terms">Terms of Service</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer isDemoMode={import.meta.env.VITE_DEMO_MODE === 'true'} />
     </div>
   );
 }

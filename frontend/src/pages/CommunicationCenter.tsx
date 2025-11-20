@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Search, Send, Paperclip, Smile, MoreVertical, Phone, Video, X,
   Check, CheckCheck, Image, FileText, Mic, Filter, Star, Archive,
-  ChevronLeft, Plus, Edit3
+  ChevronLeft, Plus, Edit3, Home
 } from 'lucide-react';
 import type {
   Conversation,
@@ -11,6 +11,8 @@ import type {
   QuickReply
 } from '../types/communications';
 import { SMS_TEMPLATES, EMAIL_TEMPLATES, QUICK_REPLIES } from '../types/communications';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
 
 // Mock data
 const mockConversations: Conversation[] = [
@@ -153,6 +155,13 @@ const mockMessages: Message[] = [
   }
 ];
 
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Realtor Dashboard', path: '/dashboard/realtor' },
+  { label: 'Communications' }
+];
+
 export default function CommunicationCenter() {
   const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(conversations[0]);
@@ -275,6 +284,9 @@ export default function CommunicationCenter() {
 
   return (
     <div className="communication-center">
+      <DemoHeader dashboardName="Communication Center" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Conversation List */}
       <div className={`conversation-list ${isMobileView && !showConversationList ? 'hidden' : ''}`}>
         <div className="conversation-header">

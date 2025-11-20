@@ -3,13 +3,16 @@ import {
   TrendingUp, TrendingDown, DollarSign, Users, Target, Award,
   Calendar, Filter, Download, RefreshCw, ChevronRight, AlertCircle,
   CheckCircle, XCircle, Clock, Zap, Brain, BarChart3, PieChart,
-  LineChart, Activity
+  LineChart, Activity, Home
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, LineChart as RechartsLineChart, Line,
   PieChart as RechartsPieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
+
 // Using inline types for now - can be moved to analytics.ts later
 type AlertPerformanceMetrics = any;
 type ClientLifecycleMetrics = any;
@@ -210,6 +213,13 @@ const predictiveData: PredictiveInsights = {
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Realtor Dashboard', path: '/dashboard/realtor' },
+  { label: 'Analytics' }
+];
+
 export default function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -327,6 +337,9 @@ export default function AnalyticsDashboard() {
 
   return (
     <div className="analytics-dashboard">
+      <DemoHeader dashboardName="Analytics Dashboard" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Header */}
       <div className="analytics-header">
         <div>

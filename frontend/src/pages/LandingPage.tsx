@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FileText, Users, TrendingUp, Clock, Shield, Zap, BarChart3, ArrowRight, Star, Sparkles } from 'lucide-react';
+import Testimonials from '../components/Testimonials';
+import './LandingPage.css';
 
 export default function LandingPage() {
   return (
@@ -421,9 +423,9 @@ export default function LandingPage() {
             }}>
               BENEFITS
             </div>
-            <h2 style={{ 
-              fontSize: '3.5rem', 
-              fontWeight: '800', 
+            <h2 style={{
+              fontSize: '3.5rem',
+              fontWeight: '800',
               marginBottom: '1.5rem',
               letterSpacing: '-0.02em',
               background: 'linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.7) 100%)',
@@ -517,6 +519,48 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section - Premium */}
+      <section style={{
+        padding: '8rem 2rem',
+        background: '#0a0a0a',
+        position: 'relative'
+      }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
+            <div style={{
+              display: 'inline-block',
+              padding: '0.5rem 1.25rem',
+              background: 'rgba(102, 126, 234, 0.1)',
+              border: '1px solid rgba(102, 126, 234, 0.3)',
+              borderRadius: '50px',
+              marginBottom: '1.5rem',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#667eea'
+            }}>
+              TESTIMONIALS
+            </div>
+            <h2 style={{
+              fontSize: '3.5rem',
+              fontWeight: '800',
+              marginBottom: '1.5rem',
+              letterSpacing: '-0.02em',
+              background: 'linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.7) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              What Our Clients Say
+            </h2>
+            <p style={{ fontSize: '1.25rem', color: 'rgba(255,255,255,0.6)', maxWidth: '700px', margin: '0 auto', lineHeight: '1.6' }}>
+              Join hundreds of satisfied title agencies and real estate professionals
+            </p>
+          </div>
+
+          <Testimonials />
         </div>
       </section>
 

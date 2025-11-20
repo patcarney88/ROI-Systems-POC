@@ -1,0 +1,120 @@
+/**
+ * LandingPage Styles
+ *
+ * Dark theme overrides for components used on the landing page
+ */
+
+/* ===== TESTIMONIALS DARK THEME OVERRIDES ===== */
+
+/* Override testimonial section to remove default padding since we handle it in the parent section */
+#root .testimonials-section {
+  padding: 0;
+}
+
+/* Dark theme testimonial cards */
+#root .testimonial-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#root .testimonial-card:hover {
+  transform: translateY(-8px);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark theme quote text */
+#root .testimonial-quote {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Dark theme author name */
+#root .author-name {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Dark theme author role */
+#root .author-role {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Dark theme footer border */
+#root .testimonial-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Hide the testimonials header since we're using our own premium header */
+#root .testimonials-header {
+  display: none;
+}
+
+/* Quote icon wrapper - adjust for dark theme */
+#root .quote-icon-wrapper {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  opacity: 0.15;
+}
+
+/* Avatar border for dark theme */
+#root .testimonial-avatar {
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhance star ratings visibility on dark background */
+#root .star-filled {
+  filter: drop-shadow(0 2px 4px rgba(255, 184, 0, 0.3));
+}
+
+/* Responsive adjustments for dark theme */
+@media (min-width: 768px) {
+  #root .testimonial-card {
+    padding: 2.5rem;
+  }
+}
+
+/* Animation keyframes for dark theme */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes floatGlow {
+    0%, 100% {
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+      box-shadow: 0 25px 50px rgba(102, 126, 234, 0.2);
+    }
+  }
+
+  #root .testimonial-card:hover {
+    animation: floatGlow 3s ease-in-out infinite;
+  }
+}
+
+/* Focus state for keyboard navigation on dark theme */
+#root .testimonial-card:focus-within {
+  outline: 2px solid rgba(102, 126, 234, 0.6);
+  outline-offset: 2px;
+}
+
+/* Premium gradient overlay on hover */
+#root .testimonial-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+#root .testimonial-card:hover::before {
+  opacity: 1;
+}
+
+/* Ensure grid works well on dark background */
+#root .testimonials-grid {
+  max-width: 1280px;
+}

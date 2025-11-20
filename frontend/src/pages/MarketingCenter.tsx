@@ -4,13 +4,15 @@ import {
   MessageSquare, Clock, CheckCircle, Play, Pause, Edit, Copy,
   Trash2, BarChart3, PieChart, Filter, Search, Download, Settings,
   Zap, Star, Award, AlertCircle, ChevronRight, Image, FileText,
-  Sparkles, Brain
+  Sparkles, Brain, Home
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { campaignApi } from '../services/api.services';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
 
 // Mock data
 const campaigns = [
@@ -163,6 +165,12 @@ const performanceData = [
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Marketing Center' }
+];
+
 export default function MarketingCenter() {
   const [selectedTab, setSelectedTab] = useState<'campaigns' | 'templates' | 'analytics'>('campaigns');
   const [showNewCampaign, setShowNewCampaign] = useState(false);
@@ -281,6 +289,9 @@ export default function MarketingCenter() {
 
   return (
     <div className="marketing-center">
+      <DemoHeader dashboardName="Marketing Center" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Header */}
       <div className="marketing-header">
         <div>

@@ -1,0 +1,232 @@
+/**
+ * AnimatedStat Component Styles
+ *
+ * Features:
+ * - Gradient text effects
+ * - Smooth fade-in animation
+ * - Responsive typography
+ * - Accessibility support
+ * - Reduced motion support
+ */
+
+.animated-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-6, 1.5rem);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+/* Visible state - fade in from bottom */
+.animated-stat--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Icon Wrapper */
+.animated-stat__icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-4, 1rem);
+  border-radius: var(--radius-full);
+  background: var(--gradient-brand);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.animated-stat:hover .animated-stat__icon-wrapper {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.animated-stat__icon {
+  color: var(--color-text-inverse);
+}
+
+/* Animated Value */
+.animated-stat__value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: var(--leading-tight);
+  margin-bottom: var(--space-2, 0.5rem);
+
+  /* Monospace for stable width during animation */
+  font-variant-numeric: tabular-nums;
+
+  /* Gradient text effect */
+  background: linear-gradient(
+    135deg,
+    var(--color-brand-primary) 0%,
+    var(--color-purple-500) 50%,
+    var(--color-brand-secondary) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+/* Gradient animation */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Label */
+.animated-stat__label {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+  max-width: 200px;
+}
+
+/* Screen reader only content */
+.animated-stat__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .animated-stat {
+    padding: var(--space-4);
+  }
+
+  .animated-stat__icon-wrapper {
+    width: 56px;
+    height: 56px;
+    margin-bottom: var(--space-3);
+  }
+
+  .animated-stat__icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .animated-stat__value {
+    font-size: var(--text-3xl);
+  }
+
+  .animated-stat__label {
+    font-size: var(--text-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .animated-stat__value {
+    font-size: var(--text-2xl);
+  }
+
+  .animated-stat__icon-wrapper {
+    width: 48px;
+    height: 48px;
+  }
+
+  .animated-stat__icon {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .animated-stat {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .animated-stat__value {
+    animation: none;
+  }
+
+  .animated-stat__icon-wrapper {
+    transition: none;
+  }
+
+  .animated-stat:hover .animated-stat__icon-wrapper {
+    transform: none;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .animated-stat__value {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--color-text-primary);
+  }
+
+  .animated-stat__icon-wrapper {
+    background: var(--color-brand-primary);
+  }
+}
+
+/* Dark Mode Support (if implemented) */
+@media (prefers-color-scheme: dark) {
+  .animated-stat__label {
+    color: var(--color-gray-300);
+  }
+
+  .animated-stat__value {
+    background: linear-gradient(
+      135deg,
+      #818cf8 0%,
+      #a78bfa 50%,
+      #818cf8 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+/* Focus Styles for Accessibility */
+.animated-stat:focus-within {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 4px;
+  border-radius: var(--radius-lg);
+}
+
+/* Print Styles */
+@media print {
+  .animated-stat {
+    opacity: 1;
+    transform: none;
+  }
+
+  .animated-stat__value {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: black;
+    animation: none;
+  }
+
+  .animated-stat__icon-wrapper {
+    background: #6366f1;
+    box-shadow: none;
+  }
+}

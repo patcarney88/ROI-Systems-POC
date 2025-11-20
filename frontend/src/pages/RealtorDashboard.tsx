@@ -15,6 +15,8 @@ import type {
   AlertType
 } from '../types/realtor';
 import { clientApi, documentApi, campaignApi } from '../services/api.services';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
 
 // Mock data templates for fallback
 const mockAlertsTemplate: BusinessAlert[] = [
@@ -117,6 +119,12 @@ const mockAlertsTemplate: BusinessAlert[] = [
       { type: 'email', label: 'Email', icon: 'mail', enabled: true }
     ]
   }
+];
+
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Realtor Dashboard' }
 ];
 
 export default function RealtorDashboard() {
@@ -386,6 +394,9 @@ export default function RealtorDashboard() {
 
   return (
     <div className="realtor-dashboard">
+      <DemoHeader dashboardName="Realtor Dashboard" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Header */}
       <header className="realtor-header">
         <div className="header-left">

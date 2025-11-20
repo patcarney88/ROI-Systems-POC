@@ -7,8 +7,16 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { documentApi, clientApi, campaignApi } from '../services/api.services';
 import HelpTooltip from '../components/HelpTooltip';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444'];
+
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Title Agent Dashboard' }
+];
 
 export default function TitleAgentDashboard() {
   const navigate = useNavigate();
@@ -455,6 +463,9 @@ Actions:
 
   return (
     <div className="title-agent-dashboard">
+      <DemoHeader dashboardName="Title Agent Dashboard" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       <div className="dashboard-layout">
         {/* Sidebar */}
         <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : 'closed'} ${mobileMenuOpen ? 'mobile-open' : ''}`}>
