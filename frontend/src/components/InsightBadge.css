@@ -1,0 +1,85 @@
+.insight-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 0.75rem;
+  animation: slideInUp 0.3s ease-out;
+}
+
+.insight-icon {
+  flex-shrink: 0;
+}
+
+.insight-message {
+  line-height: 1.4;
+}
+
+/* Type variants */
+.insight-badge-success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.insight-badge-warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.insight-badge-info {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.insight-badge-neutral {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+/* Animation */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .insight-badge {
+    font-size: 0.8125rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .insight-icon {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .insight-badge {
+    animation: none;
+  }
+}
+
+/* Print */
+@media print {
+  .insight-badge {
+    border: 1px solid #000 !important;
+    background: white !important;
+    color: #000 !important;
+  }
+}

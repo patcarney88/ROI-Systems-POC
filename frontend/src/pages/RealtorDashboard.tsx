@@ -15,6 +15,11 @@ import type {
   AlertType
 } from '../types/realtor';
 import { clientApi, documentApi, campaignApi } from '../services/api.services';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
+import AnimatedCounter from '../components/AnimatedCounter';
+import InsightBadge from '../components/InsightBadge';
+import ContextualCTA from '../components/ContextualCTA';
 
 // Mock data templates for fallback
 const mockAlertsTemplate: BusinessAlert[] = [
@@ -117,6 +122,12 @@ const mockAlertsTemplate: BusinessAlert[] = [
       { type: 'email', label: 'Email', icon: 'mail', enabled: true }
     ]
   }
+];
+
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Realtor Dashboard' }
 ];
 
 export default function RealtorDashboard() {
@@ -386,6 +397,9 @@ export default function RealtorDashboard() {
 
   return (
     <div className="realtor-dashboard">
+      <DemoHeader dashboardName="Realtor Dashboard" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Header */}
       <header className="realtor-header">
         <div className="header-left">
@@ -562,32 +576,60 @@ export default function RealtorDashboard() {
                 <div className="metric-icon conversion">
                   <Target size={24} />
                 </div>
-                <div className="metric-value">{mockMetrics.conversionRate}%</div>
+                <div className="metric-value">
+                  <AnimatedCounter end={mockMetrics.conversionRate} decimals={1} suffix="%" />
+                </div>
                 <div className="metric-label">Conversion Rate</div>
+                <InsightBadge
+                  type="success"
+                  icon="trending-up"
+                  message="Above industry avg (12.5%) • Top 15% of agents"
+                />
               </div>
 
               <div className="metric-card">
                 <div className="metric-icon response">
                   <Clock size={24} />
                 </div>
-                <div className="metric-value">{mockMetrics.avgResponseTime}m</div>
+                <div className="metric-value">
+                  <AnimatedCounter end={mockMetrics.avgResponseTime} suffix="m" />
+                </div>
                 <div className="metric-label">Avg Response</div>
+                <InsightBadge
+                  type="success"
+                  icon="trending-up"
+                  message="45% faster than last month • Excellent response time"
+                />
               </div>
 
               <div className="metric-card">
                 <div className="metric-icon deals">
                   <Check size={24} />
                 </div>
-                <div className="metric-value">{mockMetrics.dealsClosed}</div>
+                <div className="metric-value">
+                  <AnimatedCounter end={mockMetrics.dealsClosed} />
+                </div>
                 <div className="metric-label">Deals Closed</div>
+                <InsightBadge
+                  type="info"
+                  icon="lightbulb"
+                  message="On track for 156 this year • 23% ahead of last year"
+                />
               </div>
 
               <div className="metric-card">
                 <div className="metric-icon revenue">
                   <DollarSign size={24} />
                 </div>
-                <div className="metric-value">${(mockMetrics.revenueGenerated / 1000).toFixed(0)}K</div>
+                <div className="metric-value">
+                  $<AnimatedCounter end={mockMetrics.revenueGenerated / 1000} decimals={0} suffix="K" />
+                </div>
                 <div className="metric-label">Revenue</div>
+                <InsightBadge
+                  type="success"
+                  icon="trending-up"
+                  message="$87K per deal • 18% above quota for Q4"
+                />
               </div>
             </div>
 
@@ -777,6 +819,12 @@ export default function RealtorDashboard() {
           </div>
         </div>
       )}
+
+      {/* Contextual CTA - appears after 10 seconds for demo */}
+      <ContextualCTA
+        dashboardName="Realtor Dashboard"
+        delayMs={10000}
+      />
     </div>
   );
 }

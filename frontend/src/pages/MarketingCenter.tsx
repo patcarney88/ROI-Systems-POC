@@ -4,13 +4,19 @@ import {
   MessageSquare, Clock, CheckCircle, Play, Pause, Edit, Copy,
   Trash2, BarChart3, PieChart, Filter, Search, Download, Settings,
   Zap, Star, Award, AlertCircle, ChevronRight, Image, FileText,
-  Sparkles, Brain
+  Sparkles, Brain, Home
 } from 'lucide-react';
 import {
-  LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell,
+  LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { campaignApi } from '../services/api.services';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
+import AnimatedCounter from '../components/AnimatedCounter';
+import InsightBadge from '../components/InsightBadge';
+import ContextualCTA from '../components/ContextualCTA';
+import InteractivePieChart from '../components/InteractivePieChart';
 
 // Mock data
 const campaigns = [
@@ -163,9 +169,16 @@ const performanceData = [
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Marketing Center' }
+];
+
 export default function MarketingCenter() {
   const [selectedTab, setSelectedTab] = useState<'campaigns' | 'templates' | 'analytics'>('campaigns');
   const [showNewCampaign, setShowNewCampaign] = useState(false);
+  const [selectedCampaignType, setSelectedCampaignType] = useState<string | null>(null);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -189,6 +202,12 @@ export default function MarketingCenter() {
 
   const handleCreateCampaign = () => {
     setShowNewCampaign(true);
+  };
+
+  const handleCampaignTypeClick = (data: any) => {
+    setSelectedCampaignType(data.name);
+    console.log(`Filtered view for: ${data.name} campaigns (${data.value}%)`);
+    // In production, this would filter the campaigns list
   };
 
   const handleEditCampaign = (campaign: any) => {
@@ -281,6 +300,9 @@ export default function MarketingCenter() {
 
   return (
     <div className="marketing-center">
+      <DemoHeader dashboardName="Marketing Center" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Header */}
       <div className="marketing-header">
         <div>
@@ -302,8 +324,15 @@ export default function MarketingCenter() {
           </div>
           <div className="stat-content">
             <div className="stat-label">Total Sent</div>
-            <div className="stat-value">{totalSent.toLocaleString()}</div>
+            <div className="stat-value">
+              <AnimatedCounter end={totalSent} separator />
+            </div>
             <div className="stat-meta">Across all campaigns</div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="2.4x more than last quarter • Excellent reach"
+            />
           </div>
         </div>
 
@@ -313,8 +342,17 @@ export default function MarketingCenter() {
           </div>
           <div className="stat-content">
             <div className="stat-label">Open Rate</div>
-            <div className="stat-value">{openRate}%</div>
-            <div className="stat-meta">{totalOpens.toLocaleString()} opens</div>
+            <div className="stat-value">
+              <AnimatedCounter end={openRate} decimals={1} suffix="%" />
+            </div>
+            <div className="stat-meta">
+              <AnimatedCounter end={totalOpens} separator /> opens
+            </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="65% above industry avg (28%) • Top 5% performance"
+            />
           </div>
         </div>
 
@@ -324,8 +362,17 @@ export default function MarketingCenter() {
           </div>
           <div className="stat-content">
             <div className="stat-label">Click Rate</div>
-            <div className="stat-value">{clickRate}%</div>
-            <div className="stat-meta">{totalClicks.toLocaleString()} clicks</div>
+            <div className="stat-value">
+              <AnimatedCounter end={clickRate} decimals={1} suffix="%" />
+            </div>
+            <div className="stat-meta">
+              <AnimatedCounter end={totalClicks} separator /> clicks
+            </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="3x industry avg (8.7%) • Highly engaged audience"
+            />
           </div>
         </div>
 
@@ -335,8 +382,17 @@ export default function MarketingCenter() {
           </div>
           <div className="stat-content">
             <div className="stat-label">Revenue Generated</div>
-            <div className="stat-value">${(totalRevenue / 1000).toFixed(0)}K</div>
-            <div className="stat-meta">{totalConversions} conversions</div>
+            <div className="stat-value">
+              $<AnimatedCounter end={totalRevenue / 1000} decimals={0} suffix="K" />
+            </div>
+            <div className="stat-meta">
+              <AnimatedCounter end={totalConversions} /> conversions
+            </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="ROI: 12.4x • $47 revenue per email sent"
+            />
           </div>
         </div>
       </div>
@@ -615,28 +671,45 @@ export default function MarketingCenter() {
 
             <div className="chart-card">
               <h3>Campaign Types</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <RechartsPieChart>
-                  <Pie
-                    data={[
-                      { name: 'Email', value: 65 },
-                      { name: 'SMS', value: 35 }
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={(entry) => `${entry.name}: ${entry.value}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
+              {selectedCampaignType && (
+                <div style={{
+                  padding: '0.5rem 0.75rem',
+                  marginBottom: '0.5rem',
+                  background: '#eff6ff',
+                  border: '1px solid #93c5fd',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                  color: '#1e40af',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <span>Filtered by: <strong>{selectedCampaignType}</strong></span>
+                  <button
+                    onClick={() => setSelectedCampaignType(null)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#2563eb',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      textDecoration: 'underline'
+                    }}
                   >
-                    {[0, 1].map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </RechartsPieChart>
-              </ResponsiveContainer>
+                    Clear
+                  </button>
+                </div>
+              )}
+              <InteractivePieChart
+                data={[
+                  { name: 'Email', value: 65 },
+                  { name: 'SMS', value: 35 }
+                ]}
+                colors={COLORS}
+                onSegmentClick={handleCampaignTypeClick}
+                width={500}
+                height={300}
+              />
             </div>
           </div>
 
@@ -688,6 +761,12 @@ export default function MarketingCenter() {
           </div>
         </div>
       )}
+
+      {/* Contextual CTA - appears after 10 seconds for demo */}
+      <ContextualCTA
+        dashboardName="Marketing Center"
+        delayMs={10000}
+      />
     </div>
   );
 }

@@ -3,13 +3,19 @@ import {
   TrendingUp, TrendingDown, DollarSign, Users, Target, Award,
   Calendar, Filter, Download, RefreshCw, ChevronRight, AlertCircle,
   CheckCircle, XCircle, Clock, Zap, Brain, BarChart3, PieChart,
-  LineChart, Activity
+  LineChart, Activity, Home
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, LineChart as RechartsLineChart, Line,
-  PieChart as RechartsPieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
+import AnimatedCounter from '../components/AnimatedCounter';
+import InsightBadge from '../components/InsightBadge';
+import ContextualCTA from '../components/ContextualCTA';
+import InteractivePieChart from '../components/InteractivePieChart';
+
 // Using inline types for now - can be moved to analytics.ts later
 type AlertPerformanceMetrics = any;
 type ClientLifecycleMetrics = any;
@@ -210,13 +216,27 @@ const predictiveData: PredictiveInsights = {
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Realtor Dashboard', path: '/dashboard/realtor' },
+  { label: 'Analytics' }
+];
+
 export default function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedAlertType, setSelectedAlertType] = useState<string | null>(null);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
+  const handleAlertTypeClick = (data: any) => {
+    setSelectedAlertType(data.type);
+    console.log(`Filtered view for: ${data.type} (${data.count} alerts, ${data.conversionRate}% conversion)`);
+    // In production, this would filter the alerts table below
   };
 
   const handleExport = () => {
@@ -327,6 +347,9 @@ export default function AnalyticsDashboard() {
 
   return (
     <div className="analytics-dashboard">
+      <DemoHeader dashboardName="Analytics Dashboard" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Header */}
       <div className="analytics-header">
         <div>
@@ -366,11 +389,18 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="metric-content">
             <div className="metric-label">Alert Accuracy</div>
-            <div className="metric-value">{alertPerformanceData.accuracy}%</div>
+            <div className="metric-value">
+              <AnimatedCounter end={alertPerformanceData.accuracy} decimals={1} suffix="%" />
+            </div>
             <div className="metric-change positive">
               <TrendingUp size={14} />
               <span>+2.3% vs last month</span>
             </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="AI predictions 92% accurate • Industry leading performance"
+            />
           </div>
         </div>
 
@@ -380,11 +410,18 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="metric-content">
             <div className="metric-label">Conversion Rate</div>
-            <div className="metric-value">{alertPerformanceData.conversionRate}%</div>
+            <div className="metric-value">
+              <AnimatedCounter end={alertPerformanceData.conversionRate} decimals={1} suffix="%" />
+            </div>
             <div className="metric-change positive">
               <TrendingUp size={14} />
               <span>+4.1% vs last month</span>
             </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="3.2x higher than cold outreach • Best month in 2024"
+            />
           </div>
         </div>
 
@@ -394,11 +431,18 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="metric-content">
             <div className="metric-label">Alert-Sourced Revenue</div>
-            <div className="metric-value">${(revenueData.alertSourcedRevenue / 1000).toFixed(0)}K</div>
+            <div className="metric-value">
+              $<AnimatedCounter end={revenueData.alertSourcedRevenue / 1000} decimals={0} suffix="K" />
+            </div>
             <div className="metric-change positive">
               <TrendingUp size={14} />
               <span>+12.4% vs last month</span>
             </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="42% of total revenue from AI alerts • ROI: 8.7x"
+            />
           </div>
         </div>
 
@@ -408,11 +452,18 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="metric-content">
             <div className="metric-label">Avg Response Time</div>
-            <div className="metric-value">{alertPerformanceData.averageResponseTime}h</div>
+            <div className="metric-value">
+              <AnimatedCounter end={alertPerformanceData.averageResponseTime} decimals={1} suffix="h" />
+            </div>
             <div className="metric-change positive">
               <TrendingDown size={14} />
               <span>-0.6h vs last month</span>
             </div>
+            <InsightBadge
+              type="success"
+              icon="trending-up"
+              message="68% faster than industry avg (6.2h) • Excellent"
+            />
           </div>
         </div>
       </div>
@@ -454,25 +505,46 @@ export default function AnalyticsDashboard() {
 
           <div className="chart-card">
             <h3>Alerts by Type</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <RechartsPieChart>
-                <Pie
-                  data={alertPerformanceData.alertsByType}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry) => `${entry.type}: ${entry.count}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
+            {selectedAlertType && (
+              <div style={{
+                padding: '0.5rem 0.75rem',
+                marginBottom: '0.5rem',
+                background: '#eff6ff',
+                border: '1px solid #93c5fd',
+                borderRadius: '0.375rem',
+                fontSize: '0.875rem',
+                color: '#1e40af',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <span>Filtered by: <strong>{selectedAlertType}</strong></span>
+                <button
+                  onClick={() => setSelectedAlertType(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#2563eb',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    textDecoration: 'underline'
+                  }}
                 >
-                  {alertPerformanceData.alertsByType.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </RechartsPieChart>
-            </ResponsiveContainer>
+                  Clear
+                </button>
+              </div>
+            )}
+            <InteractivePieChart
+              data={alertPerformanceData.alertsByType.map((item: any) => ({
+                name: item.type,
+                value: item.count,
+                ...item
+              }))}
+              colors={COLORS}
+              onSegmentClick={handleAlertTypeClick}
+              width={500}
+              height={300}
+            />
           </div>
         </div>
 
@@ -728,6 +800,12 @@ export default function AnalyticsDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Contextual CTA - appears after 10 seconds for demo */}
+      <ContextualCTA
+        dashboardName="Analytics Dashboard"
+        delayMs={10000}
+      />
     </div>
   );
 }

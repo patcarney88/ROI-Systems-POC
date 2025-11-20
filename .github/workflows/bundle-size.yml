@@ -1,0 +1,113 @@
+name: Bundle Size Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/bundle-size.yml'
+
+jobs:
+  check-bundle:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build production bundle
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Analyze bundle size
+        id: analyze
+        run: |
+          cd frontend
+          npm run analyze > bundle-report.txt
+          cat bundle-report.txt
+
+      - name: Check JavaScript budget
+        run: |
+          cd frontend
+          JS_SIZE=$(du -sb dist/assets/*.js 2>/dev/null | awk '{sum+=$1} END {print sum}' || echo 0)
+          if [ "$JS_SIZE" -gt 512000 ]; then
+            echo "❌ JavaScript bundle exceeds 500 KB limit: $((JS_SIZE / 1024)) KB"
+            exit 1
+          else
+            echo "✅ JavaScript bundle within budget: $((JS_SIZE / 1024)) KB / 500 KB"
+          fi
+
+      - name: Check CSS budget
+        run: |
+          cd frontend
+          CSS_SIZE=$(du -sb dist/assets/*.css 2>/dev/null | awk '{sum+=$1} END {print sum}' || echo 0)
+          if [ "$CSS_SIZE" -gt 153600 ]; then
+            echo "❌ CSS bundle exceeds 150 KB limit: $((CSS_SIZE / 1024)) KB"
+            exit 1
+          else
+            echo "✅ CSS bundle within budget: $((CSS_SIZE / 1024)) KB / 150 KB"
+          fi
+
+      - name: Generate bundle report comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('frontend/bundle-report.txt', 'utf8');
+
+            // Extract key metrics from report
+            const jsMatch = report.match(/Total JavaScript: ([\d.]+) KB/);
+            const cssMatch = report.match(/Total CSS: ([\d.]+) KB/);
+            const totalMatch = report.match(/Total Bundle Size: ([\d.]+) KB/);
+            const gzipMatch = report.match(/Estimated Gzip[^:]*: ([\d.]+) KB/);
+
+            const jsSize = jsMatch ? jsMatch[1] : 'N/A';
+            const cssSize = cssMatch ? cssMatch[1] : 'N/A';
+            const totalSize = totalMatch ? totalMatch[1] : 'N/A';
+            const gzipSize = gzipMatch ? gzipMatch[1] : 'N/A';
+
+            const comment = `## 📦 Bundle Size Report
+
+            | Metric | Size | Budget | Status |
+            |--------|------|--------|--------|
+            | JavaScript | ${jsSize} KB | 500 KB | ${parseFloat(jsSize) > 500 ? '❌' : '✅'} |
+            | CSS | ${cssSize} KB | 150 KB | ${parseFloat(cssSize) > 150 ? '❌' : '✅'} |
+            | Total | ${totalSize} KB | 2000 KB | ${parseFloat(totalSize) > 2000 ? '❌' : '✅'} |
+            | Gzipped (est.) | ${gzipSize} KB | 600 KB | ${parseFloat(gzipSize) > 600 ? '⚠️' : '✅'} |
+
+            <details>
+            <summary>📊 Full Analysis Report</summary>
+
+            \`\`\`
+            ${report}
+            \`\`\`
+            </details>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Upload bundle stats
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-stats
+          path: |
+            frontend/dist/stats.html
+            frontend/bundle-report.txt

@@ -1,0 +1,205 @@
+/**
+ * Breadcrumb Component Styles
+ * ROI Systems - Professional breadcrumb navigation
+ */
+
+/* ===== CONTAINER ===== */
+
+.breadcrumb {
+  display: block;
+  width: 100%;
+}
+
+.breadcrumb-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ===== BREADCRUMB ITEMS ===== */
+
+.breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* ===== LINKS & TEXT ===== */
+
+.breadcrumb-link,
+.breadcrumb-text,
+.breadcrumb-current {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  transition: var(--transition-colors);
+}
+
+/* Clickable link styles */
+.breadcrumb-link {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+}
+
+.breadcrumb-link:hover {
+  color: var(--color-brand-primary);
+}
+
+.breadcrumb-link:focus {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.breadcrumb-link:active {
+  color: var(--color-brand-secondary);
+}
+
+/* Non-clickable text */
+.breadcrumb-text {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-medium);
+}
+
+/* Current page (last item) */
+.breadcrumb-current {
+  color: var(--color-text-primary);
+  font-weight: var(--font-semibold);
+  cursor: default;
+}
+
+/* ===== ICONS ===== */
+
+.breadcrumb-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.breadcrumb-separator {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-tertiary);
+}
+
+/* ===== LABEL ===== */
+
+.breadcrumb-label {
+  white-space: nowrap;
+}
+
+/* ===== MOBILE ELLIPSIS ===== */
+
+.breadcrumb-ellipsis {
+  display: none;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.breadcrumb-ellipsis-text {
+  letter-spacing: 0.1em;
+  font-weight: var(--font-bold);
+}
+
+/* ===== RESPONSIVE BEHAVIOR ===== */
+
+/* Mobile: Show only first item, ellipsis, and last item */
+@media (max-width: 639px) {
+  /* Hide intermediate items */
+  .breadcrumb-item-intermediate {
+    display: none;
+  }
+
+  /* Show ellipsis when there are intermediate items */
+  .breadcrumb-ellipsis {
+    display: inline-flex;
+  }
+}
+
+/* Tablet and Desktop: Show all items, hide ellipsis */
+@media (min-width: 640px) {
+  .breadcrumb-item-intermediate {
+    display: inline-flex;
+  }
+
+  .breadcrumb-ellipsis {
+    display: none;
+  }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .breadcrumb-link {
+    text-decoration: underline;
+  }
+
+  .breadcrumb-current {
+    font-weight: var(--font-bold);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .breadcrumb-link,
+  .breadcrumb-text,
+  .breadcrumb-current {
+    transition: none;
+  }
+}
+
+/* ===== FOCUS VISIBLE (Modern browsers) ===== */
+
+.breadcrumb-link:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.breadcrumb-link:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ===== PRINT STYLES ===== */
+
+@media print {
+  .breadcrumb {
+    display: none;
+  }
+}
+
+/* ===== VARIANTS (Optional) ===== */
+
+/* Compact variant - smaller spacing */
+.breadcrumb.breadcrumb-compact .breadcrumb-list {
+  gap: var(--space-1);
+}
+
+.breadcrumb.breadcrumb-compact .breadcrumb-item {
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+
+.breadcrumb.breadcrumb-compact .breadcrumb-link,
+.breadcrumb.breadcrumb-compact .breadcrumb-text,
+.breadcrumb.breadcrumb-compact .breadcrumb-current {
+  gap: var(--space-1);
+}
+
+.breadcrumb.breadcrumb-compact .breadcrumb-icon,
+.breadcrumb.breadcrumb-compact .breadcrumb-separator {
+  width: 14px;
+  height: 14px;
+}

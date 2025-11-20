@@ -4,11 +4,24 @@ import {
   Home, FileText, Users, Mail, Bell, BarChart3, Settings, HelpCircle,
   TrendingUp, AlertCircle, Phone, Send, Eye, Upload, Calendar, Activity, Target, Zap
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { documentApi, clientApi, campaignApi } from '../services/api.services';
 import HelpTooltip from '../components/HelpTooltip';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
+import AnimatedCounter from '../components/AnimatedCounter';
+import InsightBadge from '../components/InsightBadge';
+import ContextualCTA from '../components/ContextualCTA';
+import InteractivePieChart from '../components/InteractivePieChart';
+import AIExplainer from '../components/AIExplainer';
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444'];
+
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Title Agent Dashboard' }
+];
 
 export default function TitleAgentDashboard() {
   const navigate = useNavigate();
@@ -34,7 +47,14 @@ export default function TitleAgentDashboard() {
       type: 'Document Expiring',
       priority: 'high',
       confidence: 95,
-      time: '2 hours ago'
+      time: '2 hours ago',
+      prediction: 'High likelihood of immediate action needed. Client has viewed documents 3 times in past 24 hours.',
+      signals: [
+        { type: 'behavior', description: 'Viewed document 3 times in last 24 hours', weight: 85 },
+        { type: 'timing', description: 'Document expires in 48 hours', weight: 95 },
+        { type: 'engagement', description: 'Responded to last 4 emails within 2 hours', weight: 78 },
+        { type: 'historical', description: 'Previous pattern: acts on expiring docs within 36 hours', weight: 82 }
+      ]
     },
     {
       id: 2,
@@ -43,7 +63,14 @@ export default function TitleAgentDashboard() {
       type: 'Email Opened',
       priority: 'medium',
       confidence: 78,
-      time: '4 hours ago'
+      time: '4 hours ago',
+      prediction: 'Moderate engagement signal. Client opened email 2 hours after delivery and clicked main CTA link.',
+      signals: [
+        { type: 'behavior', description: 'Opened email within 2 hours of delivery', weight: 65 },
+        { type: 'engagement', description: 'Clicked primary call-to-action link', weight: 80 },
+        { type: 'timing', description: 'Opened during typical active hours (2-4pm)', weight: 55 },
+        { type: 'historical', description: 'Average response time: 3.2 hours', weight: 70 }
+      ]
     },
     {
       id: 3,
@@ -52,7 +79,14 @@ export default function TitleAgentDashboard() {
       type: 'New Inquiry',
       priority: 'high',
       confidence: 88,
-      time: '6 hours ago'
+      time: '6 hours ago',
+      prediction: 'Strong interest signal. First-time inquiry with specific questions indicates serious intent.',
+      signals: [
+        { type: 'behavior', description: 'Submitted detailed inquiry form with 4 specific questions', weight: 90 },
+        { type: 'engagement', description: 'Spent 8 minutes on property listing page', weight: 75 },
+        { type: 'timing', description: 'Inquiry submitted during business hours', weight: 60 },
+        { type: 'source', description: 'Came from high-intent referral source', weight: 85 }
+      ]
     },
     {
       id: 4,
@@ -61,7 +95,14 @@ export default function TitleAgentDashboard() {
       type: 'Document Viewed',
       priority: 'low',
       confidence: 62,
-      time: '1 day ago'
+      time: '1 day ago',
+      prediction: 'Low urgency signal. Passive browsing behavior with minimal engagement depth.',
+      signals: [
+        { type: 'behavior', description: 'Quick 45-second document view', weight: 40 },
+        { type: 'engagement', description: 'No follow-up actions taken', weight: 35 },
+        { type: 'timing', description: 'Viewed outside typical active hours (11pm)', weight: 50 },
+        { type: 'historical', description: 'Typically takes 3-4 views before taking action', weight: 55 }
+      ]
     }
   ]);
   const [documentsData, setDocumentsData] = useState<any[]>([
@@ -116,6 +157,7 @@ export default function TitleAgentDashboard() {
     { name: 'Inspections', value: 190 },
     { name: 'Closing Docs', value: 150 }
   ]);
+  const [selectedDocType, setSelectedDocType] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -453,8 +495,17 @@ Actions:
     navigate('/dashboard/marketing');
   };
 
+  const handleDocumentTypeClick = (data: any) => {
+    setSelectedDocType(data.name);
+    console.log(`Filtered view for: ${data.name} (${data.value} documents)`);
+    // In production, this would filter the documents list below
+  };
+
   return (
     <div className="title-agent-dashboard">
+      <DemoHeader dashboardName="Title Agent Dashboard" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       <div className="dashboard-layout">
         {/* Sidebar */}
         <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : 'closed'} ${mobileMenuOpen ? 'mobile-open' : ''}`}>
@@ -563,11 +614,18 @@ Actions:
                       <span className="stat-label">New This Week</span>
                       <Zap size={24} className="stat-icon" />
                     </div>
-                    <div className="stat-value">{transactionData.newThisWeek}</div>
+                    <div className="stat-value">
+                      <AnimatedCounter end={transactionData.newThisWeek} />
+                    </div>
                     <div className="stat-trend positive">
                       <TrendingUp size={16} />
                       <span>+{transactionData.trend}% from last week</span>
                     </div>
+                    <InsightBadge
+                      type="success"
+                      icon="trending-up"
+                      message={`${Math.round((transactionData.newThisWeek / 16) * 100 - 100)}% above last week (16) • On track for ${Math.round(transactionData.newThisWeek * 4.3)} this month`}
+                    />
                   </div>
 
                   <div className="stat-card gradient-green">
@@ -575,11 +633,18 @@ Actions:
                       <span className="stat-label">Completed This Month</span>
                       <Target size={24} className="stat-icon" />
                     </div>
-                    <div className="stat-value">{transactionData.completedThisMonth}</div>
+                    <div className="stat-value">
+                      <AnimatedCounter end={transactionData.completedThisMonth} />
+                    </div>
                     <div className="stat-trend positive">
                       <TrendingUp size={16} />
-                      <span>On track for monthly goal</span>
+                      <span>On track for monthly goal (60)</span>
                     </div>
+                    <InsightBadge
+                      type="info"
+                      icon="lightbulb"
+                      message="78% to goal • Complete 13 more to hit target and earn $15K bonus"
+                    />
                   </div>
 
                   <div className="stat-card gradient-purple">
@@ -587,11 +652,18 @@ Actions:
                       <span className="stat-label">Total YTD</span>
                       <Activity size={24} className="stat-icon" />
                     </div>
-                    <div className="stat-value">{transactionData.totalYTD}</div>
+                    <div className="stat-value">
+                      <AnimatedCounter end={transactionData.totalYTD} separator />
+                    </div>
                     <div className="stat-trend positive">
                       <TrendingUp size={16} />
-                      <span>Best year yet!</span>
+                      <span>Best year yet! Up from 412 last year</span>
                     </div>
+                    <InsightBadge
+                      type="success"
+                      icon="trending-up"
+                      message="28% YoY growth • Ranks you #8 out of 247 agents in your market"
+                    />
                   </div>
 
                   <div className="stat-card gradient-orange">
@@ -599,11 +671,21 @@ Actions:
                       <span className="stat-label">Revenue Generated</span>
                       <BarChart3 size={24} className="stat-icon" />
                     </div>
-                    <div className="stat-value">${(transactionData.revenueGenerated / 1000000).toFixed(2)}M</div>
+                    <div className="stat-value">
+                      $<AnimatedCounter
+                        end={transactionData.revenueGenerated / 1000000}
+                        decimals={2}
+                      />M
+                    </div>
                     <div className="stat-trend positive">
                       <TrendingUp size={16} />
-                      <span>+12.5% vs last year</span>
+                      <span>+12.5% vs last year ($2.56M)</span>
                     </div>
+                    <InsightBadge
+                      type="success"
+                      icon="trending-up"
+                      message="Avg $5,450 per transaction • $321K above your annual quota"
+                    />
                   </div>
                 </>
               )}
@@ -659,6 +741,15 @@ Actions:
                       <span className="alert-confidence">Confidence: {alert.confidence}%</span>
                       <span className="alert-time">{alert.time}</span>
                     </div>
+                    {alert.signals && (
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <AIExplainer
+                          confidence={alert.confidence}
+                          signals={alert.signals}
+                          prediction={alert.prediction}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="alert-actions">
                     <button className="action-btn" title="Call" onClick={() => handleCall(alert)}>
@@ -750,17 +841,27 @@ Actions:
               <div className="marketing-metrics">
                 <div className="metric-card">
                   <span className="metric-label">Emails Sent</span>
-                  <span className="metric-value">{marketingData.emailsSent.toLocaleString()}</span>
+                  <span className="metric-value">
+                    <AnimatedCounter end={marketingData.emailsSent} separator />
+                  </span>
                 </div>
                 <div className="metric-card">
                   <span className="metric-label">Opened</span>
-                  <span className="metric-value">{marketingData.emailsOpened.toLocaleString()}</span>
-                  <span className="metric-percentage">{marketingData.openRate}%</span>
+                  <span className="metric-value">
+                    <AnimatedCounter end={marketingData.emailsOpened} separator />
+                  </span>
+                  <span className="metric-percentage">
+                    <AnimatedCounter end={marketingData.openRate} decimals={1} suffix="%" />
+                  </span>
                 </div>
                 <div className="metric-card">
                   <span className="metric-label">Clicked</span>
-                  <span className="metric-value">{marketingData.emailsClicked.toLocaleString()}</span>
-                  <span className="metric-percentage">{marketingData.clickRate}%</span>
+                  <span className="metric-value">
+                    <AnimatedCounter end={marketingData.emailsClicked} separator />
+                  </span>
+                  <span className="metric-percentage">
+                    <AnimatedCounter end={marketingData.clickRate} decimals={1} suffix="%" />
+                  </span>
                 </div>
               </div>
 
@@ -774,11 +875,11 @@ Actions:
                 </div>
                 <div className="rate-bar">
                   <div className="rate-range"></div>
-                  <div 
-                    className="rate-current" 
+                  <div
+                    className="rate-current"
                     style={{ left: `${marketingData.openRate}%` }}
                   >
-                    {marketingData.openRate}%
+                    <AnimatedCounter end={marketingData.openRate} decimals={1} suffix="%" />
                   </div>
                 </div>
               </div>
@@ -838,25 +939,42 @@ Actions:
 
               <div className="chart-container">
                 <h3>Document Access Frequency</h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart margin={{ top: 0, right: 8, bottom: 0, left: 8 }}>
-                    <Pie
-                      data={documentAccessData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={false}
-                      outerRadius={70}
-                      fill="#8884d8"
-                      dataKey="value"
+                {selectedDocType && (
+                  <div style={{
+                    padding: '0.5rem 0.75rem',
+                    marginBottom: '0.5rem',
+                    background: '#eff6ff',
+                    border: '1px solid #93c5fd',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
+                    color: '#1e40af',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span>Filtered by: <strong>{selectedDocType}</strong></span>
+                    <button
+                      onClick={() => setSelectedDocType(null)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2563eb',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        textDecoration: 'underline'
+                      }}
                     >
-                      {documentAccessData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                      Clear
+                    </button>
+                  </div>
+                )}
+                <InteractivePieChart
+                  data={documentAccessData}
+                  colors={COLORS}
+                  onSegmentClick={handleDocumentTypeClick}
+                  width={400}
+                  height={250}
+                />
               </div>
             </div>
 
@@ -867,7 +985,9 @@ Actions:
                   <div className="stat-bar">
                     <div className="stat-bar-fill" style={{ width: '78%' }}></div>
                   </div>
-                  <span className="stat-percentage">78%</span>
+                  <span className="stat-percentage">
+                    <AnimatedCounter end={78} suffix="%" />
+                  </span>
                 </div>
               </div>
               <div className="engagement-stat">
@@ -876,13 +996,21 @@ Actions:
                   <div className="stat-bar">
                     <div className="stat-bar-fill" style={{ width: '85%' }}></div>
                   </div>
-                  <span className="stat-percentage">85%</span>
+                  <span className="stat-percentage">
+                    <AnimatedCounter end={85} suffix="%" />
+                  </span>
                 </div>
               </div>
             </div>
           </section>
         </main>
       </div>
+
+      {/* Contextual CTA - appears after 10 seconds for demo */}
+      <ContextualCTA
+        dashboardName="Title Agent Dashboard"
+        delayMs={10000}
+      />
     </div>
   );
 }

@@ -1,0 +1,2617 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "created": "2025-11-19T00:00:00Z",
+    "updated": "2025-11-19T00:00:00Z",
+    "author": "ROI Systems Development Team",
+    "project": {
+      "name": "ROI Systems POC",
+      "description": "Real Estate Document Management & Client Retention Platform",
+      "repository": "https://github.com/patcarney88/ROI-Systems-POC",
+      "type": "Full-Stack Web Application",
+      "stage": "POC/MVP"
+    },
+    "tags": [
+      "real-estate",
+      "document-management",
+      "client-retention",
+      "ai-powered",
+      "microservices",
+      "react",
+      "typescript",
+      "express",
+      "postgresql"
+    ],
+    "team": {
+      "size": "1-3 developers",
+      "roles": [
+        "Full-Stack Developer",
+        "DevOps Engineer",
+        "QA Engineer"
+      ]
+    }
+  },
+  "requirements": {
+    "functional": [
+      {
+        "id": "FR-001",
+        "title": "User Authentication & Authorization",
+        "description": "Secure user authentication with role-based access control (RBAC)",
+        "priority": "P0",
+        "status": "Implemented",
+        "acceptance_criteria": [
+          "Users can register with email/password",
+          "Users can login with secure JWT tokens",
+          "Password complexity requirements enforced (12+ chars, mixed case, special chars)",
+          "Role-based permissions (Admin, Title Agent, Realtor, Homeowner)",
+          "Token refresh mechanism implemented",
+          "Email verification required",
+          "Password reset functionality"
+        ],
+        "related_components": [
+          "AuthController",
+          "AuthService",
+          "JWT Middleware",
+          "Login Page",
+          "Register Page"
+        ]
+      },
+      {
+        "id": "FR-002",
+        "title": "Document Management System",
+        "description": "Complete document lifecycle management with upload, storage, retrieval, and deletion",
+        "priority": "P0",
+        "status": "Implemented",
+        "acceptance_criteria": [
+          "Users can upload documents (PDF, DOCX, images)",
+          "Documents stored securely in AWS S3 or local storage",
+          "Document metadata tracked (title, type, size, upload date)",
+          "Users can view document history",
+          "Users can delete documents with proper authorization",
+          "Document download functionality",
+          "Document sharing capabilities"
+        ],
+        "related_components": [
+          "DocumentController",
+          "DocumentService",
+          "StorageService",
+          "Documents Page",
+          "DocumentManagement Page"
+        ]
+      },
+      {
+        "id": "FR-003",
+        "title": "AI Document Analysis",
+        "description": "Automated document analysis using AI/ML for classification and insights",
+        "priority": "P1",
+        "status": "Implemented",
+        "acceptance_criteria": [
+          "Documents automatically classified by type",
+          "Key information extracted from documents",
+          "AI-powered insights generated",
+          "Integration with Anthropic Claude API",
+          "Document OCR processing",
+          "Confidence scores provided"
+        ],
+        "related_components": [
+          "DocumentIntelligenceService",
+          "DocumentClassificationService",
+          "ML Models"
+        ]
+      },
+      {
+        "id": "FR-004",
+        "title": "Client Management",
+        "description": "Comprehensive client relationship management system",
+        "priority": "P0",
+        "status": "Implemented",
+        "acceptance_criteria": [
+          "Create, read, update, delete client records",
+          "Track client engagement scores",
+          "Store client contact information",
+          "Associate documents with clients",
+          "Track client transaction history",
+          "Client status management"
+        ],
+        "related_components": [
+          "ClientController",
+          "ClientService",
+          "Client Model",
+          "Clients Page"
+        ]
+      },
+      {
+        "id": "FR-005",
+        "title": "Marketing Campaign Management",
+        "description": "Create and manage marketing campaigns for client retention",
+        "priority": "P1",
+        "status": "Implemented",
+        "acceptance_criteria": [
+          "Create marketing campaigns",
+          "Schedule campaign launches",
+          "Track campaign performance metrics",
+          "Email automation integration",
+          "Campaign templates",
+          "Analytics and reporting"
+        ],
+        "related_components": [
+          "CampaignController",
+          "CampaignService",
+          "EmailService",
+          "Campaigns Page",
+          "MarketingCenter Page"
+        ]
+      },
+      {
+        "id": "FR-006",
+        "title": "Analytics Dashboard",
+        "description": "Real-time analytics and business intelligence dashboards",
+        "priority": "P1",
+        "status": "Implemented",
+        "acceptance_criteria": [
+          "Display key performance indicators (KPIs)",
+          "Real-time transaction metrics",
+          "Revenue tracking and forecasting",
+          "Client engagement analytics",
+          "Interactive charts and visualizations",
+          "Role-specific dashboard views",
+          "Export capabilities"
+        ],
+        "related_components": [
+          "TitleAgentDashboard",
+          "RealtorDashboard",
+          "AnalyticsDashboard",
+          "Dashboard Page"
+        ]
+      },
+      {
+        "id": "FR-007",
+        "title": "Communication Center",
+        "description": "Centralized communication hub for client interactions",
+        "priority": "P2",
+        "status": "Implemented",
+        "acceptance_criteria": [
+          "Send emails to clients",
+          "Email templates",
+          "Communication history tracking",
+          "Bulk email capabilities",
+          "Email scheduling",
+          "Notification system"
+        ],
+        "related_components": [
+          "CommunicationCenter Page",
+          "EmailService",
+          "NotificationService"
+        ]
+      },
+      {
+        "id": "FR-008",
+        "title": "User Profile Management",
+        "description": "User profile customization and settings",
+        "priority": "P2",
+        "status": "Implemented",
+        "acceptance_criteria": [
+          "View and edit profile information",
+          "Change password",
+          "Update notification preferences",
+          "Manage account settings",
+          "Profile picture upload",
+          "Account deactivation"
+        ],
+        "related_components": [
+          "MyProfile Page",
+          "Settings Page",
+          "UserController"
+        ]
+      },
+      {
+        "id": "FR-009",
+        "title": "Help & Support System",
+        "description": "Integrated help documentation and support system",
+        "priority": "P3",
+        "status": "Implemented",
+        "acceptance_criteria": [
+          "Searchable help documentation",
+          "FAQ section",
+          "Support ticket submission",
+          "Tutorial videos",
+          "Inline help tooltips",
+          "Contact support form"
+        ],
+        "related_components": [
+          "HelpSupport Page",
+          "HelpTooltip Component"
+        ]
+      },
+      {
+        "id": "FR-010",
+        "title": "SoftPro Integration",
+        "description": "Integration with SoftPro title software",
+        "priority": "P2",
+        "status": "Partial",
+        "acceptance_criteria": [
+          "Authenticate with SoftPro API",
+          "Import transaction data",
+          "Sync document information",
+          "Webhook handlers for real-time updates",
+          "Error handling and retry logic"
+        ],
+        "related_components": [
+          "SoftProApiService",
+          "SoftProWebhookService",
+          "Integration Routes"
+        ]
+      }
+    ],
+    "non_functional": [
+      {
+        "id": "NFR-001",
+        "category": "Security",
+        "title": "Application Security",
+        "description": "Comprehensive security measures to protect user data and prevent attacks",
+        "priority": "P0",
+        "requirements": [
+          "All passwords hashed with bcrypt (cost factor 10)",
+          "JWT tokens with 15-minute expiration",
+          "Refresh tokens with 30-day expiration",
+          "HTTPS/TLS encryption for all communications",
+          "SQL injection prevention via Sequelize ORM",
+          "XSS protection with content security policy",
+          "CSRF protection on all state-changing operations",
+          "Rate limiting on authentication endpoints (5 attempts per 15 min)",
+          "Input validation and sanitization",
+          "Secure HTTP headers via Helmet.js",
+          "Database SSL connections in production",
+          "Environment variable encryption"
+        ],
+        "acceptance_criteria": [
+          "Zero HIGH/CRITICAL security vulnerabilities",
+          "OWASP Top 10 compliance",
+          "Regular security audits passed",
+          "Penetration testing completed"
+        ]
+      },
+      {
+        "id": "NFR-002",
+        "category": "Performance",
+        "title": "Application Performance",
+        "description": "Fast, responsive application with optimal resource usage",
+        "priority": "P1",
+        "requirements": [
+          "API response time P95 < 500ms",
+          "Database query time P95 < 100ms",
+          "Frontend initial load < 3 seconds",
+          "Time to Interactive (TTI) < 5 seconds",
+          "Lighthouse performance score > 90",
+          "Initial bundle size < 500KB gzipped",
+          "Route chunks < 200KB each"
+        ],
+        "acceptance_criteria": [
+          "Performance benchmarks met in staging",
+          "No performance degradation under load",
+          "Synthetic monitoring shows < 500ms P95",
+          "Real user monitoring shows good Core Web Vitals"
+        ]
+      },
+      {
+        "id": "NFR-003",
+        "category": "Scalability",
+        "title": "System Scalability",
+        "description": "Ability to handle increasing load and users",
+        "priority": "P2",
+        "requirements": [
+          "Horizontal scaling via Kubernetes",
+          "Database connection pooling",
+          "Redis caching for frequently accessed data",
+          "CDN for static assets",
+          "Auto-scaling based on CPU/memory metrics",
+          "Load balancing across multiple instances"
+        ],
+        "acceptance_criteria": [
+          "System handles 1000+ concurrent users",
+          "Auto-scaling triggers at 70% CPU",
+          "Cache hit rate > 70%",
+          "Zero downtime during scaling events"
+        ]
+      },
+      {
+        "id": "NFR-004",
+        "category": "Reliability",
+        "title": "System Reliability & Availability",
+        "description": "High availability and fault tolerance",
+        "priority": "P1",
+        "requirements": [
+          "99.9% uptime SLA (43 minutes downtime/month)",
+          "Automated health checks",
+          "Graceful degradation on service failures",
+          "Database backups every 6 hours",
+          "Point-in-time recovery capability",
+          "Circuit breakers for external services"
+        ],
+        "acceptance_criteria": [
+          "Uptime monitoring shows 99.9%+ availability",
+          "Mean time to recovery (MTTR) < 15 minutes",
+          "Successful disaster recovery drill",
+          "Database recovery tested quarterly"
+        ]
+      },
+      {
+        "id": "NFR-005",
+        "category": "Testing",
+        "title": "Test Coverage",
+        "description": "Comprehensive automated testing",
+        "priority": "P0",
+        "requirements": [
+          "80%+ unit test coverage",
+          "80%+ branch coverage",
+          "Integration tests for all API endpoints",
+          "E2E tests for critical user journeys",
+          "Frontend component tests",
+          "Performance regression tests",
+          "Security scanning in CI/CD"
+        ],
+        "acceptance_criteria": [
+          "Code coverage reports show 80%+",
+          "All tests pass in CI/CD",
+          "No critical bugs in production",
+          "Test execution time < 10 minutes"
+        ],
+        "current_status": "20-30% coverage - needs significant work"
+      },
+      {
+        "id": "NFR-006",
+        "category": "Maintainability",
+        "title": "Code Maintainability",
+        "description": "Clean, documented, maintainable codebase",
+        "priority": "P1",
+        "requirements": [
+          "TypeScript strict mode enabled",
+          "ESLint rules enforced",
+          "No files > 1000 lines",
+          "Comprehensive inline documentation",
+          "API documentation (OpenAPI/Swagger)",
+          "Architecture Decision Records (ADRs)",
+          "Zero TODO/FIXME in production code"
+        ],
+        "acceptance_criteria": [
+          "Code Climate maintainability score > A",
+          "SonarQube quality gate passed",
+          "No linting errors",
+          "Documentation up to date"
+        ],
+        "current_issues": [
+          "Multiple files > 20,000 lines",
+          "20+ TODO comments",
+          "Legacy .old files present"
+        ]
+      },
+      {
+        "id": "NFR-007",
+        "category": "Observability",
+        "title": "Monitoring & Observability",
+        "description": "Comprehensive system monitoring and logging",
+        "priority": "P2",
+        "requirements": [
+          "Centralized logging (Winston + ELK)",
+          "Application Performance Monitoring (APM)",
+          "Error tracking (Sentry/DataDog)",
+          "Metrics collection (Prometheus)",
+          "Dashboards (Grafana)",
+          "Distributed tracing (OpenTelemetry)",
+          "Alerting for critical errors"
+        ],
+        "acceptance_criteria": [
+          "All errors logged and tracked",
+          "Dashboards show real-time metrics",
+          "Alerts configured for SLO violations",
+          "On-call rotation established"
+        ],
+        "current_status": "Winston logging implemented, APM needed"
+      },
+      {
+        "id": "NFR-008",
+        "category": "Usability",
+        "title": "User Experience",
+        "description": "Intuitive, accessible user interface",
+        "priority": "P1",
+        "requirements": [
+          "WCAG 2.1 Level AA compliance",
+          "Mobile responsive design",
+          "Keyboard navigation support",
+          "Screen reader compatible",
+          "Clear error messages",
+          "Loading states for async operations",
+          "Confirmation dialogs for destructive actions"
+        ],
+        "acceptance_criteria": [
+          "Lighthouse accessibility score > 90",
+          "User testing shows 80%+ task completion",
+          "No critical accessibility violations",
+          "Mobile usability score > 85"
+        ]
+      }
+    ],
+    "constraints": [
+      {
+        "id": "CON-001",
+        "type": "Technical",
+        "description": "Must use PostgreSQL for primary database",
+        "rationale": "Required for Sequelize ORM and relational data model"
+      },
+      {
+        "id": "CON-002",
+        "type": "Technical",
+        "description": "React 19 for frontend framework",
+        "rationale": "Latest features and performance improvements"
+      },
+      {
+        "id": "CON-003",
+        "type": "Technical",
+        "description": "TypeScript strict mode required",
+        "rationale": "Type safety and code quality"
+      },
+      {
+        "id": "CON-004",
+        "type": "Security",
+        "description": "Zero HIGH/CRITICAL security vulnerabilities",
+        "rationale": "Handles sensitive real estate and client data"
+      },
+      {
+        "id": "CON-005",
+        "type": "Compliance",
+        "description": "GDPR and data privacy compliance",
+        "rationale": "Handles personal and financial information"
+      },
+      {
+        "id": "CON-006",
+        "type": "Infrastructure",
+        "description": "Must be containerized with Docker",
+        "rationale": "Deployment consistency and scalability"
+      },
+      {
+        "id": "CON-007",
+        "type": "Budget",
+        "description": "Use open-source technologies where possible",
+        "rationale": "Cost optimization for POC/MVP"
+      }
+    ]
+  },
+  "architecture": {
+    "overview": {
+      "type": "Monorepo Microservices Architecture",
+      "pattern": "Layered Architecture with Service-Oriented Components",
+      "description": "Full-stack TypeScript application with React frontend, Express backend, microservices for specialized functions, and ML/AI capabilities",
+      "design_principles": [
+        "Separation of Concerns",
+        "Single Responsibility Principle",
+        "Dependency Injection",
+        "API-First Design",
+        "Security by Default",
+        "Fail Fast",
+        "Graceful Degradation"
+      ]
+    },
+    "components": [
+      {
+        "id": "COMP-001",
+        "name": "Frontend SPA",
+        "type": "Web Application",
+        "technology": "React 19 + TypeScript + Vite",
+        "description": "Single-page application providing user interface",
+        "responsibilities": [
+          "User interface rendering",
+          "Client-side routing",
+          "Form validation",
+          "State management",
+          "API communication"
+        ],
+        "subcomponents": [
+          {
+            "name": "Pages",
+            "count": 22,
+            "description": "Route-level components",
+            "examples": [
+              "TitleAgentDashboard",
+              "RealtorDashboard",
+              "DocumentManagement",
+              "CommunicationCenter"
+            ]
+          },
+          {
+            "name": "Reusable Components",
+            "count": 12,
+            "description": "Shared UI components",
+            "examples": [
+              "Button",
+              "Modal",
+              "StatCard",
+              "ErrorBoundary"
+            ]
+          },
+          {
+            "name": "API Services",
+            "count": 7,
+            "description": "Backend communication layer",
+            "examples": [
+              "authApi",
+              "documentApi",
+              "clientApi",
+              "campaignApi"
+            ]
+          }
+        ],
+        "dependencies": [
+          "COMP-002 (Backend API)"
+        ],
+        "deployment": {
+          "port": 5173,
+          "build_output": "dist/",
+          "serve": "Nginx or CDN"
+        }
+      },
+      {
+        "id": "COMP-002",
+        "name": "Backend API",
+        "type": "REST API Server",
+        "technology": "Express + TypeScript + Sequelize",
+        "description": "Main API server handling business logic and data operations",
+        "responsibilities": [
+          "Request routing",
+          "Authentication/Authorization",
+          "Business logic execution",
+          "Database operations",
+          "External service integration"
+        ],
+        "subcomponents": [
+          {
+            "name": "Controllers",
+            "count": 14,
+            "description": "Request handlers",
+            "examples": [
+              "AuthController",
+              "DocumentController",
+              "ClientController",
+              "CampaignController"
+            ]
+          },
+          {
+            "name": "Services",
+            "count": 15,
+            "description": "Business logic layer",
+            "examples": [
+              "DocumentIntelligenceService",
+              "EmailService",
+              "StorageService",
+              "SoftProApiService"
+            ]
+          },
+          {
+            "name": "Middleware",
+            "count": 12,
+            "description": "Request processing",
+            "examples": [
+              "auth.middleware",
+              "validation.middleware",
+              "rateLimiter",
+              "csrf.middleware"
+            ]
+          },
+          {
+            "name": "Models",
+            "count": 11,
+            "description": "Data models",
+            "examples": [
+              "User",
+              "Document",
+              "Client",
+              "Campaign"
+            ]
+          }
+        ],
+        "dependencies": [
+          "COMP-003 (PostgreSQL Database)",
+          "COMP-004 (Redis Cache)",
+          "COMP-006 (Auth Service)",
+          "COMP-007 (Document Service)"
+        ],
+        "deployment": {
+          "port": 5000,
+          "replicas": "2-10 (auto-scaling)",
+          "healthcheck": "/health"
+        }
+      },
+      {
+        "id": "COMP-003",
+        "name": "PostgreSQL Database",
+        "type": "Relational Database",
+        "technology": "PostgreSQL 15",
+        "description": "Primary data store for application data",
+        "responsibilities": [
+          "Data persistence",
+          "ACID transactions",
+          "Data integrity enforcement",
+          "Query optimization"
+        ],
+        "schemas": [
+          {
+            "name": "users",
+            "description": "User accounts and authentication"
+          },
+          {
+            "name": "documents",
+            "description": "Document metadata and tracking"
+          },
+          {
+            "name": "clients",
+            "description": "Client information and relationships"
+          },
+          {
+            "name": "campaigns",
+            "description": "Marketing campaign data"
+          },
+          {
+            "name": "transactions",
+            "description": "Real estate transaction records"
+          }
+        ],
+        "deployment": {
+          "port": 5432,
+          "backup": "Every 6 hours",
+          "replication": "Primary-Replica setup"
+        }
+      },
+      {
+        "id": "COMP-004",
+        "name": "Redis Cache",
+        "type": "In-Memory Cache",
+        "technology": "Redis 7",
+        "description": "Caching layer for performance optimization",
+        "responsibilities": [
+          "Session storage",
+          "Query result caching",
+          "Rate limiting counters",
+          "Real-time data caching"
+        ],
+        "deployment": {
+          "port": 6379,
+          "persistence": "RDB snapshots + AOF"
+        }
+      },
+      {
+        "id": "COMP-005",
+        "name": "Elasticsearch",
+        "type": "Search Engine",
+        "technology": "Elasticsearch 8.11",
+        "description": "Full-text search and analytics",
+        "responsibilities": [
+          "Document full-text search",
+          "Client search",
+          "Analytics aggregations",
+          "Autocomplete suggestions"
+        ],
+        "deployment": {
+          "port": 9200,
+          "cluster": "3 nodes (planned)"
+        }
+      },
+      {
+        "id": "COMP-006",
+        "name": "Auth Service",
+        "type": "Microservice",
+        "technology": "Express + TypeScript",
+        "description": "Dedicated authentication and authorization service",
+        "responsibilities": [
+          "User authentication",
+          "Token management",
+          "Permission checking",
+          "Session management"
+        ],
+        "deployment": {
+          "port": 3001,
+          "replicas": "2-5 (auto-scaling)"
+        }
+      },
+      {
+        "id": "COMP-007",
+        "name": "Document Service",
+        "type": "Microservice",
+        "technology": "Express + TypeScript",
+        "description": "Document processing and storage service",
+        "responsibilities": [
+          "File upload handling",
+          "Document storage (S3)",
+          "Document retrieval",
+          "Thumbnail generation"
+        ],
+        "deployment": {
+          "port": 3002,
+          "replicas": "2-5 (auto-scaling)"
+        }
+      },
+      {
+        "id": "COMP-008",
+        "name": "ML Pipeline",
+        "type": "Machine Learning Service",
+        "technology": "Python 3.9 + TensorFlow",
+        "description": "AI/ML capabilities for document analysis",
+        "responsibilities": [
+          "Document classification",
+          "OCR processing",
+          "Data extraction",
+          "Predictive analytics"
+        ],
+        "integration": {
+          "anthropic_claude": "Document intelligence analysis",
+          "tensorflow": "Custom ML models"
+        },
+        "deployment": {
+          "port": 8000,
+          "gpu": "Optional for faster processing"
+        }
+      },
+      {
+        "id": "COMP-009",
+        "name": "AWS S3",
+        "type": "Object Storage",
+        "technology": "AWS S3 (or LocalStack)",
+        "description": "Cloud storage for documents and files",
+        "responsibilities": [
+          "Document file storage",
+          "Static asset hosting",
+          "Backup storage",
+          "Versioning"
+        ]
+      },
+      {
+        "id": "COMP-010",
+        "name": "Email Service",
+        "type": "External Integration",
+        "technology": "SendGrid",
+        "description": "Email delivery service",
+        "responsibilities": [
+          "Transactional emails",
+          "Marketing campaigns",
+          "Email templates",
+          "Delivery tracking"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "id": "FLOW-001",
+        "name": "User Authentication Flow",
+        "description": "User login and token generation",
+        "steps": [
+          "User submits credentials via Login Page",
+          "Frontend sends POST to /api/v1/auth/login",
+          "Backend validates credentials against User model",
+          "Auth Service generates JWT tokens",
+          "Tokens stored in Redis for session management",
+          "Access token returned to frontend",
+          "Frontend stores token in localStorage",
+          "Subsequent requests include token in Authorization header"
+        ],
+        "components": [
+          "Login Page",
+          "Backend API",
+          "Auth Service",
+          "PostgreSQL",
+          "Redis"
+        ]
+      },
+      {
+        "id": "FLOW-002",
+        "name": "Document Upload Flow",
+        "description": "User uploads and processes a document",
+        "steps": [
+          "User selects file in DocumentUploadModal",
+          "Frontend creates multipart/form-data request",
+          "Backend receives file via Document Controller",
+          "File validated (type, size, virus scan)",
+          "Document Service uploads to S3",
+          "S3 URL stored in Document model",
+          "ML Service triggers document analysis",
+          "Document classified and metadata extracted",
+          "Results stored in database",
+          "Frontend receives confirmation and updates UI"
+        ],
+        "components": [
+          "DocumentUploadModal",
+          "Backend API",
+          "Document Service",
+          "AWS S3",
+          "ML Pipeline",
+          "PostgreSQL"
+        ]
+      },
+      {
+        "id": "FLOW-003",
+        "name": "Marketing Campaign Execution",
+        "description": "Create and launch a marketing campaign",
+        "steps": [
+          "User creates campaign in Campaigns Page",
+          "Backend creates Campaign record",
+          "User launches campaign",
+          "Campaign Service retrieves target clients",
+          "Email Service generates personalized emails",
+          "SendGrid sends emails to recipients",
+          "Delivery events tracked via webhooks",
+          "Campaign stats updated in real-time",
+          "Analytics displayed in dashboard"
+        ],
+        "components": [
+          "Campaigns Page",
+          "Backend API",
+          "Campaign Service",
+          "Email Service",
+          "SendGrid",
+          "PostgreSQL"
+        ]
+      },
+      {
+        "id": "FLOW-004",
+        "name": "Dashboard Data Refresh",
+        "description": "Real-time dashboard updates",
+        "steps": [
+          "Dashboard component mounts",
+          "API requests for KPI data",
+          "Backend checks Redis cache",
+          "On cache miss, queries PostgreSQL",
+          "Data aggregated and formatted",
+          "Results cached in Redis (TTL: 5 minutes)",
+          "Data returned to frontend",
+          "Charts and stats rendered",
+          "Auto-refresh every 30 seconds"
+        ],
+        "components": [
+          "TitleAgentDashboard",
+          "Backend API",
+          "Redis Cache",
+          "PostgreSQL"
+        ]
+      }
+    ],
+    "integrations": [
+      {
+        "id": "INT-001",
+        "name": "SoftPro Integration",
+        "type": "External API",
+        "description": "Title software integration for transaction data",
+        "endpoints": [
+          "GET /api/softpro/transactions",
+          "POST /api/softpro/webhook"
+        ],
+        "authentication": "API Key + OAuth 2.0"
+      },
+      {
+        "id": "INT-002",
+        "name": "Anthropic Claude AI",
+        "type": "External API",
+        "description": "AI-powered document analysis",
+        "usage": "Document intelligence and classification",
+        "authentication": "API Key"
+      },
+      {
+        "id": "INT-003",
+        "name": "SendGrid",
+        "type": "External API",
+        "description": "Email delivery service",
+        "usage": "Transactional and marketing emails",
+        "authentication": "API Key"
+      },
+      {
+        "id": "INT-004",
+        "name": "AWS S3",
+        "type": "Cloud Storage",
+        "description": "Document and file storage",
+        "usage": "Persistent file storage",
+        "authentication": "IAM Credentials"
+      }
+    ],
+    "technology_stack": {
+      "frontend": {
+        "framework": "React 19.1.1",
+        "build_tool": "Vite 7.1.7",
+        "language": "TypeScript 5.9.3",
+        "state_management": "React Context API",
+        "routing": "React Router DOM 7.9.4",
+        "forms": "React Hook Form 7.65.0 + Zod 4.1.12",
+        "charts": "Recharts 3.2.1",
+        "http_client": "Axios 1.12.2",
+        "testing": "Vitest 3.2.4 + Testing Library"
+      },
+      "backend": {
+        "framework": "Express 4.18.2",
+        "language": "TypeScript 5.3.3",
+        "orm": "Sequelize 6.37.7",
+        "database_driver": "pg 8.16.3",
+        "cache_client": "ioredis 5.8.1",
+        "authentication": "jsonwebtoken 9.0.2",
+        "validation": "express-validator 7.0.1",
+        "security": "Helmet 7.1.0, bcrypt 6.0.0",
+        "logging": "Winston 3.11.0",
+        "testing": "Jest 29.7.0"
+      },
+      "database": {
+        "primary": "PostgreSQL 15",
+        "cache": "Redis 7",
+        "search": "Elasticsearch 8.11.0"
+      },
+      "ml": {
+        "language": "Python 3.9",
+        "framework": "TensorFlow",
+        "workflow": "Apache Airflow",
+        "ai_api": "Anthropic Claude SDK 0.12.0"
+      },
+      "infrastructure": {
+        "containerization": "Docker + Docker Compose",
+        "orchestration": "Kubernetes",
+        "ci_cd": "GitHub Actions",
+        "monitoring": "Prometheus + Grafana (planned)",
+        "cloud": "AWS (S3, EC2, RDS)"
+      }
+    }
+  },
+  "implementation": {
+    "api_specifications": {
+      "base_url": "/api/v1",
+      "versioning": "URI versioning",
+      "authentication": "JWT Bearer tokens",
+      "response_format": "JSON",
+      "endpoints": [
+        {
+          "path": "/auth/register",
+          "method": "POST",
+          "description": "Register new user account",
+          "authentication": "None",
+          "rate_limit": "5 requests per 15 minutes",
+          "request_body": {
+            "email": "string (email)",
+            "password": "string (min 12 chars)",
+            "firstName": "string",
+            "lastName": "string",
+            "role": "enum (admin|agent|realtor|homeowner)"
+          },
+          "responses": {
+            "201": {
+              "description": "User created successfully",
+              "body": {
+                "success": true,
+                "data": {
+                  "user": "User object",
+                  "accessToken": "string",
+                  "refreshToken": "string"
+                }
+              }
+            },
+            "400": {
+              "description": "Validation error",
+              "body": {
+                "success": false,
+                "error": {
+                  "code": "VALIDATION_ERROR",
+                  "message": "string",
+                  "details": "object"
+                }
+              }
+            },
+            "409": {
+              "description": "Email already exists"
+            }
+          },
+          "validation": [
+            "Email must be valid format",
+            "Password must be 12+ characters",
+            "Password must contain uppercase, lowercase, number, special char",
+            "Disposable email domains blocked"
+          ]
+        },
+        {
+          "path": "/auth/login",
+          "method": "POST",
+          "description": "Authenticate user and get tokens",
+          "authentication": "None",
+          "rate_limit": "5 requests per 15 minutes",
+          "request_body": {
+            "email": "string",
+            "password": "string"
+          },
+          "responses": {
+            "200": {
+              "description": "Login successful",
+              "body": {
+                "success": true,
+                "data": {
+                  "user": "User object",
+                  "accessToken": "string (expires in 15m)",
+                  "refreshToken": "string (expires in 30d)"
+                }
+              }
+            },
+            "401": {
+              "description": "Invalid credentials"
+            },
+            "429": {
+              "description": "Too many attempts"
+            }
+          }
+        },
+        {
+          "path": "/auth/refresh",
+          "method": "POST",
+          "description": "Refresh access token",
+          "authentication": "Refresh token required",
+          "request_body": {
+            "refreshToken": "string"
+          },
+          "responses": {
+            "200": {
+              "description": "Token refreshed",
+              "body": {
+                "success": true,
+                "data": {
+                  "accessToken": "string"
+                }
+              }
+            },
+            "401": {
+              "description": "Invalid refresh token"
+            }
+          }
+        },
+        {
+          "path": "/auth/logout",
+          "method": "POST",
+          "description": "Logout user and invalidate tokens",
+          "authentication": "Required",
+          "responses": {
+            "200": {
+              "description": "Logged out successfully"
+            }
+          }
+        },
+        {
+          "path": "/documents",
+          "method": "GET",
+          "description": "List user's documents",
+          "authentication": "Required",
+          "query_parameters": {
+            "page": "number (default: 1)",
+            "limit": "number (default: 20, max: 100)",
+            "type": "string (filter by document type)",
+            "search": "string (search in title)"
+          },
+          "responses": {
+            "200": {
+              "description": "Documents retrieved",
+              "body": {
+                "success": true,
+                "data": "Document[]",
+                "meta": {
+                  "total": "number",
+                  "page": "number",
+                  "limit": "number"
+                }
+              }
+            }
+          }
+        },
+        {
+          "path": "/documents",
+          "method": "POST",
+          "description": "Upload new document",
+          "authentication": "Required",
+          "content_type": "multipart/form-data",
+          "request_body": {
+            "file": "File (required)",
+            "title": "string (optional)",
+            "type": "string (optional)",
+            "clientId": "string (optional)"
+          },
+          "validation": [
+            "File size < 50MB",
+            "Allowed types: PDF, DOCX, JPG, PNG",
+            "Virus scan required",
+            "Title max 255 chars"
+          ],
+          "responses": {
+            "201": {
+              "description": "Document uploaded",
+              "body": {
+                "success": true,
+                "data": {
+                  "document": "Document object",
+                  "analysis": "AI analysis results"
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid file or validation error"
+            },
+            "413": {
+              "description": "File too large"
+            }
+          }
+        },
+        {
+          "path": "/documents/:id",
+          "method": "GET",
+          "description": "Get document details",
+          "authentication": "Required",
+          "authorization": "Owner or admin",
+          "responses": {
+            "200": {
+              "description": "Document details",
+              "body": {
+                "success": true,
+                "data": "Document object"
+              }
+            },
+            "404": {
+              "description": "Document not found"
+            }
+          }
+        },
+        {
+          "path": "/documents/:id",
+          "method": "PUT",
+          "description": "Update document metadata",
+          "authentication": "Required",
+          "authorization": "Owner or admin",
+          "request_body": {
+            "title": "string (optional)",
+            "type": "string (optional)",
+            "metadata": "object (optional)"
+          },
+          "responses": {
+            "200": {
+              "description": "Document updated"
+            }
+          }
+        },
+        {
+          "path": "/documents/:id",
+          "method": "DELETE",
+          "description": "Delete document",
+          "authentication": "Required",
+          "authorization": "Owner or admin",
+          "responses": {
+            "200": {
+              "description": "Document deleted"
+            },
+            "404": {
+              "description": "Document not found"
+            }
+          }
+        },
+        {
+          "path": "/documents/:id/analyze",
+          "method": "POST",
+          "description": "Trigger AI analysis on document",
+          "authentication": "Required",
+          "authorization": "Owner or admin",
+          "responses": {
+            "200": {
+              "description": "Analysis completed",
+              "body": {
+                "success": true,
+                "data": {
+                  "classification": "string",
+                  "confidence": "number",
+                  "extractedData": "object",
+                  "insights": "string[]"
+                }
+              }
+            }
+          }
+        },
+        {
+          "path": "/clients",
+          "method": "GET",
+          "description": "List clients",
+          "authentication": "Required",
+          "query_parameters": {
+            "page": "number",
+            "limit": "number",
+            "search": "string",
+            "status": "string"
+          },
+          "responses": {
+            "200": {
+              "description": "Clients list"
+            }
+          }
+        },
+        {
+          "path": "/clients",
+          "method": "POST",
+          "description": "Create new client",
+          "authentication": "Required",
+          "request_body": {
+            "name": "string (required)",
+            "email": "string (required)",
+            "phone": "string (optional)",
+            "address": "object (optional)"
+          },
+          "responses": {
+            "201": {
+              "description": "Client created"
+            }
+          }
+        },
+        {
+          "path": "/clients/:id",
+          "method": "GET",
+          "description": "Get client details",
+          "authentication": "Required",
+          "responses": {
+            "200": {
+              "description": "Client details"
+            }
+          }
+        },
+        {
+          "path": "/clients/:id",
+          "method": "PUT",
+          "description": "Update client information",
+          "authentication": "Required",
+          "responses": {
+            "200": {
+              "description": "Client updated"
+            }
+          }
+        },
+        {
+          "path": "/clients/:id",
+          "method": "DELETE",
+          "description": "Delete client",
+          "authentication": "Required",
+          "authorization": "Admin only",
+          "responses": {
+            "200": {
+              "description": "Client deleted"
+            }
+          }
+        },
+        {
+          "path": "/campaigns",
+          "method": "GET",
+          "description": "List marketing campaigns",
+          "authentication": "Required",
+          "responses": {
+            "200": {
+              "description": "Campaigns list"
+            }
+          }
+        },
+        {
+          "path": "/campaigns",
+          "method": "POST",
+          "description": "Create new campaign",
+          "authentication": "Required",
+          "request_body": {
+            "name": "string (required)",
+            "type": "string (required)",
+            "targetAudience": "object",
+            "schedule": "object"
+          },
+          "responses": {
+            "201": {
+              "description": "Campaign created"
+            }
+          }
+        },
+        {
+          "path": "/campaigns/:id/launch",
+          "method": "POST",
+          "description": "Launch marketing campaign",
+          "authentication": "Required",
+          "responses": {
+            "200": {
+              "description": "Campaign launched"
+            }
+          }
+        },
+        {
+          "path": "/health",
+          "method": "GET",
+          "description": "Basic health check",
+          "authentication": "None",
+          "responses": {
+            "200": {
+              "description": "Service healthy",
+              "body": {
+                "status": "healthy",
+                "timestamp": "ISO 8601 datetime"
+              }
+            }
+          }
+        },
+        {
+          "path": "/health/detailed",
+          "method": "GET",
+          "description": "Detailed system health",
+          "authentication": "Admin only",
+          "responses": {
+            "200": {
+              "description": "Detailed health status",
+              "body": {
+                "status": "healthy",
+                "services": {
+                  "database": "boolean",
+                  "redis": "boolean",
+                  "elasticsearch": "boolean",
+                  "storage": "boolean"
+                },
+                "metrics": {
+                  "uptime": "number",
+                  "memoryUsage": "object",
+                  "cpuUsage": "number"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "database_schemas": {
+      "users": {
+        "table_name": "users",
+        "description": "User accounts and authentication",
+        "columns": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "constraints": "PRIMARY KEY, DEFAULT gen_random_uuid()"
+          },
+          {
+            "name": "email",
+            "type": "VARCHAR(255)",
+            "constraints": "UNIQUE NOT NULL"
+          },
+          {
+            "name": "password",
+            "type": "VARCHAR(255)",
+            "constraints": "NOT NULL",
+            "description": "Bcrypt hashed password"
+          },
+          {
+            "name": "firstName",
+            "type": "VARCHAR(100)",
+            "constraints": "NOT NULL"
+          },
+          {
+            "name": "lastName",
+            "type": "VARCHAR(100)",
+            "constraints": "NOT NULL"
+          },
+          {
+            "name": "role",
+            "type": "ENUM",
+            "constraints": "NOT NULL DEFAULT 'client'",
+            "values": ["admin", "agent", "realtor", "homeowner"]
+          },
+          {
+            "name": "status",
+            "type": "ENUM",
+            "constraints": "NOT NULL DEFAULT 'active'",
+            "values": ["active", "inactive", "suspended"]
+          },
+          {
+            "name": "lastLogin",
+            "type": "TIMESTAMP",
+            "constraints": "NULL"
+          },
+          {
+            "name": "emailVerified",
+            "type": "BOOLEAN",
+            "constraints": "DEFAULT FALSE"
+          },
+          {
+            "name": "createdAt",
+            "type": "TIMESTAMP",
+            "constraints": "NOT NULL DEFAULT NOW()"
+          },
+          {
+            "name": "updatedAt",
+            "type": "TIMESTAMP",
+            "constraints": "NOT NULL DEFAULT NOW()"
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_users_email",
+            "columns": ["email"],
+            "type": "UNIQUE"
+          },
+          {
+            "name": "idx_users_role",
+            "columns": ["role"]
+          }
+        ]
+      },
+      "documents": {
+        "table_name": "documents",
+        "description": "Document metadata and tracking",
+        "columns": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "constraints": "PRIMARY KEY, DEFAULT gen_random_uuid()"
+          },
+          {
+            "name": "userId",
+            "type": "UUID",
+            "constraints": "NOT NULL REFERENCES users(id) ON DELETE CASCADE"
+          },
+          {
+            "name": "clientId",
+            "type": "UUID",
+            "constraints": "NULL REFERENCES clients(id) ON DELETE SET NULL"
+          },
+          {
+            "name": "title",
+            "type": "VARCHAR(255)",
+            "constraints": "NOT NULL"
+          },
+          {
+            "name": "type",
+            "type": "VARCHAR(50)",
+            "constraints": "NOT NULL"
+          },
+          {
+            "name": "fileUrl",
+            "type": "TEXT",
+            "constraints": "NOT NULL",
+            "description": "S3 or local storage URL"
+          },
+          {
+            "name": "fileName",
+            "type": "VARCHAR(255)",
+            "constraints": "NOT NULL"
+          },
+          {
+            "name": "mimeType",
+            "type": "VARCHAR(100)",
+            "constraints": "NOT NULL"
+          },
+          {
+            "name": "size",
+            "type": "BIGINT",
+            "constraints": "NOT NULL",
+            "description": "File size in bytes"
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(50)",
+            "constraints": "DEFAULT 'processing'"
+          },
+          {
+            "name": "metadata",
+            "type": "JSONB",
+            "constraints": "DEFAULT '{}'",
+            "description": "AI analysis results and custom metadata"
+          },
+          {
+            "name": "createdAt",
+            "type": "TIMESTAMP",
+            "constraints": "NOT NULL DEFAULT NOW()"
+          },
+          {
+            "name": "updatedAt",
+            "type": "TIMESTAMP",
+            "constraints": "NOT NULL DEFAULT NOW()"
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_documents_userId",
+            "columns": ["userId"]
+          },
+          {
+            "name": "idx_documents_clientId",
+            "columns": ["clientId"]
+          },
+          {
+            "name": "idx_documents_type",
+            "columns": ["type"]
+          },
+          {
+            "name": "idx_documents_metadata",
+            "columns": ["metadata"],
+            "type": "GIN"
+          }
+        ]
+      },
+      "clients": {
+        "table_name": "clients",
+        "description": "Client information and relationships",
+        "columns": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "constraints": "PRIMARY KEY, DEFAULT gen_random_uuid()"
+          },
+          {
+            "name": "userId",
+            "type": "UUID",
+            "constraints": "NOT NULL REFERENCES users(id) ON DELETE CASCADE",
+            "description": "Agent/Realtor who owns this client"
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(255)",
+            "constraints": "NOT NULL"
+          },
+          {
+            "name": "email",
+            "type": "VARCHAR(255)",
+            "constraints": "NOT NULL"
+          },
+          {
+            "name": "phone",
+            "type": "VARCHAR(20)",
+            "constraints": "NULL"
+          },
+          {
+            "name": "address",
+            "type": "JSONB",
+            "constraints": "DEFAULT '{}'",
+            "description": "Client address information"
+          },
+          {
+            "name": "engagementScore",
+            "type": "INTEGER",
+            "constraints": "DEFAULT 0",
+            "description": "Client engagement score (0-100)"
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(50)",
+            "constraints": "DEFAULT 'active'"
+          },
+          {
+            "name": "notes",
+            "type": "TEXT",
+            "constraints": "NULL"
+          },
+          {
+            "name": "createdAt",
+            "type": "TIMESTAMP",
+            "constraints": "NOT NULL DEFAULT NOW()"
+          },
+          {
+            "name": "updatedAt",
+            "type": "TIMESTAMP",
+            "constraints": "NOT NULL DEFAULT NOW()"
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_clients_userId",
+            "columns": ["userId"]
+          },
+          {
+            "name": "idx_clients_email",
+            "columns": ["email"]
+          },
+          {
+            "name": "idx_clients_status",
+            "columns": ["status"]
+          }
+        ]
+      },
+      "campaigns": {
+        "table_name": "campaigns",
+        "description": "Marketing campaigns",
+        "columns": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "constraints": "PRIMARY KEY, DEFAULT gen_random_uuid()"
+          },
+          {
+            "name": "userId",
+            "type": "UUID",
+            "constraints": "NOT NULL REFERENCES users(id) ON DELETE CASCADE"
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(255)",
+            "constraints": "NOT NULL"
+          },
+          {
+            "name": "type",
+            "type": "VARCHAR(50)",
+            "constraints": "NOT NULL"
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(50)",
+            "constraints": "DEFAULT 'draft'"
+          },
+          {
+            "name": "targetAudience",
+            "type": "JSONB",
+            "constraints": "DEFAULT '{}'",
+            "description": "Campaign targeting criteria"
+          },
+          {
+            "name": "schedule",
+            "type": "JSONB",
+            "constraints": "DEFAULT '{}'",
+            "description": "Campaign schedule and timing"
+          },
+          {
+            "name": "stats",
+            "type": "JSONB",
+            "constraints": "DEFAULT '{}'",
+            "description": "Campaign performance statistics"
+          },
+          {
+            "name": "launchedAt",
+            "type": "TIMESTAMP",
+            "constraints": "NULL"
+          },
+          {
+            "name": "createdAt",
+            "type": "TIMESTAMP",
+            "constraints": "NOT NULL DEFAULT NOW()"
+          },
+          {
+            "name": "updatedAt",
+            "type": "TIMESTAMP",
+            "constraints": "NOT NULL DEFAULT NOW()"
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_campaigns_userId",
+            "columns": ["userId"]
+          },
+          {
+            "name": "idx_campaigns_status",
+            "columns": ["status"]
+          }
+        ]
+      }
+    },
+    "component_specifications": {
+      "frontend_pages": [
+        {
+          "name": "TitleAgentDashboard",
+          "path": "/title-agent",
+          "file": "frontend/src/pages/TitleAgentDashboard.tsx",
+          "description": "Dashboard for title agents with transaction metrics",
+          "authentication": "Required",
+          "role": "agent",
+          "current_issues": [
+            "34,198 lines - needs refactoring",
+            "Monolithic component structure"
+          ],
+          "refactoring_plan": [
+            "Extract TransactionStats component",
+            "Extract BusinessAlerts component",
+            "Extract DocumentProcessing component",
+            "Extract MarketingMetrics component",
+            "Extract EngagementCharts component",
+            "Target: < 500 lines per component"
+          ]
+        },
+        {
+          "name": "RealtorDashboard",
+          "path": "/realtor",
+          "file": "frontend/src/pages/RealtorDashboard.tsx",
+          "description": "Dashboard for realtors with listings and client metrics",
+          "authentication": "Required",
+          "role": "realtor",
+          "current_issues": [
+            "29,093 lines - needs refactoring"
+          ]
+        },
+        {
+          "name": "AnalyticsDashboard",
+          "path": "/analytics",
+          "file": "frontend/src/pages/AnalyticsDashboard.tsx",
+          "description": "Advanced analytics with charts and reports",
+          "authentication": "Required",
+          "current_issues": [
+            "30,075 lines - needs refactoring"
+          ]
+        },
+        {
+          "name": "DocumentManagement",
+          "path": "/documents",
+          "file": "frontend/src/pages/DocumentManagement.tsx",
+          "description": "Document upload, management, and viewing",
+          "authentication": "Required"
+        },
+        {
+          "name": "Clients",
+          "path": "/clients",
+          "file": "frontend/src/pages/Clients.tsx",
+          "description": "Client relationship management",
+          "authentication": "Required"
+        },
+        {
+          "name": "Campaigns",
+          "path": "/campaigns",
+          "file": "frontend/src/pages/Campaigns.tsx",
+          "description": "Marketing campaign creation and management",
+          "authentication": "Required"
+        },
+        {
+          "name": "Login",
+          "path": "/login",
+          "file": "frontend/src/pages/Login.tsx",
+          "description": "User authentication page",
+          "authentication": "None"
+        },
+        {
+          "name": "Register",
+          "path": "/register",
+          "file": "frontend/src/pages/Register.tsx",
+          "description": "New user registration",
+          "authentication": "None"
+        }
+      ],
+      "reusable_components": [
+        {
+          "name": "Button",
+          "file": "frontend/src/components/Button.tsx",
+          "description": "Reusable button component with variants",
+          "props": {
+            "variant": "primary | secondary | danger",
+            "size": "small | medium | large",
+            "disabled": "boolean",
+            "onClick": "function",
+            "children": "ReactNode"
+          }
+        },
+        {
+          "name": "Modal",
+          "file": "frontend/src/components/Modal.tsx",
+          "description": "Reusable modal dialog component",
+          "props": {
+            "isOpen": "boolean",
+            "onClose": "function",
+            "title": "string",
+            "children": "ReactNode"
+          }
+        },
+        {
+          "name": "StatCard",
+          "file": "frontend/src/components/StatCard.tsx",
+          "description": "Dashboard statistics card",
+          "props": {
+            "title": "string",
+            "value": "string | number",
+            "change": "number",
+            "icon": "ReactNode"
+          }
+        },
+        {
+          "name": "ErrorBoundary",
+          "file": "frontend/src/components/ErrorBoundary.tsx",
+          "description": "Error boundary for graceful error handling",
+          "implementation": "React error boundary pattern"
+        }
+      ]
+    },
+    "service_layer_specifications": [
+      {
+        "name": "DocumentIntelligenceService",
+        "file": "backend/src/services/document-intelligence.service.ts",
+        "description": "AI-powered document analysis using Anthropic Claude",
+        "methods": [
+          {
+            "name": "analyzeDocument",
+            "parameters": ["documentId: string"],
+            "returns": "Promise<AnalysisResult>",
+            "description": "Analyze document and extract insights"
+          },
+          {
+            "name": "classifyDocument",
+            "parameters": ["file: File"],
+            "returns": "Promise<Classification>",
+            "description": "Classify document type with confidence score"
+          },
+          {
+            "name": "extractMetadata",
+            "parameters": ["documentId: string"],
+            "returns": "Promise<Metadata>",
+            "description": "Extract structured metadata from document"
+          }
+        ]
+      },
+      {
+        "name": "EmailService",
+        "file": "backend/src/services/email.service.ts",
+        "description": "Email sending via SendGrid",
+        "methods": [
+          {
+            "name": "sendTransactional",
+            "parameters": ["to: string", "template: string", "data: object"],
+            "returns": "Promise<void>",
+            "description": "Send transactional email"
+          },
+          {
+            "name": "sendCampaign",
+            "parameters": ["campaignId: string"],
+            "returns": "Promise<void>",
+            "description": "Send marketing campaign emails"
+          }
+        ],
+        "current_issues": [
+          "SendGrid dependency has HIGH security vulnerability",
+          "Requires upgrade to v8.1.6"
+        ]
+      },
+      {
+        "name": "StorageService",
+        "file": "backend/src/services/storage.service.ts",
+        "description": "File storage abstraction (S3 or local)",
+        "methods": [
+          {
+            "name": "upload",
+            "parameters": ["file: File", "options: UploadOptions"],
+            "returns": "Promise<string>",
+            "description": "Upload file and return URL"
+          },
+          {
+            "name": "download",
+            "parameters": ["url: string"],
+            "returns": "Promise<Buffer>",
+            "description": "Download file from storage"
+          },
+          {
+            "name": "delete",
+            "parameters": ["url: string"],
+            "returns": "Promise<void>",
+            "description": "Delete file from storage"
+          }
+        ]
+      }
+    ]
+  },
+  "validation": {
+    "test_specifications": {
+      "unit_tests": {
+        "target_coverage": "80%",
+        "current_coverage": "20-30%",
+        "framework": "Jest (backend) + Vitest (frontend)",
+        "required_tests": [
+          {
+            "category": "Controllers",
+            "files": 14,
+            "status": "Partial",
+            "priority": "P0",
+            "tests": [
+              "AuthController - register, login, refresh, logout",
+              "DocumentController - CRUD operations",
+              "ClientController - CRUD operations",
+              "CampaignController - CRUD + launch"
+            ]
+          },
+          {
+            "category": "Services",
+            "files": 15,
+            "status": "Missing",
+            "priority": "P0",
+            "tests": [
+              "DocumentIntelligenceService",
+              "EmailService",
+              "StorageService",
+              "SoftProApiService"
+            ]
+          },
+          {
+            "category": "Middleware",
+            "files": 12,
+            "status": "Partial",
+            "priority": "P0",
+            "tests": [
+              "auth.middleware - token validation",
+              "validation.middleware - input sanitization",
+              "rateLimiter - rate limiting logic",
+              "csrf.middleware - CSRF protection"
+            ]
+          },
+          {
+            "category": "Models",
+            "files": 11,
+            "status": "Missing",
+            "priority": "P1",
+            "tests": [
+              "User model - password hashing, validation",
+              "Document model - associations",
+              "Client model - engagement score calculation",
+              "Campaign model - stats tracking"
+            ]
+          },
+          {
+            "category": "Frontend Components",
+            "files": 12,
+            "status": "Missing",
+            "priority": "P1",
+            "tests": [
+              "Button - variants, disabled state",
+              "Modal - open/close, accessibility",
+              "StatCard - rendering, formatting",
+              "ErrorBoundary - error catching"
+            ]
+          }
+        ]
+      },
+      "integration_tests": {
+        "target_coverage": "All API endpoints",
+        "current_coverage": "< 25%",
+        "framework": "Jest + Supertest",
+        "required_tests": [
+          {
+            "category": "Authentication Flow",
+            "tests": [
+              "User registration with valid data",
+              "User registration with invalid data",
+              "User login with correct credentials",
+              "User login with incorrect credentials",
+              "Token refresh flow",
+              "Logout and token invalidation",
+              "Email verification flow",
+              "Password reset flow"
+            ]
+          },
+          {
+            "category": "Document Operations",
+            "tests": [
+              "Upload document with valid file",
+              "Upload document with invalid file type",
+              "Upload document exceeding size limit",
+              "List documents with pagination",
+              "Get document by ID",
+              "Update document metadata",
+              "Delete document",
+              "Trigger AI analysis"
+            ]
+          },
+          {
+            "category": "Client Management",
+            "tests": [
+              "Create client with valid data",
+              "List clients with filters",
+              "Update client information",
+              "Delete client and cascade effects"
+            ]
+          },
+          {
+            "category": "Campaign Management",
+            "tests": [
+              "Create campaign",
+              "Launch campaign",
+              "Track campaign statistics",
+              "Cancel campaign"
+            ]
+          },
+          {
+            "category": "Authorization",
+            "tests": [
+              "Access denied without token",
+              "Access denied with expired token",
+              "Access denied with insufficient permissions",
+              "Role-based access control"
+            ]
+          }
+        ]
+      },
+      "e2e_tests": {
+        "target_coverage": "All critical user journeys",
+        "current_coverage": "0%",
+        "framework": "Playwright (configured via MCP)",
+        "required_tests": [
+          {
+            "journey": "New User Registration and Login",
+            "steps": [
+              "Navigate to landing page",
+              "Click register button",
+              "Fill registration form",
+              "Submit and verify email",
+              "Login with new credentials",
+              "Verify dashboard loads"
+            ]
+          },
+          {
+            "journey": "Document Upload and Management",
+            "steps": [
+              "Login as title agent",
+              "Navigate to documents page",
+              "Upload new document",
+              "Verify document appears in list",
+              "View document details",
+              "Download document",
+              "Delete document"
+            ]
+          },
+          {
+            "journey": "Client Creation and Campaign",
+            "steps": [
+              "Login as realtor",
+              "Create new client",
+              "Navigate to campaigns",
+              "Create marketing campaign",
+              "Select target clients",
+              "Launch campaign",
+              "Verify campaign status"
+            ]
+          },
+          {
+            "journey": "Analytics Dashboard Usage",
+            "steps": [
+              "Login as title agent",
+              "Navigate to analytics dashboard",
+              "Verify KPIs load",
+              "Interact with charts",
+              "Filter date range",
+              "Export report"
+            ]
+          }
+        ]
+      },
+      "performance_tests": {
+        "target_metrics": {
+          "api_response_p95": "< 500ms",
+          "database_query_p95": "< 100ms",
+          "concurrent_users": "1000+",
+          "throughput": "100 requests/second"
+        },
+        "tests": [
+          "Load test - 1000 concurrent users",
+          "Stress test - increasing load until failure",
+          "Spike test - sudden traffic increase",
+          "Endurance test - sustained load over time",
+          "Database query performance",
+          "Cache effectiveness"
+        ]
+      }
+    },
+    "quality_gates": [
+      {
+        "gate": "Code Coverage",
+        "criteria": "80%+ line coverage, 80%+ branch coverage",
+        "blocking": true
+      },
+      {
+        "gate": "Security Scan",
+        "criteria": "Zero HIGH/CRITICAL vulnerabilities",
+        "blocking": true
+      },
+      {
+        "gate": "Linting",
+        "criteria": "Zero ESLint errors",
+        "blocking": true
+      },
+      {
+        "gate": "Type Safety",
+        "criteria": "Zero TypeScript errors in strict mode",
+        "blocking": true
+      },
+      {
+        "gate": "Build Success",
+        "criteria": "Production build completes without errors",
+        "blocking": true
+      },
+      {
+        "gate": "Performance",
+        "criteria": "Lighthouse score > 90",
+        "blocking": false
+      },
+      {
+        "gate": "Accessibility",
+        "criteria": "Zero critical a11y violations",
+        "blocking": true
+      }
+    ],
+    "acceptance_criteria": {
+      "production_readiness": [
+        "All HIGH/CRITICAL security vulnerabilities resolved",
+        "80%+ test coverage achieved",
+        "All critical user journeys have E2E tests",
+        "API documentation complete (Swagger)",
+        "Error monitoring operational",
+        "Performance benchmarks met (P95 < 500ms)",
+        "Zero-downtime deployment capability",
+        "Database SSL enabled in production",
+        "Virus scanning implemented",
+        "Monitoring and alerting configured"
+      ],
+      "feature_completion": [
+        "User authentication fully functional",
+        "Document management complete",
+        "AI document analysis working",
+        "Client management operational",
+        "Marketing campaigns functional",
+        "Analytics dashboards accurate",
+        "Email notifications working",
+        "Role-based permissions enforced"
+      ]
+    }
+  },
+  "deployment": {
+    "containerization": {
+      "strategy": "Docker multi-stage builds",
+      "orchestration": "Kubernetes",
+      "services": [
+        {
+          "name": "frontend",
+          "base_image": "node:18-alpine",
+          "exposed_port": 5173,
+          "build_stages": [
+            "Install dependencies",
+            "Build production bundle",
+            "Serve with nginx"
+          ],
+          "environment_variables": [
+            "VITE_API_URL",
+            "VITE_ENV"
+          ]
+        },
+        {
+          "name": "backend",
+          "base_image": "node:18-alpine",
+          "exposed_port": 5000,
+          "build_stages": [
+            "Install dependencies",
+            "Build TypeScript",
+            "Run production server"
+          ],
+          "environment_variables": [
+            "NODE_ENV",
+            "DATABASE_URL",
+            "REDIS_URL",
+            "JWT_SECRET",
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "SENDGRID_API_KEY"
+          ]
+        },
+        {
+          "name": "auth-service",
+          "base_image": "node:18-alpine",
+          "exposed_port": 3001,
+          "replicas": "2-5"
+        },
+        {
+          "name": "document-service",
+          "base_image": "node:18-alpine",
+          "exposed_port": 3002,
+          "replicas": "2-5"
+        },
+        {
+          "name": "ml-service",
+          "base_image": "python:3.9-slim",
+          "exposed_port": 8000,
+          "gpu_support": true
+        },
+        {
+          "name": "postgres",
+          "base_image": "postgres:15-alpine",
+          "exposed_port": 5432,
+          "volumes": [
+            "/var/lib/postgresql/data"
+          ]
+        },
+        {
+          "name": "redis",
+          "base_image": "redis:7-alpine",
+          "exposed_port": 6379,
+          "persistence": "RDB + AOF"
+        }
+      ]
+    },
+    "kubernetes": {
+      "cluster_setup": {
+        "provider": "AWS EKS (or self-hosted)",
+        "kubernetes_version": "1.28+",
+        "node_pools": [
+          {
+            "name": "general",
+            "instance_type": "t3.medium",
+            "min_nodes": 2,
+            "max_nodes": 10
+          },
+          {
+            "name": "ml",
+            "instance_type": "g4dn.xlarge",
+            "min_nodes": 0,
+            "max_nodes": 3,
+            "gpu_enabled": true
+          }
+        ]
+      },
+      "deployments": [
+        {
+          "name": "frontend",
+          "replicas": 3,
+          "strategy": "RollingUpdate",
+          "resources": {
+            "requests": {
+              "cpu": "100m",
+              "memory": "128Mi"
+            },
+            "limits": {
+              "cpu": "500m",
+              "memory": "512Mi"
+            }
+          },
+          "probes": {
+            "readiness": "HTTP GET / (port 80)",
+            "liveness": "HTTP GET / (port 80)"
+          }
+        },
+        {
+          "name": "backend",
+          "replicas": 3,
+          "strategy": "RollingUpdate",
+          "resources": {
+            "requests": {
+              "cpu": "200m",
+              "memory": "256Mi"
+            },
+            "limits": {
+              "cpu": "1000m",
+              "memory": "1Gi"
+            }
+          },
+          "probes": {
+            "readiness": "HTTP GET /health (port 5000)",
+            "liveness": "HTTP GET /health (port 5000)"
+          },
+          "hpa": {
+            "min_replicas": 3,
+            "max_replicas": 10,
+            "target_cpu": "70%"
+          }
+        }
+      ],
+      "services": [
+        {
+          "name": "frontend",
+          "type": "ClusterIP",
+          "port": 80,
+          "target_port": 80
+        },
+        {
+          "name": "backend",
+          "type": "ClusterIP",
+          "port": 5000,
+          "target_port": 5000
+        }
+      ],
+      "ingress": {
+        "class": "nginx",
+        "tls": true,
+        "rules": [
+          {
+            "host": "app.roisystems.com",
+            "paths": [
+              {
+                "path": "/",
+                "service": "frontend",
+                "port": 80
+              },
+              {
+                "path": "/api",
+                "service": "backend",
+                "port": 5000
+              }
+            ]
+          }
+        ]
+      },
+      "secrets": {
+        "management": "Sealed Secrets or External Secrets Operator",
+        "secrets": [
+          "database-credentials",
+          "jwt-secrets",
+          "aws-credentials",
+          "sendgrid-api-key"
+        ]
+      }
+    },
+    "ci_cd": {
+      "platform": "GitHub Actions",
+      "workflows": [
+        {
+          "name": "CI - Pull Request",
+          "trigger": "pull_request",
+          "jobs": [
+            {
+              "name": "lint",
+              "steps": [
+                "Checkout code",
+                "Install dependencies",
+                "Run ESLint",
+                "Run TypeScript type check"
+              ]
+            },
+            {
+              "name": "test",
+              "steps": [
+                "Checkout code",
+                "Install dependencies",
+                "Run unit tests",
+                "Run integration tests",
+                "Upload coverage reports"
+              ]
+            },
+            {
+              "name": "security-scan",
+              "steps": [
+                "Run npm audit",
+                "Run Snyk security scan",
+                "Check for secrets in code"
+              ]
+            },
+            {
+              "name": "build",
+              "steps": [
+                "Build frontend",
+                "Build backend",
+                "Verify build artifacts"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CD - Deploy to Staging",
+          "trigger": "push to develop branch",
+          "jobs": [
+            {
+              "name": "build-and-push",
+              "steps": [
+                "Build Docker images",
+                "Tag with commit SHA",
+                "Push to container registry"
+              ]
+            },
+            {
+              "name": "deploy-staging",
+              "steps": [
+                "Update Kubernetes manifests",
+                "Apply to staging cluster",
+                "Wait for rollout completion",
+                "Run smoke tests"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "CD - Deploy to Production",
+          "trigger": "push to main branch",
+          "requires_approval": true,
+          "jobs": [
+            {
+              "name": "build-and-push",
+              "steps": [
+                "Build Docker images",
+                "Tag with version number",
+                "Push to container registry"
+              ]
+            },
+            {
+              "name": "deploy-production",
+              "strategy": "Blue-Green deployment",
+              "steps": [
+                "Deploy to green environment",
+                "Run health checks",
+                "Run E2E tests",
+                "Switch traffic to green",
+                "Monitor for errors",
+                "Keep blue for rollback"
+              ]
+            }
+          ]
+        }
+      ],
+      "quality_gates": [
+        "All tests must pass",
+        "Code coverage >= 80%",
+        "No security vulnerabilities",
+        "No linting errors",
+        "Successful build"
+      ]
+    },
+    "monitoring": {
+      "logging": {
+        "solution": "Winston + ELK Stack",
+        "log_levels": [
+          "error",
+          "warn",
+          "info",
+          "debug"
+        ],
+        "structured_logging": true,
+        "retention": "30 days"
+      },
+      "metrics": {
+        "solution": "Prometheus + Grafana",
+        "metrics": [
+          "HTTP request duration",
+          "HTTP request rate",
+          "HTTP error rate",
+          "Database query duration",
+          "Cache hit rate",
+          "CPU usage",
+          "Memory usage",
+          "Disk usage"
+        ],
+        "dashboards": [
+          "Application Overview",
+          "API Performance",
+          "Database Performance",
+          "System Resources"
+        ]
+      },
+      "apm": {
+        "solution": "New Relic or DataDog (recommended)",
+        "features": [
+          "Distributed tracing",
+          "Error tracking",
+          "Performance monitoring",
+          "User session tracking"
+        ]
+      },
+      "alerting": {
+        "channels": [
+          "PagerDuty",
+          "Slack",
+          "Email"
+        ],
+        "alerts": [
+          {
+            "name": "High Error Rate",
+            "condition": "Error rate > 1% for 5 minutes",
+            "severity": "critical"
+          },
+          {
+            "name": "High Response Time",
+            "condition": "P95 response time > 1s for 10 minutes",
+            "severity": "warning"
+          },
+          {
+            "name": "Service Down",
+            "condition": "Health check fails for 2 minutes",
+            "severity": "critical"
+          },
+          {
+            "name": "High CPU Usage",
+            "condition": "CPU > 80% for 15 minutes",
+            "severity": "warning"
+          },
+          {
+            "name": "Database Connection Issues",
+            "condition": "Database connection errors > 10 in 5 minutes",
+            "severity": "critical"
+          }
+        ]
+      },
+      "uptime_monitoring": {
+        "solution": "UptimeRobot or Pingdom",
+        "endpoints": [
+          "/health",
+          "/api/v1/health/detailed"
+        ],
+        "frequency": "1 minute",
+        "locations": [
+          "US East",
+          "US West",
+          "Europe"
+        ]
+      }
+    }
+  },
+  "risk_assessment": {
+    "critical_risks": [
+      {
+        "id": "RISK-001",
+        "category": "Security",
+        "description": "HIGH/CRITICAL security vulnerabilities in dependencies",
+        "impact": "High",
+        "probability": "Certain (already exists)",
+        "mitigation": [
+          "Immediate: Run npm audit fix",
+          "Update @sendgrid/mail to v8.1.6",
+          "Update happy-dom to latest",
+          "Enable automated dependency scanning in CI/CD",
+          "Configure Dependabot for automatic updates"
+        ],
+        "timeline": "Week 1"
+      },
+      {
+        "id": "RISK-002",
+        "category": "Quality",
+        "description": "Insufficient test coverage (20% vs 80% target)",
+        "impact": "High",
+        "probability": "High",
+        "mitigation": [
+          "Allocate 2-3 sprints for comprehensive testing",
+          "Prioritize critical path testing first",
+          "Implement test-driven development (TDD) going forward",
+          "Set up coverage reporting in CI/CD",
+          "Block merges below coverage threshold"
+        ],
+        "timeline": "Sprints 1-3"
+      },
+      {
+        "id": "RISK-003",
+        "category": "Technical Debt",
+        "description": "Extremely large component files (20k-34k lines)",
+        "impact": "Medium",
+        "probability": "High",
+        "mitigation": [
+          "Incremental refactoring during Sprint 2-3",
+          "Extract reusable sub-components",
+          "Set up file size limits in linting",
+          "Create component library/design system"
+        ],
+        "timeline": "Sprints 2-3"
+      },
+      {
+        "id": "RISK-004",
+        "category": "Production",
+        "description": "Database SSL disabled (rejectUnauthorized: false)",
+        "impact": "High",
+        "probability": "Medium",
+        "mitigation": [
+          "Configure proper SSL certificates",
+          "Update database connection config",
+          "Test SSL connection in staging",
+          "Document SSL setup process"
+        ],
+        "timeline": "Week 1"
+      },
+      {
+        "id": "RISK-005",
+        "category": "Operational",
+        "description": "No virus scanning for uploaded files",
+        "impact": "High",
+        "probability": "Medium",
+        "mitigation": [
+          "Integrate ClamAV for file scanning",
+          "Add virus scanning to upload pipeline",
+          "Configure quarantine process",
+          "Add monitoring for malware detection"
+        ],
+        "timeline": "Sprint 3"
+      }
+    ],
+    "medium_risks": [
+      {
+        "id": "RISK-006",
+        "category": "Performance",
+        "description": "Large bundle sizes may impact load times",
+        "impact": "Medium",
+        "probability": "Medium",
+        "mitigation": [
+          "Implement code splitting",
+          "Lazy load routes and components",
+          "Optimize images and assets",
+          "Enable compression"
+        ],
+        "timeline": "Sprint 4"
+      },
+      {
+        "id": "RISK-007",
+        "category": "Scalability",
+        "description": "No auto-scaling configured",
+        "impact": "Medium",
+        "probability": "Low",
+        "mitigation": [
+          "Configure Kubernetes HPA",
+          "Set up resource limits",
+          "Load testing to determine thresholds"
+        ],
+        "timeline": "Sprint 5"
+      }
+    ]
+  }
+}

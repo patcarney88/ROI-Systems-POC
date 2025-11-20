@@ -1,0 +1,369 @@
+/* ============================================
+   Entrance Animations for Dashboard Elements
+   ============================================ */
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slide Up Animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide In From Left */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Slide In From Right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Scale In Animation */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Bounce In Animation */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Chart Draw Animation (for line/bar charts) */
+@keyframes chartDraw {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Progress Bar Fill */
+@keyframes progressFill {
+  from {
+    width: 0;
+  }
+  to {
+    width: var(--progress-width);
+  }
+}
+
+/* ============================================
+   Animation Classes
+   ============================================ */
+
+/* Stat Cards - Staggered entrance */
+.stat-card {
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+.stat-card:nth-child(5) { animation-delay: 0.5s; }
+.stat-card:nth-child(6) { animation-delay: 0.6s; }
+.stat-card:nth-child(7) { animation-delay: 0.7s; }
+
+/* Chart Containers */
+.chart-container {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.4s;
+}
+
+.chart-card {
+  animation: scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.3s;
+}
+
+/* Alert Items - Staggered */
+.alert-item {
+  animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.alert-item:nth-child(1) { animation-delay: 0.1s; }
+.alert-item:nth-child(2) { animation-delay: 0.2s; }
+.alert-item:nth-child(3) { animation-delay: 0.3s; }
+.alert-item:nth-child(4) { animation-delay: 0.4s; }
+.alert-item:nth-child(5) { animation-delay: 0.5s; }
+
+/* Widget Sections */
+.widget-section {
+  animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.2s;
+}
+
+/* Document Items */
+.document-item {
+  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.document-item:nth-child(1) { animation-delay: 0.1s; }
+.document-item:nth-child(2) { animation-delay: 0.2s; }
+.document-item:nth-child(3) { animation-delay: 0.3s; }
+.document-item:nth-child(4) { animation-delay: 0.4s; }
+
+/* Campaign Items */
+.campaign-card {
+  animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.campaign-card:nth-child(1) { animation-delay: 0.1s; }
+.campaign-card:nth-child(2) { animation-delay: 0.2s; }
+.campaign-card:nth-child(3) { animation-delay: 0.3s; }
+.campaign-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* Metric Cards */
+.metric-card {
+  animation: bounceIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.metric-card:nth-child(1) { animation-delay: 0.15s; }
+.metric-card:nth-child(2) { animation-delay: 0.25s; }
+.metric-card:nth-child(3) { animation-delay: 0.35s; }
+
+/* ============================================
+   Micro-Interactions & Hover Effects
+   ============================================ */
+
+/* Button Hover Effects */
+.btn-primary,
+.btn-primary-sm,
+.btn-primary-full,
+.btn-secondary,
+.btn-secondary-sm,
+.btn-secondary-full,
+.action-btn,
+.cta-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary:hover,
+.btn-primary-sm:hover,
+.btn-primary-full:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.25);
+}
+
+.btn-primary:active,
+.btn-primary-sm:active,
+.btn-primary-full:active {
+  transform: translateY(0);
+}
+
+.btn-secondary:hover,
+.btn-secondary-sm:hover,
+.btn-secondary-full:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+/* Card Hover Effects */
+.stat-card,
+.chart-card,
+.alert-item,
+.campaign-card,
+.document-item,
+.metric-card {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.chart-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.alert-item:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  transform: translateX(4px);
+}
+
+.campaign-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* Input Focus Effects */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Progress Bar Animation */
+.progress-fill,
+.stat-bar-fill,
+.rate-fill,
+.weight-fill {
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Badge Pulse Animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.status-badge.status-processing,
+.badge-new {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Shimmer Loading Effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Icon Spin */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.icon-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Tooltip Fade In */
+.tooltip-content {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================
+   Accessibility - Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .stat-card,
+  .chart-container,
+  .chart-card,
+  .alert-item,
+  .widget-section,
+  .document-item,
+  .campaign-card,
+  .metric-card {
+    animation: none;
+  }
+
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .stat-card:hover,
+  .chart-card:hover,
+  .alert-item:hover,
+  .campaign-card:hover {
+    transform: none;
+  }
+}
+
+/* ============================================
+   Page Load Optimization
+   ============================================ */
+
+/* Initial state - prevent flash */
+.stat-card,
+.chart-container,
+.chart-card,
+.alert-item,
+.widget-section,
+.document-item,
+.campaign-card,
+.metric-card {
+  opacity: 0;
+}
+
+/* After page load, elements become visible via animations */

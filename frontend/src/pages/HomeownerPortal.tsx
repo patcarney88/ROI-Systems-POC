@@ -11,6 +11,10 @@ import {
 } from 'recharts';
 import { documentApi } from '../services/api.services';
 import { notify } from '../utils/notifications';
+import DemoHeader from '../components/DemoHeader';
+import Breadcrumb from '../components/Breadcrumb';
+import AnimatedCounter from '../components/AnimatedCounter';
+import ContextualCTA from '../components/ContextualCTA';
 
 // Mock data
 const propertyData = {
@@ -183,6 +187,12 @@ const notifications = [
   }
 ];
 
+// Breadcrumb configuration
+const breadcrumbItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Homeowner Portal' }
+];
+
 export default function HomeownerPortal() {
   const [selectedTimeRange, setSelectedTimeRange] = useState<'1M' | '6M' | '1Y' | 'ALL'>('1Y');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -249,6 +259,9 @@ export default function HomeownerPortal() {
 
   return (
     <div className="homeowner-portal">
+      <DemoHeader dashboardName="Homeowner Portal" isDemoMode={true} />
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Hero Section */}
       <div className="hero-section">
         <div className="property-hero">
@@ -317,19 +330,27 @@ export default function HomeownerPortal() {
             <div className="property-stats">
               <div className="stat">
                 <span className="stat-label">Bedrooms</span>
-                <span className="stat-value">{propertyData.bedrooms}</span>
+                <span className="stat-value">
+                  <AnimatedCounter end={propertyData.bedrooms} />
+                </span>
               </div>
               <div className="stat">
                 <span className="stat-label">Bathrooms</span>
-                <span className="stat-value">{propertyData.bathrooms}</span>
+                <span className="stat-value">
+                  <AnimatedCounter end={propertyData.bathrooms} decimals={1} />
+                </span>
               </div>
               <div className="stat">
                 <span className="stat-label">Sq Ft</span>
-                <span className="stat-value">{propertyData.sqft.toLocaleString()}</span>
+                <span className="stat-value">
+                  <AnimatedCounter end={propertyData.sqft} separator />
+                </span>
               </div>
               <div className="stat">
                 <span className="stat-label">Year Built</span>
-                <span className="stat-value">{propertyData.yearBuilt}</span>
+                <span className="stat-value">
+                  <AnimatedCounter end={propertyData.yearBuilt} />
+                </span>
               </div>
             </div>
 
@@ -652,6 +673,12 @@ export default function HomeownerPortal() {
           ))}
         </div>
       </div>
+
+      {/* Contextual CTA - appears after 10 seconds for demo */}
+      <ContextualCTA
+        dashboardName="Homeowner Portal"
+        delayMs={10000}
+      />
     </div>
   );
 }

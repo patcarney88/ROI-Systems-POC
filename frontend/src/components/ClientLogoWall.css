@@ -1,0 +1,365 @@
+/**
+ * ClientLogoWall Styles
+ *
+ * Responsive logo wall component with grid and marquee variants
+ * Supports dark/light themes with grayscale effects
+ */
+
+/* ==========================================================================
+   Container & Header
+   ========================================================================== */
+
+.client-logo-wall {
+  width: 100%;
+  padding: 4rem 2rem;
+}
+
+.logo-wall-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.logo-wall-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary, #ffffff);
+  line-height: 1.2;
+}
+
+.logo-wall-subtitle {
+  font-size: 1.125rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Grid Layout
+   ========================================================================== */
+
+.logo-grid {
+  display: grid;
+  gap: 2rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  align-items: center;
+  justify-items: center;
+}
+
+/* Responsive grid columns */
+/* Mobile: 2 columns */
+.logo-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* Tablet: 4 columns */
+@media (min-width: 768px) {
+  .logo-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2.5rem;
+  }
+}
+
+/* Desktop: 6 columns (default) */
+@media (min-width: 1024px) {
+  .logo-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 3rem;
+  }
+}
+
+/* Custom column overrides */
+@media (min-width: 1024px) {
+  .logo-grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .logo-grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .logo-grid-cols-5 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .logo-grid-cols-6 {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* ==========================================================================
+   Logo Items
+   ========================================================================== */
+
+.logo-item {
+  width: 100%;
+  max-width: 180px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+/* Grayscale effect */
+.logo-grayscale .logo-image,
+.logo-grayscale .logo-placeholder {
+  filter: grayscale(100%) opacity(0.6);
+}
+
+.logo-grayscale:hover .logo-image,
+.logo-grayscale:hover .logo-placeholder {
+  filter: grayscale(0%) opacity(1);
+  transform: scale(1.05);
+}
+
+/* ==========================================================================
+   Logo Placeholder
+   ========================================================================== */
+
+.logo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logo-placeholder-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Hover effect for placeholders */
+.logo-item:hover .logo-placeholder {
+  border-color: rgba(102, 126, 234, 0.3);
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.08) 0%,
+    rgba(102, 126, 234, 0.03) 100%
+  );
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+}
+
+.logo-item:hover .logo-placeholder-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ==========================================================================
+   Marquee Variant
+   ========================================================================== */
+
+.logo-marquee {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+}
+
+.logo-marquee-track {
+  display: flex;
+  gap: 3rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  animation: marquee-scroll 30s linear infinite;
+  width: max-content;
+}
+
+.logo-marquee-track .logo-item {
+  flex-shrink: 0;
+}
+
+/* Pause animation on hover */
+.logo-marquee:hover .logo-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* ==========================================================================
+   Light Theme Support
+   ========================================================================== */
+
+.client-logo-wall.light-theme .logo-wall-title {
+  color: var(--text-primary-light, #1a1a1a);
+}
+
+.client-logo-wall.light-theme .logo-wall-subtitle {
+  color: var(--text-secondary-light, rgba(0, 0, 0, 0.6));
+}
+
+.client-logo-wall.light-theme .logo-placeholder {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.02) 0%,
+    rgba(0, 0, 0, 0.01) 100%
+  );
+}
+
+.client-logo-wall.light-theme .logo-placeholder-text {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.client-logo-wall.light-theme .logo-item:hover .logo-placeholder {
+  border-color: rgba(102, 126, 234, 0.4);
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.06) 0%,
+    rgba(102, 126, 234, 0.02) 100%
+  );
+}
+
+.client-logo-wall.light-theme .logo-item:hover .logo-placeholder-text {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+/* Grayscale for light theme */
+.client-logo-wall.light-theme .logo-grayscale .logo-image,
+.client-logo-wall.light-theme .logo-grayscale .logo-placeholder {
+  filter: grayscale(100%) opacity(0.5);
+}
+
+.client-logo-wall.light-theme .logo-grayscale:hover .logo-image,
+.client-logo-wall.light-theme .logo-grayscale:hover .logo-placeholder {
+  filter: grayscale(0%) opacity(1);
+}
+
+/* ==========================================================================
+   Responsive Typography
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  .client-logo-wall {
+    padding: 3rem 1.5rem;
+  }
+
+  .logo-wall-header {
+    margin-bottom: 2rem;
+  }
+
+  .logo-wall-title {
+    font-size: 1.5rem;
+  }
+
+  .logo-wall-subtitle {
+    font-size: 1rem;
+  }
+
+  .logo-placeholder-text {
+    font-size: 0.75rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .logo-wall-title {
+    font-size: 1.75rem;
+  }
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+/* Focus states for keyboard navigation */
+.logo-item:focus-within {
+  outline: 2px solid rgba(102, 126, 234, 0.5);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .logo-item,
+  .logo-image,
+  .logo-placeholder,
+  .logo-marquee-track {
+    transition: none;
+    animation: none;
+  }
+
+  .logo-grayscale:hover .logo-image,
+  .logo-grayscale:hover .logo-placeholder {
+    transform: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .logo-placeholder {
+    border-width: 2px;
+    border-color: currentColor;
+  }
+
+  .logo-placeholder-text {
+    font-weight: 700;
+  }
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+  .client-logo-wall {
+    padding: 2rem 0;
+  }
+
+  .logo-marquee-track {
+    animation: none;
+  }
+
+  .logo-grayscale .logo-image,
+  .logo-grayscale .logo-placeholder {
+    filter: none;
+  }
+}

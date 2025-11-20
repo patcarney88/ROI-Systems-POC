@@ -54,7 +54,7 @@
 }
 
 .stat-label {
-  font-size: 0.875rem;
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
   opacity: 0.9;
   font-weight: 500;
 }
@@ -64,7 +64,7 @@
 }
 
 .stat-value {
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 700;
   margin-bottom: 0.5rem;
   line-height: 1;
